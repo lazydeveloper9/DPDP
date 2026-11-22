@@ -170,6 +170,35 @@ def detect(
 
 
 @app.command()
+def evaluate(
+    target: str = typer.Argument(..., help="Path to directory or scan target"),
+    config: Optional[str] = typer.Option(None, "--config", "-c"),
+    debug: bool = typer.Option(False, "--debug"),
+    output: Optional[str] = typer.Option(None, "--output", "-o", help="Save RawFindingList JSON"),
+) -> None:
+    """[Stage 4] Evaluate DPDP rules (Pass A local + Pass B cross-file)."""
+    from cs01.pipeline.stage1_ingest.ingestor import run_ingest
+    from cs01.pipeline.stage2_parse.parser import run_parse
+    from cs01.pipeline.stage3_detect.detector import run_detect
+    from cs01.pipeline.stage4_evaluate.evaluator import run_evaluate
+    from cs01.utils import save_json
+    import json
+
+    cfg = load_config(config_path=config, overrides={"scan_root": str(target), "debug": debug or None})
+    manifest = run_ingest(cfg)
+    model = run_parse(manifest, cfg)
+    flow_graph, pii_hits = run_detect(model, cfg)
+    findings = run_evaluate(flow_graph, pii_hits, model, cfg)
+
+    output_payload = [f.model_dump(mode="json") for f in findings]
+    if output:
+        save_json(output_payload, output)
+        console.print(f"[green]{len(findings)} findings saved to {output}[/green]")
+    else:
+        console.print(json.dumps(output_payload, indent=2))
+
+
+@app.command()
 def rules(
     rule_id: Optional[str] = typer.Argument(None, help="Explain a specific rule"),
     pass_filter: Optional[str] = typer.Option(None, "--pass", help="A or B"),

@@ -1,0 +1,39 @@
+- rule_id: "ARCH-DPDP-001"
+  pass: "B"
+  description: "Application stores personal data in schema, but no consent withdrawal or user erasure route exists"
+  dpdp_section: "§6(4)"
+  dpdp_rule: "Rule 3(c)"
+  penalty_band: "50_crore"
+  severity: "HIGH"
+  remediation: "Implement a dedicated endpoint (e.g. POST /consent/withdraw or DELETE /user/profile) allowing Data Principals to withdraw consent and request erasure."
+  tags: ["consent-withdrawal", "erasure", "dpdp-s6-4", "high"]
+
+- rule_id: "ARCH-DPDP-002"
+  pass: "B"
+  description: "Personal data stored in schema, but no scheduled data purging/erasure routine detected"
+  dpdp_section: "§8(7)"
+  dpdp_rule: "Rule 8(2)"
+  penalty_band: "50_crore"
+  severity: "HIGH"
+  remediation: "Implement a background job or cron routine to purge personal data whose purpose has expired or whose retention threshold has elapsed."
+  tags: ["scheduled-erasure", "retention", "dpdp-s8-7", "high"]
+
+- rule_id: "ARCH-DPDP-003"
+  pass: "B"
+  description: "Children age or date of birth stored in schema without a verifiable guardian age-gate in code"
+  dpdp_section: "§9"
+  dpdp_rule: "Rule 10"
+  penalty_band: "200_crore_children"
+  severity: "CRITICAL"
+  remediation: "Under Section 9 of the DPDP Act, implement verifiable parental/guardian consent and age verification before collecting data from minors."
+  tags: ["children-protection", "age-gate", "dpdp-s9", "critical"]
+
+- rule_id: "ARCH-DPDP-004"
+  pass: "B"
+  description: "Outbound third-party data transmission detected to an unapproved processor"
+  dpdp_section: "§8(2)"
+  dpdp_rule: "Rule 6(2)"
+  penalty_band: "50_crore"
+  severity: "HIGH"
+  remediation: "Register all external data processors in cs01.yaml approved_processors under valid Data Processing Agreements (DPAs)."
+  tags: ["data-processor", "third-party", "dpdp-s8-2", "high"]

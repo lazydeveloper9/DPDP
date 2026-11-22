@@ -1,0 +1,79 @@
+- rule_id: "CODE-DPDP-001"
+  pass: "A"
+  description: "Personal data flows directly into an unguarded logger sink"
+  dpdp_section: "§8(5)"
+  dpdp_rule: "Rule 6(1)(a)"
+  penalty_band: "250_crore"
+  severity: "CRITICAL"
+  remediation: "Wrap sensitive personal data with a masking or tokenization function before logging (e.g. mask_pii(payload))."
+  tags: ["pii-logging", "security-safeguards", "dpdp-s8-5", "critical"]
+
+- rule_id: "CODE-DPDP-002"
+  pass: "A"
+  description: "Personal data sent to third-party SDK or external HTTP sink without verified consent guard"
+  dpdp_section: "§7"
+  dpdp_rule: "Rule 3(2)"
+  penalty_band: "50_crore"
+  severity: "HIGH"
+  remediation: "Verify explicit user consent prior to dispatching personal data to external services."
+  tags: ["third-party-sharing", "consent", "dpdp-s7", "high"]
+
+- rule_id: "CODE-DPDP-003"
+  pass: "A"
+  description: "Hardcoded Indian identifier literal detected in source code"
+  dpdp_section: "§8(5)"
+  dpdp_rule: "Rule 6(1)(a)"
+  penalty_band: "250_crore"
+  severity: "HIGH"
+  remediation: "Remove hardcoded identity numbers from source code; load mock identifiers dynamically in test environments."
+  tags: ["hardcoded-pii", "credentials", "dpdp-s8-5", "high"]
+
+- rule_id: "SQL-DPDP-001"
+  pass: "A"
+  description: "Personal data column defined without column-level encryption marker in database schema"
+  dpdp_section: "§8(5)"
+  dpdp_rule: "Rule 6(1)(a)"
+  penalty_band: "250_crore"
+  severity: "CRITICAL"
+  remediation: "Enable column-level encryption (e.g. EncryptedType, KMS, or DB pgcrypto) for personal data columns."
+  tags: ["database-encryption", "schema", "dpdp-s8-5", "critical"]
+
+- rule_id: "SQL-DPDP-002"
+  pass: "A"
+  description: "Personal data table lacks documented retention period comment in schema"
+  dpdp_section: "§8(7)"
+  dpdp_rule: "Rule 6(1)(e)"
+  penalty_band: "50_crore"
+  severity: "MEDIUM"
+  remediation: "Document the statutory retention period in table or column schema comments (e.g. COMMENT ON COLUMN ... 'retention 180 days')."
+  tags: ["retention", "schema-metadata", "dpdp-r6-1-e", "medium"]
+
+- rule_id: "IAC-DPDP-001"
+  pass: "A"
+  description: "Terraform database instance configured with storage_encrypted = false"
+  dpdp_section: "§8(5)"
+  dpdp_rule: "Rule 6(1)(a)"
+  penalty_band: "250_crore"
+  severity: "CRITICAL"
+  remediation: "Set storage_encrypted = true on all database instances in Terraform."
+  tags: ["terraform-encryption", "cloud-security", "dpdp-s8-5", "critical"]
+
+- rule_id: "IAC-DPDP-002"
+  pass: "A"
+  description: "Cloud log group retention period configured below statutory 365-day requirement"
+  dpdp_section: "§8(3)"
+  dpdp_rule: "Rule 8(3)"
+  penalty_band: "50_crore"
+  severity: "HIGH"
+  remediation: "Set retention_in_days to at least 365 days in CloudWatch or logging configuration (overlaps with CERT-In 180-day floor)."
+  tags: ["log-retention", "cert-in", "dpdp-r8-3", "high"]
+
+- rule_id: "ENV-DPDP-001"
+  pass: "A"
+  description: "Insecure database SSL configuration (sslmode=disable or ssl=false) in environment configuration"
+  dpdp_section: "§8(5)"
+  dpdp_rule: "Rule 6(1)(a)"
+  penalty_band: "250_crore"
+  severity: "CRITICAL"
+  remediation: "Enforce TLS for database connections: set sslmode=require or sslmode=verify-full."
+  tags: ["ssl-tls", "environment-config", "dpdp-s8-5", "critical"]
