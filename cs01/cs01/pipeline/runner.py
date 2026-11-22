@@ -11,7 +11,7 @@ from rich.console import Console
 from rich.progress import Progress, SpinnerColumn, TextColumn
 
 from cs01.models.scan_config import ScanConfig
-from cs01.utils import save_json, new_scan_id, utc_now_iso
+from cs01.utils import save_json, new_scan_id, utc_now_iso, is_archive, extracted_workspace
 
 console = Console(stderr=True)
 
@@ -32,119 +32,131 @@ def run_pipeline(cfg: ScanConfig) -> int:
     output_dir = Path(cfg.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    with Progress(
-        SpinnerColumn(),
-        TextColumn("[progress.description]{task.description}"),
-        console=console,
-        transient=True,
-    ) as progress:
+    with extracted_workspace(cfg.scan_root) as resolved_root:
+        orig_scan_root = cfg.scan_root
+        if is_archive(orig_scan_root):
+            console.print(f"[cyan]📦 Archive detected ({orig_scan_root}). Safely unpacked to temporary workspace.[/cyan]")
+        cfg.scan_root = str(resolved_root)
 
-        # ── Stage 1: Ingest & Classify ──────────────────────────────────────
-        t = progress.add_task("[cyan]Stage 1 · Ingest & Classify...", total=None)
-        from cs01.pipeline.stage1_ingest.ingestor import run_ingest
-        manifest = run_ingest(cfg)
-        progress.remove_task(t)
-        console.print(
-            f"[green]✔ Stage 1[/green] — {manifest.total_scanned} files scanned, "
-            f"{manifest.skipped_count} skipped"
-        )
-        if cfg.save_stage_output:
-            save_json(manifest, output_dir / "stage1_manifest.json")
+        with Progress(
+            SpinnerColumn(),
+            TextColumn("[progress.description]{task.description}"),
+            console=console,
+            transient=True,
+        ) as progress:
 
-        # ── Stage 2: Parse ──────────────────────────────────────────────────
-        t = progress.add_task("[cyan]Stage 2 · Parse...", total=None)
-        from cs01.pipeline.stage2_parse.parser import run_parse
-        repo_model = run_parse(manifest, cfg)
-        progress.remove_task(t)
-        console.print(
-            f"[green]✔ Stage 2[/green] — "
-            f"{len(repo_model.ast_index)} ASTs, "
-            f"{len(repo_model.schema_records)} schema records, "
-            f"{len(repo_model.iac_trees)} IaC trees"
-        )
-        if cfg.save_stage_output:
-            save_json(repo_model, output_dir / "stage2_model.json")
+            # ── Stage 1: Ingest & Classify ──────────────────────────────────────
+            t = progress.add_task("[cyan]Stage 1 · Ingest & Classify...", total=None)
+            from cs01.pipeline.stage1_ingest.ingestor import run_ingest
+            manifest = run_ingest(cfg)
+            progress.remove_task(t)
+            console.print(
+                f"[green]✔ Stage 1[/green] — {manifest.total_scanned} files scanned, "
+                f"{manifest.skipped_count} skipped"
+            )
+            if cfg.save_stage_output:
+                save_json(manifest, output_dir / "stage1_manifest.json")
 
-        # ── Stage 3: Detect ─────────────────────────────────────────────────
-        t = progress.add_task("[cyan]Stage 3 · Detect PII & Trace Flows...", total=None)
-        from cs01.pipeline.stage3_detect.detector import run_detect
-        flow_graph, pii_hits = run_detect(repo_model, cfg)
-        progress.remove_task(t)
-        console.print(
-            f"[green]✔ Stage 3[/green] — "
-            f"{len(pii_hits.hits)} PII hits, "
-            f"{len(flow_graph.edges)} flow edges "
-            f"({len(flow_graph.unguarded_edges())} unguarded)"
-        )
-        if cfg.save_stage_output:
-            save_json(flow_graph, output_dir / "stage3_flow_graph.json")
-            save_json(pii_hits, output_dir / "stage3_pii_hits.json")
+            # ── Stage 2: Parse ──────────────────────────────────────────────────
+            t = progress.add_task("[cyan]Stage 2 · Parse...", total=None)
+            from cs01.pipeline.stage2_parse.parser import run_parse
+            repo_model = run_parse(manifest, cfg)
+            progress.remove_task(t)
+            console.print(
+                f"[green]✔ Stage 2[/green] — "
+                f"{len(repo_model.ast_index)} ASTs, "
+                f"{len(repo_model.schema_records)} schema records, "
+                f"{len(repo_model.iac_trees)} IaC trees"
+            )
+            if cfg.save_stage_output:
+                save_json(repo_model, output_dir / "stage2_model.json")
 
-        # ── Stage 4: Evaluate ───────────────────────────────────────────────
-        t = progress.add_task("[cyan]Stage 4 · Evaluate DPDP Rules...", total=None)
-        from cs01.pipeline.stage4_evaluate.evaluator import run_evaluate
-        raw_findings = run_evaluate(flow_graph, pii_hits, repo_model, cfg)
-        progress.remove_task(t)
-        console.print(
-            f"[green]✔ Stage 4[/green] — "
-            f"{len(raw_findings)} raw findings "
-            f"(Pass A + Pass B)"
-        )
-        if cfg.save_stage_output:
-            save_json({"findings": [f.model_dump(mode="json") for f in raw_findings]},
-                      output_dir / "stage4_raw_findings.json")
+            # ── Stage 3: Detect ─────────────────────────────────────────────────
+            t = progress.add_task("[cyan]Stage 3 · Detect PII & Trace Flows...", total=None)
+            from cs01.pipeline.stage3_detect.detector import run_detect
+            flow_graph, pii_hits = run_detect(repo_model, cfg)
+            progress.remove_task(t)
+            console.print(
+                f"[green]✔ Stage 3[/green] — "
+                f"{len(pii_hits.hits)} PII hits, "
+                f"{len(flow_graph.edges)} flow edges "
+                f"({len(flow_graph.unguarded_edges())} unguarded)"
+            )
+            if cfg.save_stage_output:
+                save_json(flow_graph, output_dir / "stage3_flow_graph.json")
+                save_json(pii_hits, output_dir / "stage3_pii_hits.json")
 
-        # ── Stage 5: Classify ───────────────────────────────────────────────
-        t = progress.add_task("[cyan]Stage 5 · Classify & Score...", total=None)
-        from cs01.pipeline.stage5_classify.classifier import run_classify
-        bundle = run_classify(
-            raw_findings, cfg,
-            scan_id=scan_id,
-            scan_timestamp=utc_now_iso(),
-            scan_root=cfg.scan_root,
-            total_files=manifest.total_scanned,
-            partial_scan=len(repo_model.parse_errors) > 0,
-            partial_details=[e.get("error", "") for e in repo_model.parse_errors],
-        )
-        progress.remove_task(t)
-        console.print(
-            f"[green]✔ Stage 5[/green] — "
-            f"{len(bundle.findings)} unique findings · "
-            f"Readiness: {bundle.readiness.overall:.0f}/100"
-        )
-        if cfg.save_stage_output:
-            save_json(bundle, output_dir / "stage5_bundle.json")
+            # ── Stage 4: Evaluate ───────────────────────────────────────────────
+            t = progress.add_task("[cyan]Stage 4 · Evaluate DPDP Rules...", total=None)
+            from cs01.pipeline.stage4_evaluate.evaluator import run_evaluate
+            raw_findings = run_evaluate(flow_graph, pii_hits, repo_model, cfg)
+            progress.remove_task(t)
+            console.print(
+                f"[green]✔ Stage 4[/green] — "
+                f"{len(raw_findings)} raw findings "
+                f"(Pass A + Pass B)"
+            )
+            if cfg.save_stage_output:
+                save_json({"findings": [f.model_dump(mode="json") for f in raw_findings]},
+                          output_dir / "stage4_raw_findings.json")
 
-        # ── Stage 6: Report ─────────────────────────────────────────────────
-        t = progress.add_task("[cyan]Stage 6 · Generate Reports...", total=None)
-        from cs01.pipeline.stage6_report.reporter import run_report
-        run_report(bundle, cfg, output_dir)
-        progress.remove_task(t)
-        console.print(f"[green]✔ Stage 6[/green] — Reports written to [cyan]{output_dir}[/cyan]")
+            # ── Stage 5: Classify ───────────────────────────────────────────────
+            t = progress.add_task("[cyan]Stage 5 · Classify & Score...", total=None)
+            from cs01.pipeline.stage5_classify.classifier import run_classify
+            bundle = run_classify(
+                raw_findings, cfg,
+                scan_id=scan_id,
+                scan_timestamp=utc_now_iso(),
+                scan_root=cfg.scan_root,
+                total_files=manifest.total_scanned,
+                partial_scan=len(repo_model.parse_errors) > 0,
+                partial_details=[e.get("error", "") for e in repo_model.parse_errors],
+            )
+            progress.remove_task(t)
+            console.print(
+                f"[green]✔ Stage 5[/green] — "
+                f"{len(bundle.findings)} unique findings · "
+                f"Readiness: {bundle.readiness.overall:.0f}/100"
+            )
+            if cfg.save_stage_output:
+                save_json(bundle, output_dir / "stage5_bundle.json")
 
-    # ── Determine exit code ─────────────────────────────────────────────────
-    if bundle.partial_scan:
-        base_exit = EXIT_PARTIAL_SCAN
-    else:
-        base_exit = EXIT_CLEAN
+            # ── Stage 6: Report ─────────────────────────────────────────────────
+            t = progress.add_task("[cyan]Stage 6 · Generate Reports...", total=None)
+            from cs01.pipeline.stage6_report.reporter import run_report
+            run_report(bundle, cfg, output_dir)
+            progress.remove_task(t)
+            console.print(f"[green]✔ Stage 6[/green] — Reports written to [cyan]{output_dir}[/cyan]")
 
-    if cfg.fail_on != "never":
-        threshold_idx = FAIL_ON_ORDER.index(cfg.fail_on)
-        for finding in bundle.findings:
-            finding_idx = FAIL_ON_ORDER.index(finding.severity.value.lower())
-            if finding_idx <= threshold_idx:
-                console.print(
-                    f"[red bold]✖ POLICY GATE FAILED[/red bold] — "
-                    f"One or more findings at or above '{cfg.fail_on}' severity."
-                )
-                return EXIT_POLICY_FAIL
+        # ── Determine exit code ─────────────────────────────────────────────────
+        if bundle.partial_scan:
+            base_exit = EXIT_PARTIAL_SCAN
+        else:
+            base_exit = EXIT_CLEAN
 
-    if base_exit == EXIT_PARTIAL_SCAN:
-        console.print(
-            "[yellow]⚠ PARTIAL SCAN[/yellow] — Some files could not be parsed. "
-            "See stage2_model.json for details."
-        )
-    else:
-        console.print("[bold green]✔ SCAN CLEAN[/bold green] — No findings at or above threshold.")
+        if cfg.fail_on != "never":
+            threshold_idx = FAIL_ON_ORDER.index(cfg.fail_on)
+            suppressed_count = 0
+            for finding in bundle.findings:
+                if getattr(finding, "is_baseline_suppressed", False):
+                    suppressed_count += 1
+                    continue
+                finding_idx = FAIL_ON_ORDER.index(finding.severity.value.lower())
+                if finding_idx <= threshold_idx:
+                    console.print(
+                        f"[red bold]✖ POLICY GATE FAILED[/red bold] — "
+                        f"One or more findings at or above '{cfg.fail_on}' severity."
+                    )
+                    return EXIT_POLICY_FAIL
+            if suppressed_count > 0:
+                console.print(f"[dim]ℹ {suppressed_count} findings suppressed by baseline[/dim]")
 
-    return base_exit
+        if base_exit == EXIT_PARTIAL_SCAN:
+            console.print(
+                "[yellow]⚠ PARTIAL SCAN[/yellow] — Some files could not be parsed. "
+                "See stage2_model.json for details."
+            )
+        else:
+            console.print("[bold green]✔ SCAN CLEAN[/bold green] — No findings at or above threshold.")
+
+        return base_exit

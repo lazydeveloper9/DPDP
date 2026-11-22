@@ -39,6 +39,7 @@ class ScoredFinding(RawFinding):
     # Evidence
     redacted_snippet: str = ""            # PII replaced with [AADHAAR_1], [PAN_1], etc.
     dedupe_key: str = ""                  # hash used for deduplication
+    is_baseline_suppressed: bool = False  # True if matches an entry in .cs01-baseline.json
 
     # Merge history
     merged_from_ids: list[str] = Field(default_factory=list)   # original RawFinding IDs

@@ -61,6 +61,29 @@ def run_classify(
         )
         scored_list.append(scored)
 
+    # 2b. Apply baseline suppression if configured
+    if cfg.baseline_path:
+        from pathlib import Path
+        bpath = Path(cfg.baseline_path)
+        if bpath.exists():
+            from cs01.utils import load_json
+            try:
+                bdata = load_json(bpath)
+                fingerprints: set[str] = set()
+                if isinstance(bdata, dict):
+                    if "fingerprints" in bdata:
+                        fingerprints = set(bdata["fingerprints"])
+                    elif "findings" in bdata:
+                        fingerprints = {f.get("dedupe_key") for f in bdata["findings"] if f.get("dedupe_key")}
+                elif isinstance(bdata, list):
+                    fingerprints = {item if isinstance(item, str) else item.get("dedupe_key", "") for item in bdata}
+                
+                for s in scored_list:
+                    if s.dedupe_key in fingerprints:
+                        s.is_baseline_suppressed = True
+            except Exception:
+                pass
+
     # 3. Sort by priority score descending
     scored_list.sort(key=lambda s: s.priority_score, reverse=True)
 

@@ -76,3 +76,6 @@ def redact_pii_in_snippet(snippet: str, pii_values: list[str]) -> str:
             counters[ptype] = counters.get(ptype, 0) + 1
             result = result.replace(val, f"[{ptype}_{counters[ptype]}]")
     return result
+
+
+from .archive import is_archive, safe_extract_zip, safe_extract_tar, extracted_workspace
