@@ -18,7 +18,10 @@ from .flow_graph import (
     SourceType, SinkType, GuardType,
 )
 from .raw_finding import RawFinding, PassType, Severity
-from .scored_finding import ScoredFinding, ScoredFindingBundle, DpdpReadinessScore
+from .scored_finding import (
+    ScoredFinding, ScoredFindingBundle, DpdpReadinessScore,
+    ExposureContext, PillarScore,
+)
 from .scan_config import ScanConfig
 
 __all__ = [
@@ -34,6 +37,7 @@ __all__ = [
     "RawFinding", "PassType", "Severity",
     # Stage 5
     "ScoredFinding", "ScoredFindingBundle", "DpdpReadinessScore",
+    "ExposureContext", "PillarScore",
     # Config
     "ScanConfig",
 ]

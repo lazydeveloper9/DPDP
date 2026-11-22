@@ -1,16 +1,79 @@
-"""Stage 5 classifier — stub (implementation in sprint S5)."""
-from cs01.models import RawFinding, ScoredFindingBundle, DpdpReadinessScore, ScanConfig
+"""
+Pipeline Stage 5 — Classify Risk & Package Evidence
+===================================================
+Entry point: run_classify(raw_findings, cfg, **kwargs) -> ScoredFindingBundle
+
+Orchestrates:
+  1. Finding deduplication
+  2. Statutory priority risk scoring
+  3. Evidence packaging & PII redaction
+  4. 8-Pillar DPDP Readiness Score computation with dynamic capping
+"""
+
+from __future__ import annotations
+from typing import Any
+
+from cs01.models import (
+    RawFinding, ScoredFinding, ScoredFindingBundle, ScanConfig, ExposureContext,
+)
+from .deduplicator import deduplicate_findings
+from .priority_scorer import PriorityScorer
+from .readiness_scorer import calculate_readiness_score
+from .evidence_packager import package_evidence
+
 
 def run_classify(
     raw_findings: list[RawFinding],
     cfg: ScanConfig,
-    **kwargs,
+    **kwargs: Any,
 ) -> ScoredFindingBundle:
+    """Stage 5 execution: deduplicate, score, and package findings."""
+    scorer = PriorityScorer(cfg.policy_profiles_dir)
+
+    # 1. Deduplicate
+    deduped_raw = deduplicate_findings(raw_findings)
+
+    # 2. Score and package each finding
+    scored_list: list[ScoredFinding] = []
+    for raw in deduped_raw:
+        # Determine confidence and exposure
+        confidence = 0.90
+        exposure = ExposureContext.PRODUCTION
+        if raw.file and any(p in raw.file.replace("\\", "/").lower() for p in ("/tests/", "/test/", "/spec/")):
+            exposure = ExposureContext.INTERNAL
+            confidence = 0.30
+
+        p_score, s_w, b_w, e_m = scorer.compute_score(
+            severity=raw.severity,
+            penalty_band=raw.penalty_band,
+            confidence=confidence,
+            exposure=exposure,
+        )
+
+        scored = package_evidence(
+            raw=raw,
+            priority_score=p_score,
+            confidence=confidence,
+            exposure=exposure,
+            s_weight=s_w,
+            b_weight=b_w,
+            e_mult=e_m,
+        )
+        scored_list.append(scored)
+
+    # 3. Sort by priority score descending
+    scored_list.sort(key=lambda s: s.priority_score, reverse=True)
+
+    # 4. Calculate 8-pillar readiness scorecard
+    readiness = calculate_readiness_score(scored_list)
+
     return ScoredFindingBundle(
-        scan_id=kwargs.get("scan_id", ""),
+        scan_id=kwargs.get("scan_id", "local_scan"),
         scan_timestamp=kwargs.get("scan_timestamp", ""),
-        scan_root=kwargs.get("scan_root", ""),
+        scan_root=kwargs.get("scan_root", cfg.scan_root),
         total_files_scanned=kwargs.get("total_files", 0),
         partial_scan=kwargs.get("partial_scan", False),
         partial_scan_details=kwargs.get("partial_details", []),
+        findings=scored_list,
+        readiness=readiness,
     )
