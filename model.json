@@ -1,0 +1,242 @@
+{
+  "ast_index": [
+    {
+      "path": "backend/api.py",
+      "language": "python",
+      "parse_error": null,
+      "functions": [
+        {
+          "name": "register",
+          "start_line": 7,
+          "end_line": 12,
+          "params": [
+            "req"
+          ],
+          "calls": [
+            {
+              "callee": "logger.info",
+              "snippet": "logger.info(\"registration payload: %s\", req.body)",
+              "line": 10
+            },
+            {
+              "callee": "requests.post",
+              "snippet": "requests.post(\"http://partner.example.test/ingest\", json={\"email\": email})",
+              "line": 11
+            }
+          ]
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "snippet": "import logging",
+          "line": 1
+        },
+        {
+          "snippet": "import requests",
+          "line": 2
+        }
+      ],
+      "assignments": [
+        {
+          "name": "logger",
+          "value_snippet": "logger = logging.getLogger(__name__)",
+          "line": 4
+        },
+        {
+          "name": "email",
+          "value_snippet": "email = req.body.email",
+          "line": 8
+        },
+        {
+          "name": "phone_number",
+          "value_snippet": "phone_number = req.body.phone_number",
+          "line": 9
+        }
+      ],
+      "string_literals": [
+        {
+          "value": "registration payload: %s",
+          "line": 10,
+          "col": 17
+        },
+        {
+          "value": "http://partner.example.test/ingest",
+          "line": 11,
+          "col": 19
+        },
+        {
+          "value": "email",
+          "line": 11,
+          "col": 63
+        },
+        {
+          "value": "email",
+          "line": 12,
+          "col": 13
+        },
+        {
+          "value": "phone_number",
+          "line": 12,
+          "col": 29
+        }
+      ],
+      "decorators": []
+    },
+    {
+      "path": "backend/routes.js",
+      "language": "javascript",
+      "parse_error": null,
+      "functions": [
+        {
+          "name": "anonymous",
+          "start_line": 1,
+          "end_line": 4,
+          "params": [
+            "req",
+            "res"
+          ],
+          "calls": [
+            {
+              "callee": "loadProfile",
+              "snippet": "loadProfile(req.user.id)",
+              "line": 2
+            },
+            {
+              "callee": "res.json",
+              "snippet": "res.json({ email: profile.email, phoneNumber: profile.phoneNumber })",
+              "line": 3
+            }
+          ]
+        }
+      ],
+      "classes": [],
+      "imports": [],
+      "assignments": [
+        {
+          "name": "profile",
+          "value_snippet": "profile = await loadProfile(req.user.id)",
+          "line": 2
+        }
+      ],
+      "string_literals": [
+        {
+          "value": "/api/profile",
+          "line": 1,
+          "col": 12
+        }
+      ],
+      "decorators": []
+    },
+    {
+      "path": "frontend/SignupForm.jsx",
+      "language": "javascript",
+      "parse_error": null,
+      "functions": [
+        {
+          "name": "SignupForm",
+          "start_line": 1,
+          "end_line": 6,
+          "params": [],
+          "calls": []
+        }
+      ],
+      "classes": [],
+      "imports": [],
+      "assignments": [],
+      "string_literals": [
+        {
+          "value": "email",
+          "line": 3,
+          "col": 17
+        },
+        {
+          "value": "email",
+          "line": 3,
+          "col": 30
+        },
+        {
+          "value": "phoneNumber",
+          "line": 4,
+          "col": 17
+        },
+        {
+          "value": "tel",
+          "line": 4,
+          "col": 36
+        }
+      ],
+      "decorators": []
+    }
+  ],
+  "schema_records": [
+    {
+      "source_orm": "sql_ddl",
+      "source_file": "db/schema.sql",
+      "table_or_model": "customers",
+      "column_or_field": "id",
+      "data_type": "UUID",
+      "is_nullable": true,
+      "has_encryption_marker": false,
+      "has_retention_comment": false,
+      "constraints": [
+        "PRIMARY KEY"
+      ],
+      "line": null
+    },
+    {
+      "source_orm": "sql_ddl",
+      "source_file": "db/schema.sql",
+      "table_or_model": "customers",
+      "column_or_field": "email",
+      "data_type": "VARCHAR(255)",
+      "is_nullable": true,
+      "has_encryption_marker": false,
+      "has_retention_comment": false,
+      "constraints": [],
+      "line": null
+    },
+    {
+      "source_orm": "sql_ddl",
+      "source_file": "db/schema.sql",
+      "table_or_model": "customers",
+      "column_or_field": "phone_number",
+      "data_type": "VARCHAR(30)",
+      "is_nullable": true,
+      "has_encryption_marker": false,
+      "has_retention_comment": false,
+      "constraints": [],
+      "line": null
+    }
+  ],
+  "iac_trees": [
+    {
+      "source_file": "infra/storage.tf",
+      "file_type": "terraform",
+      "resource_type": "aws_s3_bucket_acl",
+      "resource_name": "customer_uploads",
+      "attributes": {
+        "bucket": "${aws_s3_bucket.customer_uploads.id}",
+        "acl": "\"public-read\"",
+        "__is_block__": true
+      },
+      "line_map": {
+        "__self__": 1,
+        "bucket": 2,
+        "acl": 3
+      },
+      "parse_error": null
+    }
+  ],
+  "env_vars": [
+    {
+      "key": "JWT_SECRET",
+      "value_sha256": "ab016d7be1fcef68fec6977d1cba023b3a1c90076569e4485bd8b2ec91ea7f76",
+      "value_length": 38,
+      "source_file": ".env.example",
+      "line": 2,
+      "is_potential_secret": true
+    }
+  ],
+  "parse_errors": []
+}

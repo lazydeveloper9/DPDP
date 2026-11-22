@@ -12,7 +12,11 @@ and reconstructable via
 
 from .repo_manifest import RepoManifest, FileRecord, Bucket, StackProfile
 from .repo_model import RepoModel, SchemaRecord, IacTree, EnvVar, AstFileRecord
-from .flow_graph import FlowGraph, PiiHitList, PiiHit, DataSource, DataSink, DataGuard, FlowEdge
+from .flow_graph import (
+    FlowGraph, PiiHitList, PiiHit, PiiType, FileRole,
+    DataSource, DataSink, DataGuard, FlowEdge,
+    SourceType, SinkType, GuardType,
+)
 from .raw_finding import RawFinding, PassType, Severity
 from .scored_finding import ScoredFinding, ScoredFindingBundle, DpdpReadinessScore
 from .scan_config import ScanConfig
@@ -23,7 +27,9 @@ __all__ = [
     # Stage 2
     "RepoModel", "SchemaRecord", "IacTree", "EnvVar", "AstFileRecord",
     # Stage 3
-    "FlowGraph", "PiiHitList", "PiiHit", "DataSource", "DataSink", "DataGuard", "FlowEdge",
+    "FlowGraph", "PiiHitList", "PiiHit", "PiiType", "FileRole",
+    "DataSource", "DataSink", "DataGuard", "FlowEdge",
+    "SourceType", "SinkType", "GuardType",
     # Stage 4
     "RawFinding", "PassType", "Severity",
     # Stage 5
