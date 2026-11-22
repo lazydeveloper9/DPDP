@@ -1,0 +1,54 @@
+# Verified UPI PSP Handle Suffixes
+# Source: NPCI published PSP list (as of November 2026)
+# Hot-updatable without binary rebuild.
+
+version: "2026-11-01"
+source: "NPCI / RBI published PSP registrations"
+
+handles:
+  # Major banks
+  - "@sbi"
+  - "@oksbi"
+  - "@ybl"           # Yes Bank
+  - "@okaxis"        # Axis Bank
+  - "@axisbank"
+  - "@okhdfcbank"    # HDFC
+  - "@hdfc"
+  - "@icici"
+  - "@okicici"
+  - "@ibl"           # IndusInd Bank
+  - "@indus"
+  - "@kotak"
+  - "@kmbl"
+  - "@pnb"
+  - "@barodampay"
+  - "@uboi"
+  - "@unionbank"
+  - "@cbi"
+  - "@centralbank"
+  - "@cnrb"          # Canara Bank
+
+  # Payment apps
+  - "@paytm"
+  - "@ptyes"
+  - "@pthdfc"
+  - "@ptsbi"
+  - "@gpay"          # Google Pay
+  - "@oksbi"
+  - "@phonepe"
+  - "@ybl"
+  - "@apl"           # Amazon Pay
+  - "@amazon"
+  - "@bhim"          # BHIM app
+
+  # Fintech
+  - "@fbl"           # Federal Bank
+  - "@federal"
+  - "@rbl"           # RBL Bank
+  - "@upi"           # Generic (flag for review)
+  - "@nsdl"
+  - "@airtel"
+  - "@airtelpaymentsbank"
+  - "@fino"
+  - "@jio"
+  - "@jiomoney"

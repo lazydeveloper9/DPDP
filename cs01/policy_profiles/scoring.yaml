@@ -1,0 +1,53 @@
+# Priority Score Configuration
+# Controls how findings are ranked for the remediation backlog.
+# All weights are multiplied together: Score = S x C x B x E
+
+version: "2026-11-01"
+
+# Readiness Score — 8 statutory pillars (each contributes equally by default)
+readiness_pillars:
+  - id: notice_consent
+    label: "Notice & Consent"
+    dpdp_references: ["§5", "§6", "Rule 3"]
+    weight: 1.0
+
+  - id: security_safeguards
+    label: "Security Safeguards"
+    dpdp_references: ["§8(5)", "Rule 6(1)(a)"]
+    weight: 1.0
+
+  - id: breach_readiness
+    label: "Breach Readiness"
+    dpdp_references: ["§8(6)", "Rule 7"]
+    weight: 1.0
+
+  - id: retention_erasure
+    label: "Retention & Erasure"
+    dpdp_references: ["Rule 6(1)(e)", "Rule 8"]
+    weight: 1.0
+
+  - id: children_protection
+    label: "Children & PwD Protection"
+    dpdp_references: ["§9", "Rule 10"]
+    weight: 1.0
+
+  - id: sdf_duties
+    label: "SDF Duties"
+    dpdp_references: ["§10", "Rule 12", "Rule 13"]
+    weight: 1.0
+
+  - id: data_principal_rights
+    label: "Data Principal Rights"
+    dpdp_references: ["Rule 14", "§11", "§12", "§13"]
+    weight: 1.0
+
+  - id: cross_border_cert_in
+    label: "Cross-Border & CERT-In Controls"
+    dpdp_references: ["Rule 15", "CERT-In 2022"]
+    weight: 1.0
+
+# CRITICAL cap: if any CRITICAL finding in these bands is unresolved,
+# the Readiness Score is capped at this maximum.
+critical_cap:
+  bands: ["250_crore", "200_crore_breach", "200_crore_children"]
+  max_score_when_capped: 60

@@ -1,0 +1,72 @@
+# DPDP Act 2023 — Section 33 Schedule Penalty Bands
+# Source: Schedule to the DPDP Act, as of November 2026
+# Hot-updatable: modify this file without rebuilding cs01 binary.
+# DISCLAIMER: These are statutory maximum ceilings. Actual penalties are
+# discretionary and determined by DPBI after formal inquiry under §33(2).
+
+version: "2026-11-01"
+source: "DPDP Act 2023, Schedule; DPDP Rules 2025"
+
+bands:
+  - id: "250_crore"
+    label: "Security Safeguards"
+    ceiling_inr_crore: 250
+    dpdp_act_section: "§8(5)"
+    description: >
+      Failure to implement reasonable security safeguards to prevent
+      personal data breach. This is the highest penalty band.
+
+  - id: "200_crore_breach"
+    label: "Breach Notification Failure"
+    ceiling_inr_crore: 200
+    dpdp_act_section: "§8(6)"
+    description: >
+      Failure to notify the Data Protection Board and affected Data Principals
+      of a personal data breach without delay.
+
+  - id: "200_crore_children"
+    label: "Children & PwD Protection"
+    ceiling_inr_crore: 200
+    dpdp_act_section: "§9"
+    description: >
+      Processing personal data of children or persons with disabilities
+      without verifiable parental/guardian consent, or in a way that
+      adversely affects their well-being.
+
+  - id: "150_crore"
+    label: "Significant Data Fiduciary Duties"
+    ceiling_inr_crore: 150
+    dpdp_act_section: "§10"
+    description: >
+      Failure by a Significant Data Fiduciary to perform duties including
+      periodic data audit, appointment of DPO, or Data Impact Assessment.
+
+  - id: "50_crore"
+    label: "Residual Obligations"
+    ceiling_inr_crore: 50
+    dpdp_act_section: "§5, §6, §7, §11, §12, §13, §14"
+    description: >
+      Failure related to notice, consent, purpose limitation, data
+      principal rights, or grievance redressal. Also covers CERT-In
+      overlapping obligations.
+
+# Scoring weights for Priority Score formula
+# Priority = Severity_Weight x Confidence x Band_Weight x Exposure_Multiplier
+scoring_weights:
+  band_weights:
+    "250_crore": 1.00
+    "200_crore_breach": 0.85
+    "200_crore_children": 0.85
+    "150_crore": 0.70
+    "50_crore": 0.40
+
+  severity_weights:
+    CRITICAL: 1.00
+    HIGH: 0.75
+    MEDIUM: 0.45
+    LOW: 0.20
+
+  exposure_multipliers:
+    external_live: 1.25      # externally reachable, confirmed by live probe
+    production: 1.00         # standard production path
+    internal: 0.50           # internal-only or non-production

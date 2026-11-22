@@ -1,0 +1,25 @@
+# CS-01 ignore file — gitignore-compatible glob syntax
+# Copy to .dpdpignore and add project-specific paths to exclude from scanning.
+
+# --- Always excluded by default (built into scanner) ---
+node_modules/
+venv/
+.venv/
+env/
+dist/
+build/
+__pycache__/
+*.min.js
+*.min.css
+*.lock
+*.map
+*.pyc
+.git/
+
+# --- Documentation (adjust as needed) ---
+docs/
+*.md
+
+# --- Add your project-specific exclusions below ---
+# vendor/
+# third_party/

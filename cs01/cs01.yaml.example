@@ -1,0 +1,45 @@
+# CS-01 Configuration File
+# Copy to cs01.yaml and customise for your organisation.
+
+# --- Organisation Profile ---
+org_name: "Acme Corp"
+entity_type: "data_fiduciary"        # data_fiduciary | data_processor | significant_data_fiduciary
+is_sdf: false                        # Significant Data Fiduciary under DPDP Act §10
+
+# Third Schedule flags (set true if your app processes these categories)
+third_schedule:
+  health_data: false
+  financial_data: false
+  biometric_data: false
+  children_data: false               # triggers §9 / Rule 10 checks
+
+# Approved Data Processors (§8(2) contract references)
+approved_processors:
+  - name: "AWS"
+    services: ["RDS", "S3", "CloudWatch"]
+  - name: "SendGrid"
+    services: ["email-delivery"]
+
+# Cross-border transfer approvals (Rule 15)
+# Leave empty until MeitY publishes approved jurisdiction list
+allowed_cross_border_regions: []
+
+# --- Scan Settings ---
+scan_layers: ["code", "schema", "iac", "secrets"]   # or add "api" for DAST
+fail_on: "high"                      # critical | high | medium | never
+output_formats: ["sarif", "json", "html"]
+output_dir: "./cs01-reports"
+
+# --- Engine Settings ---
+engine:
+  tree_sitter: true                  # always on
+  opengrep: false                    # set true if opengrep binary is installed (optional)
+  ai_triage: false                   # opt-in; requires local vLLM server
+
+# --- Bonus Modules ---
+bonus:
+  consent_audit: false
+  patch_generator: false
+
+# --- Policy Profiles (hot-updatable) ---
+policy_profiles_dir: "./policy_profiles"
