@@ -12,7 +12,7 @@ from ruamel.yaml import YAML
 
 from cs01.models.scan_config import (
     ScanConfig, ThirdScheduleFlags, ApprovedProcessor,
-    EngineConfig, BonusConfig,
+    EngineConfig, BonusConfig, AiConfig,
 )
 
 yaml = YAML()
@@ -83,6 +83,7 @@ def load_config(
             diff_base=raw.get("diff_base"),
             engine=EngineConfig(**raw.get("engine", {})),
             bonus=BonusConfig(**raw.get("bonus", {})),
+            ai=AiConfig(**raw.get("ai", {})),
             policy_profiles_dir=raw.get("policy_profiles_dir", "./policy_profiles"),
             save_stage_output=raw.get("save_stage_output", False),
             debug=raw.get("debug", False),

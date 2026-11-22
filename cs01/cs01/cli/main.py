@@ -49,8 +49,11 @@ def scan(
     debug: bool = typer.Option(False, "--debug", help="Verbose debug output"),
     diff_base: Optional[str] = typer.Option(None, "--diff-base", help="Git ref for diff-only scan"),
     baseline: Optional[str] = typer.Option(None, "--baseline", help="Path to .cs01-baseline.json"),
+    ai: bool = typer.Option(True, "--ai/--no-ai", help="Auto-generate AI DPO brief via local Qwen 2.5 Coder if running"),
+    ai_model: Optional[str] = typer.Option(None, "--ai-model", help="Local LLM model name (default: auto-detected)"),
+    ai_endpoint: Optional[str] = typer.Option(None, "--ai-endpoint", help="Local LLM endpoint (default: http://localhost:11434)"),
 ) -> None:
-    """Run the full 6-stage compliance scan pipeline on a repository."""
+    """Run the full 6-stage compliance scan pipeline on a repository or zip archive."""
     overrides = {
         "scan_root": path,
         "fail_on": fail_on,
@@ -59,6 +62,11 @@ def scan(
         "debug": debug or None,
         "diff_base": diff_base,
         "baseline_path": baseline,
+        "ai": {
+            "enabled": ai,
+            "model": ai_model or "qwen2.5-coder:7b",
+            "endpoint": ai_endpoint or "http://localhost:11434",
+        },
     }
     if format:
         overrides["output_formats"] = ["sarif", "json", "html"] if format == "all" else [format]
@@ -78,6 +86,10 @@ def scan(
     from cs01.pipeline.runner import run_pipeline
     exit_code = run_pipeline(cfg)
     sys.exit(exit_code)
+
+
+# Register 'audit' as a direct alias for 'scan'
+app.command("audit", help="All-in-one compliance audit command (alias for scan).")(scan)
 
 
 # --- Individual stage debug commands ---
@@ -475,6 +487,121 @@ def baseline_diff(
         "[green]Fixed compared to baseline[/green]",
     )
     console.print(table)
+
+
+# --- Local AI (Qwen 2.5 Coder) Commands ---
+@app.command()
+def summarize(
+    target: str = typer.Argument(..., help="Path to repository, archive, or stage5_bundle.json"),
+    model: str = typer.Option("qwen2.5-coder:14b", "--model", "-m", help="Local LLM model name"),
+    endpoint: str = typer.Option("http://localhost:11434", "--endpoint", "-e", help="Local LLM endpoint"),
+    output: Optional[str] = typer.Option(None, "--output", "-o", help="Save AI summary Markdown to file"),
+    config: Optional[str] = typer.Option(None, "--config", "-c"),
+) -> None:
+    """[AI] Generate an Executive DPO Compliance Brief using local Qwen 2.5 Coder."""
+    from cs01.ai import LocalLLMClient, generate_executive_dpo_brief
+    from cs01.models import ScoredFindingBundle
+    from cs01.utils import load_json, extracted_workspace
+
+    client = LocalLLMClient(model=model, endpoint=endpoint)
+    if not client.is_available():
+        console.print(
+            f"[bold red]✖ Local LLM server unreachable at {endpoint}[/bold red]\n"
+            f"[yellow]Ensure Ollama or vLLM is running (e.g., 'ollama run {model}').[/yellow]"
+        )
+        raise typer.Exit(1)
+
+    target_path = Path(target)
+    if target_path.is_file() and target_path.suffix == ".json":
+        data = load_json(target_path)
+        bundle = ScoredFindingBundle.model_validate(data)
+    else:
+        with extracted_workspace(target) as resolved:
+            cfg = load_config(config_path=config, overrides={"scan_root": str(resolved)})
+            from cs01.pipeline.stage1_ingest.ingestor import run_ingest
+            from cs01.pipeline.stage2_parse.parser import run_parse
+            from cs01.pipeline.stage3_detect.detector import run_detect
+            from cs01.pipeline.stage4_evaluate.evaluator import run_evaluate
+            from cs01.pipeline.stage5_classify.classifier import run_classify
+            manifest = run_ingest(cfg)
+            repo_model = run_parse(manifest, cfg)
+            flow, hits = run_detect(repo_model, cfg)
+            raw = run_evaluate(flow, hits, repo_model, cfg)
+            bundle = run_classify(raw, cfg, total_files=manifest.total_scanned)
+
+    console.print(f"[cyan]🤖 Asking local Qwen 2.5 Coder ({model}) to generate Executive DPO Brief...[/cyan]")
+    brief_md = generate_executive_dpo_brief(bundle, client)
+
+    if output:
+        out_p = Path(output)
+        out_p.parent.mkdir(parents=True, exist_ok=True)
+        out_p.write_text(brief_md, encoding="utf-8")
+        console.print(f"[bold green]✔ AI Executive DPO Brief saved to [cyan]{output}[/cyan][/bold green]")
+    else:
+        from rich.markdown import Markdown
+        console.print(Markdown(brief_md))
+
+
+@app.command()
+def explain(
+    target: str = typer.Argument(..., help="Path to repository, archive, or stage5_bundle.json"),
+    rule_or_id: Optional[str] = typer.Argument(None, help="Specific Rule ID (e.g. CODE-DPDP-001) or finding ID to explain"),
+    model: str = typer.Option("qwen2.5-coder:14b", "--model", "-m", help="Local LLM model name"),
+    endpoint: str = typer.Option("http://localhost:11434", "--endpoint", "-e", help="Local LLM endpoint"),
+    config: Optional[str] = typer.Option(None, "--config", "-c"),
+) -> None:
+    """[AI] Use local Qwen 2.5 Coder to explain a finding in depth and produce a production code fix."""
+    from cs01.ai import LocalLLMClient, explain_finding_in_depth
+    from cs01.models import ScoredFindingBundle
+    from cs01.utils import load_json, extracted_workspace
+
+    client = LocalLLMClient(model=model, endpoint=endpoint)
+    if not client.is_available():
+        console.print(
+            f"[bold red]✖ Local LLM server unreachable at {endpoint}[/bold red]\n"
+            f"[yellow]Ensure Ollama or vLLM is running (e.g., 'ollama run {model}').[/yellow]"
+        )
+        raise typer.Exit(1)
+
+    target_path = Path(target)
+    if target_path.is_file() and target_path.suffix == ".json":
+        data = load_json(target_path)
+        bundle = ScoredFindingBundle.model_validate(data)
+    else:
+        with extracted_workspace(target) as resolved:
+            cfg = load_config(config_path=config, overrides={"scan_root": str(resolved)})
+            from cs01.pipeline.stage1_ingest.ingestor import run_ingest
+            from cs01.pipeline.stage2_parse.parser import run_parse
+            from cs01.pipeline.stage3_detect.detector import run_detect
+            from cs01.pipeline.stage4_evaluate.evaluator import run_evaluate
+            from cs01.pipeline.stage5_classify.classifier import run_classify
+            manifest = run_ingest(cfg)
+            repo_model = run_parse(manifest, cfg)
+            flow, hits = run_detect(repo_model, cfg)
+            raw = run_evaluate(flow, hits, repo_model, cfg)
+            bundle = run_classify(raw, cfg, total_files=manifest.total_scanned)
+
+    if not bundle.findings:
+        console.print("[green]No findings in this bundle to explain![/green]")
+        return
+
+    # Select finding
+    target_finding = None
+    if rule_or_id:
+        for f in bundle.findings:
+            if f.id == rule_or_id or f.rule_id == rule_or_id:
+                target_finding = f
+                break
+        if not target_finding:
+            console.print(f"[red]Finding with ID or Rule '{rule_or_id}' not found in scan.[/red]")
+            raise typer.Exit(1)
+    else:
+        target_finding = bundle.findings[0]
+
+    console.print(f"[cyan]🤖 Asking local Qwen 2.5 Coder to explain [bold]{target_finding.rule_id}[/bold] in {target_finding.file}...[/cyan]")
+    explanation = explain_finding_in_depth(target_finding, client)
+    from rich.markdown import Markdown
+    console.print(Markdown(explanation))
 
 
 if __name__ == "__main__":

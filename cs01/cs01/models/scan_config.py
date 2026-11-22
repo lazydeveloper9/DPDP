@@ -28,6 +28,14 @@ class EngineConfig(BaseModel):
     ai_triage_endpoint: Optional[str] = None   # local vLLM endpoint URL
 
 
+class AiConfig(BaseModel):
+    enabled: bool = True
+    model: str = "qwen2.5-coder:7b"
+    endpoint: str = "http://localhost:11434"   # Local Ollama or vLLM endpoint
+    temperature: float = 0.2
+    timeout_seconds: float = 300.0
+
+
 class BonusConfig(BaseModel):
     consent_audit: bool = False
     patch_generator: bool = False
@@ -62,6 +70,9 @@ class ScanConfig(BaseModel):
 
     # Bonus modules
     bonus: BonusConfig = Field(default_factory=BonusConfig)
+
+    # Local AI (Qwen 2.5 Coder)
+    ai: AiConfig = Field(default_factory=AiConfig)
 
     # Policy profiles directory
     policy_profiles_dir: str = "./policy_profiles"

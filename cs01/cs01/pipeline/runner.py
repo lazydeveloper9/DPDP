@@ -9,6 +9,8 @@ from pathlib import Path
 
 from rich.console import Console
 from rich.progress import Progress, SpinnerColumn, TextColumn
+from rich.panel import Panel
+from rich.table import Table
 
 from cs01.models.scan_config import ScanConfig
 from cs01.utils import save_json, new_scan_id, utc_now_iso, is_archive, extracted_workspace
@@ -127,6 +129,37 @@ def run_pipeline(cfg: ScanConfig) -> int:
             run_report(bundle, cfg, output_dir)
             progress.remove_task(t)
             console.print(f"[green]✔ Stage 6[/green] — Reports written to [cyan]{output_dir}[/cyan]")
+
+        # ── Cryptographic Evidence Integrity Verification ───────────────────────
+        evidence_zip = output_dir / "cs01-evidence-bundle.zip"
+        if evidence_zip.exists():
+            from cs01.pipeline.stage6_report.evidence_locker import verify_evidence_bundle
+            is_valid, _ = verify_evidence_bundle(evidence_zip)
+            if is_valid:
+                console.print("[green]✔ Evidence Bundle cryptographically verified (Rule 13 compliant)[/green]")
+
+        # ── Executive Compliance Dashboard ──────────────────────────────────────
+        score_color = "green" if bundle.readiness.overall >= 80 else ("yellow" if bundle.readiness.overall >= 60 else "red")
+        ai_brief_file = output_dir / "dpo_ai_executive_brief.md"
+        ai_brief_line = f"\n  • [bold green]Qwen 2.5 Coder Brief:[/bold green] [cyan]{ai_brief_file}[/cyan]" if ai_brief_file.exists() else ""
+
+        console.print(Panel(
+            f"[bold]DPDP Readiness Score:[/bold] [{score_color} bold]{bundle.readiness.overall:.0f}/100[/] "
+            f"{'([red bold]CAPPED[/red bold] · ' + (bundle.readiness.cap_reason or 'Critical Violations') + ')' if bundle.readiness.is_capped else ''}\n"
+            f"[bold]Max Statutory Penalty Ceiling Engaged:[/bold] [red]{bundle.readiness.max_statutory_ceiling_engaged or 'None'}[/red]\n"
+            f"[bold]Violations Summary:[/bold] [red bold]{bundle.readiness.open_critical_count} Critical[/], [yellow]{bundle.readiness.open_high_count} High[/], {len(bundle.findings)} Total Unique\n\n"
+            f"[bold]Generated Deliverables in [cyan]{output_dir}[/cyan]:[/bold]\n"
+            f"  • Executive HTML Dashboard: [cyan]{output_dir / 'cs01-dpo-report.html'}[/cyan]\n"
+            f"  • Assessment Markdown Report: [cyan]{output_dir / 'cs01-report.md'}[/cyan]\n"
+            f"  • Developer SARIF 2.1.0:   [cyan]{output_dir / 'cs01-findings.sarif'}[/cyan]\n"
+            f"  • Technical RoPA Draft:    [cyan]{output_dir / 'ropa_map.json'}[/cyan]\n"
+            f"  • Consent Lifecycle Audit: [cyan]{output_dir / 'consent_audit.json'}[/cyan]\n"
+            f"  • Auto-Remediation Patches: [cyan]{output_dir / 'remediation_patches'}[/cyan]\n"
+            f"  • Rule 13 Cryptographic Zip: [cyan]{evidence_zip}[/cyan]"
+            f"{ai_brief_line}",
+            title="[bold green]CS-01 Compliance Audit Complete[/bold green]",
+            border_style="green" if bundle.readiness.overall >= 80 else "yellow",
+        ))
 
         # ── Determine exit code ─────────────────────────────────────────────────
         if bundle.partial_scan:

@@ -53,15 +53,20 @@ Verify installation:
 cs01 --help
 ```
 
-### 2. Run an Audit
+### 2. Run an Audit (One Single Command)
+
+To execute the entire compliance pipeline in one command:
 
 ```powershell
-# Scan any codebase directory
-cs01 scan C:\path\to\your\project --output-dir ./cs01-reports
-
-# Or scan a zipped application directly
-cs01 scan C:\path\to\software.zip --output-dir ./cs01-reports
+cs01 audit C:\path\to\your\project
 ```
+
+Or for a software archive:
+```powershell
+cs01 audit C:\path\to\software.zip
+```
+
+*(Note: `cs01 audit` and `cs01 scan` are identical all-in-one commands).*
 
 ---
 

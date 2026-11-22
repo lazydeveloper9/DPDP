@@ -23,6 +23,7 @@ from cs01.utils import save_json
 from .sarif_exporter import export_sarif
 from .gitlab_exporter import export_gitlab_sast
 from .html_exporter import export_html_report
+from .markdown_exporter import export_markdown_report
 from .ropa_exporter import export_ropa_draft
 from .evidence_locker import create_evidence_bundle
 from cs01.bonus.patch_generator.patcher import generate_patches
@@ -62,6 +63,11 @@ def run_report(
         export_html_report(bundle, html_path)
         generated_files["cs01-dpo-report.html"] = html_path
 
+    # 4b. Canonical Assessment Markdown Report
+    md_path = out_dir / "cs01-report.md"
+    export_markdown_report(bundle, cfg, md_path)
+    generated_files["cs01-report.md"] = md_path
+
     # 5. RoPA Technical Draft
     ropa_path = out_dir / "ropa_map.json"
     export_ropa_draft(bundle, ropa_path)
@@ -74,6 +80,28 @@ def run_report(
 
     # 7. Bonus: Patch Generator
     generate_patches(bundle, out_dir)
+
+    # 7b. Local AI Executive Brief (Qwen 2.5 Coder)
+    if cfg.ai.enabled or cfg.engine.ai_triage:
+        from cs01.ai import LocalLLMClient, generate_executive_dpo_brief
+        client = LocalLLMClient(
+            model=cfg.ai.model,
+            endpoint=cfg.ai.endpoint,
+            temperature=cfg.ai.temperature,
+            timeout=cfg.ai.timeout_seconds,
+        )
+        if client.is_available():
+            try:
+                ai_brief_md = generate_executive_dpo_brief(bundle, client)
+                ai_brief_path = out_dir / "dpo_ai_executive_brief.md"
+                with open(ai_brief_path, "w", encoding="utf-8") as f:
+                    f.write(ai_brief_md)
+                generated_files["dpo_ai_executive_brief.md"] = ai_brief_path
+            except Exception as e:
+                if cfg.debug:
+                    print(f"[dim]Local LLM generation note: {e}[/dim]")
+        elif cfg.debug:
+            print(f"[dim]Local LLM endpoint {cfg.ai.endpoint} not reachable. Skipping AI brief.[/dim]")
 
     # 8. Cryptographic Rule 13 Evidence Bundle
     bundle_zip_path = out_dir / "cs01-evidence-bundle.zip"

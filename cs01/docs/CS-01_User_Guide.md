@@ -36,21 +36,19 @@
 
 ---
 
-## 2. Basic Usage
+## 2. Basic Usage (All-in-One Command)
 
-### Scanning a Repository Directory
-To run a full 6-stage compliance audit on any project folder:
-
-```powershell
-cs01 scan C:\path\to\your\project --output-dir ./cs01-reports
-```
-
-### Scanning a Software ZIP Archive Directly
-You do not need to unpack archives manually. CS-01 automatically unpacks `.zip`, `.tar`, and `.tar.gz` files into a secure, sandboxed temporary workspace with built-in **Zip Slip path traversal defense**, scans the extracted files, generates reports, and cleans up the temporary workspace when done:
+You can execute the entire compliance pipeline from ingestion to reports, Qwen 2.5 Coder AI briefing, and Rule 13 evidence verification with **one single command**:
 
 ```powershell
-cs01 scan C:\path\to\software.zip --output-dir ./cs01-reports
+# For any codebase directory:
+cs01 audit C:\path\to\your\project
+
+# Or for a software ZIP archive directly:
+cs01 audit C:\path\to\software.zip
 ```
+
+*(Note: `cs01 audit` and `cs01 scan` are identical all-in-one commands).*
 
 ---
 
@@ -355,7 +353,24 @@ dpdp_compliance:
 
 ---
 
-## 7. Frequently Asked Questions (FAQ)
+## 7. LLM Reporting Rules & Standards (Qwen 2.5 Coder)
+
+The local AI engine enforces the following **10 Reporting Rules** when writing reports:
+
+1. **Mandatory Exact Code Citation:** Every vulnerability must quote its exact file, line number, and code snippet.
+2. **Mechanics of Failure:** The report must explain how the code operates line-by-line and why it constitutes a breach or leak.
+3. **India DPDP Grounding:** Must explicitly cite the governing section (§8(5), §8(6), §9, §10, Rule 6/8/10) and statutory maximum ceiling.
+4. **"Before vs. After" Code Fix:** Drop-in, production-ready replacement code demonstrating masking, ORM encryption, or routing.
+5. **Two-Tier Framing:** Plain-English business risk for the DPO and Board, paired with technical root-cause analysis for developers.
+6. **Zero Hallucination & Redaction Integrity:** Never invent files or identities; always preserve placeholders like `[AADHAAR_1]`.
+7. **Verification Steps:** Concrete instructions on how developers can verify that the vulnerability has been resolved.
+8. **Data Principal Impact:** Assessment of real-world harm to individuals (e.g., identity theft, financial fraud).
+9. **Active Leaks vs. Architectural Gaps:** Distinct categorization between active plaintext exfiltration vs. missing purge routines.
+10. **Statutory Disclaimer:** Disclaims that penalties are discretionary ceilings under §33(2) and CS-01 is a technical auditing tool.
+
+---
+
+## 8. Frequently Asked Questions (FAQ)
 
 #### Q1: Does CS-01 send my code or customer data to any cloud service?
 **No.** CS-01 is 100% local-first and zero-egress. All AST parsing, regular expression matching, and mathematical validator calculations execute on your CPU. No code or PII is ever transmitted externally.
