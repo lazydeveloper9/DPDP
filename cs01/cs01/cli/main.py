@@ -102,6 +102,37 @@ def ingest(
 
 
 @app.command()
+def parse(
+    target: str = typer.Argument(..., help="Directory path to scan or path to RepoManifest JSON file"),
+    config: Optional[str] = typer.Option(None, "--config", "-c"),
+    debug: bool = typer.Option(False, "--debug"),
+    output: Optional[str] = typer.Option(None, "--output", "-o", help="Save RepoModel JSON"),
+) -> None:
+    """[Stage 2] Parse into structured representations (AST, Schemas, IaC, Env)."""
+    from cs01.models import RepoManifest
+    from cs01.pipeline.stage1_ingest.ingestor import run_ingest
+    from cs01.pipeline.stage2_parse.parser import run_parse
+    from cs01.utils import save_json, load_json
+    import json
+
+    target_path = Path(target)
+    if target_path.is_file() and target_path.suffix == ".json":
+        manifest_data = load_json(target_path)
+        manifest = RepoManifest.model_validate(manifest_data)
+        cfg = load_config(config_path=config, overrides={"scan_root": manifest.scan_root, "debug": debug or None})
+    else:
+        cfg = load_config(config_path=config, overrides={"scan_root": str(target_path), "debug": debug or None})
+        manifest = run_ingest(cfg)
+
+    repo_model = run_parse(manifest, cfg)
+    if output:
+        save_json(repo_model, output)
+        console.print(f"[green]RepoModel saved to {output}[/green]")
+    else:
+        console.print(json.dumps(repo_model.model_dump(mode="json"), indent=2))
+
+
+@app.command()
 def rules(
     rule_id: Optional[str] = typer.Argument(None, help="Explain a specific rule"),
     pass_filter: Optional[str] = typer.Option(None, "--pass", help="A or B"),

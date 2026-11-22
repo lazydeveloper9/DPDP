@@ -1,0 +1,4 @@
+FROM python:3.11
+ENV PORT=8080
+ENV APP_SECRET=raw_secret_value
+ARG BUILD_ID=123
