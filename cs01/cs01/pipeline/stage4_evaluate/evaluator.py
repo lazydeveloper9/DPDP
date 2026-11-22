@@ -22,7 +22,21 @@ def run_evaluate(
     model: RepoModel,
     cfg: ScanConfig,
 ) -> list[RawFinding]:
-    """Execute Pass A and Pass B rule evaluation."""
-    pass_a_findings = evaluate_pass_a(flow_graph, pii_hits, model, cfg)
-    pass_b_findings = evaluate_pass_b(model, cfg)
-    return pass_a_findings + pass_b_findings
+    """Execute Pass A, Pass B, and optional Opengrep/Semgrep rule evaluation."""
+    findings: list[RawFinding] = []
+
+    # 1. Native AST Pass A evaluation (if tree_sitter enabled)
+    if cfg.engine.tree_sitter:
+        findings.extend(evaluate_pass_a(flow_graph, pii_hits, model, cfg))
+
+    # 2. Native Pass B evaluation (whole-repo cross-file assertions)
+    findings.extend(evaluate_pass_b(model, cfg))
+
+    # 3. Optional Opengrep / Semgrep subprocess bridge
+    if cfg.engine.opengrep:
+        from cs01.pipeline.stage3_detect.opengrep_bridge import OpengrepBridge
+        bridge = OpengrepBridge()
+        opengrep_findings = bridge.run_scan(cfg.scan_root, cfg)
+        findings.extend(opengrep_findings)
+
+    return findings

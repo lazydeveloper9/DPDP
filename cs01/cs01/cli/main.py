@@ -52,6 +52,7 @@ def scan(
     ai: bool = typer.Option(True, "--ai/--no-ai", help="Auto-generate AI DPO brief via local Qwen 2.5 Coder if running"),
     ai_model: Optional[str] = typer.Option(None, "--ai-model", help="Local LLM model name (default: auto-detected)"),
     ai_endpoint: Optional[str] = typer.Option(None, "--ai-endpoint", help="Local LLM endpoint (default: http://localhost:11434)"),
+    engine: Optional[str] = typer.Option(None, "--engine", help="SAST engine: 'tree-sitter' (default), 'opengrep'/'semgrep', or 'all'"),
 ) -> None:
     """Run the full 6-stage compliance scan pipeline on a repository or zip archive."""
     overrides = {
@@ -68,16 +69,31 @@ def scan(
             "endpoint": ai_endpoint or "http://localhost:11434",
         },
     }
+    if engine:
+        eng = engine.lower()
+        if eng in ("opengrep", "semgrep"):
+            overrides["engine"] = {"opengrep": True, "tree_sitter": False}
+        elif eng in ("all", "both"):
+            overrides["engine"] = {"opengrep": True, "tree_sitter": True}
+        elif eng in ("tree-sitter", "treesitter"):
+            overrides["engine"] = {"opengrep": False, "tree_sitter": True}
     if format:
         overrides["output_formats"] = ["sarif", "json", "html"] if format == "all" else [format]
 
     cfg = load_config(config_path=config, overrides=overrides)
 
+    engines = []
+    if cfg.engine.tree_sitter:
+        engines.append("tree-sitter")
+    if cfg.engine.opengrep:
+        engines.append("opengrep")
+    engine_str = " + ".join(engines) if engines else "tree-sitter"
+
     console.print(Panel(
         f"[bold green]CS-01 Scan Starting[/bold green]\n"
         f"Target: [cyan]{path}[/cyan]\n"
         f"Fail-on: [yellow]{cfg.fail_on}[/yellow]  "
-        f"Engine: tree-sitter{'+ opengrep' if cfg.engine.opengrep else ''}",
+        f"Engine: {engine_str}",
         title="CS-01",
         border_style="blue",
     ))

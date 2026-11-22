@@ -22,7 +22,10 @@ from .scored_finding import (
     ScoredFinding, ScoredFindingBundle, DpdpReadinessScore,
     ExposureContext, PillarScore,
 )
-from .scan_config import ScanConfig
+from .scan_config import (
+    ScanConfig, EngineConfig, AiConfig, BonusConfig,
+    ApprovedProcessor, ThirdScheduleFlags,
+)
 
 __all__ = [
     # Stage 1
@@ -39,5 +42,6 @@ __all__ = [
     "ScoredFinding", "ScoredFindingBundle", "DpdpReadinessScore",
     "ExposureContext", "PillarScore",
     # Config
-    "ScanConfig",
+    "ScanConfig", "EngineConfig", "AiConfig", "BonusConfig",
+    "ApprovedProcessor", "ThirdScheduleFlags",
 ]

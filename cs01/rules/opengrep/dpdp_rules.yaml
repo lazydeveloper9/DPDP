@@ -1,0 +1,125 @@
+# ==============================================================================
+# CS-01 DPDP Compliance Auditor — Opengrep & Semgrep Rulepack
+# License: Apache-2.0
+# DPDP Act, 2023 & DPDP Rules, 2025 Statutory Safeguards
+# ==============================================================================
+
+rules:
+  # ----------------------------------------------------------------------------
+  # Rule 1: Personal Data Written to Application Logs (Rule 6(1)(a) / Sec 8(5))
+  # ----------------------------------------------------------------------------
+  - id: DPDP-SEC-LOG-001
+    languages:
+      - python
+      - javascript
+      - typescript
+    severity: ERROR
+    message: "Personal data flows directly into an unmasked application logger sink"
+    metadata:
+      cs01_rule_id: "CODE-DPDP-001"
+      dpdp_section: "§8(5)"
+      dpdp_rule: "Rule 6(1)(a)"
+      penalty_band: "250_crore"
+      remediation: "Wrap sensitive personal data with a masking or tokenization function before logging (e.g., mask_pii(payload))."
+      cwe: "CWE-532: Insertion of Sensitive Information into Log File"
+    pattern-either:
+      - pattern: logger.info(..., $REQ.body, ...)
+      - pattern: logger.error(..., $REQ.body, ...)
+      - pattern: logger.debug(..., $REQ.body, ...)
+      - pattern: logger.warn(..., $REQ.body, ...)
+      - pattern: console.log(..., $REQ.body, ...)
+      - pattern: console.error(..., $REQ.body, ...)
+      - pattern: console.warn(..., $REQ.body, ...)
+      - pattern: logging.info(..., $DATA, ...)
+      - pattern: logging.error(..., $DATA, ...)
+      - pattern: logging.warning(..., $DATA, ...)
+
+  # ----------------------------------------------------------------------------
+  # Rule 2: Insecure Database SSL/TLS Connection Mode (Rule 6(1)(a) / Sec 8(5))
+  # ----------------------------------------------------------------------------
+  - id: DPDP-SEC-ENV-001
+    languages:
+      - python
+      - javascript
+      - typescript
+      - json
+      - yaml
+    severity: ERROR
+    message: "Insecure database SSL configuration (sslmode=disable or ssl=false) detected"
+    metadata:
+      cs01_rule_id: "ENV-DPDP-001"
+      dpdp_section: "§8(5)"
+      dpdp_rule: "Rule 6(1)(a)"
+      penalty_band: "250_crore"
+      remediation: "Enforce TLS encryption for database connections (set sslmode=require or sslmode=verify-full)."
+      cwe: "CWE-319: Cleartext Transmission of Sensitive Information"
+    pattern-either:
+      - pattern-regex: "sslmode=disable"
+      - pattern-regex: "sslmode=allow"
+      - pattern-regex: "['\"]ssl['\"]\\s*:\\s*false"
+      - pattern-regex: "rejectUnauthorized\\s*:\\s*false"
+
+  # ----------------------------------------------------------------------------
+  # Rule 3: Hardcoded Indian Identity Number Literals (Rule 6(1)(a) / Sec 8(5))
+  # ----------------------------------------------------------------------------
+  - id: DPDP-SEC-HARDCODED-001
+    languages:
+      - python
+      - javascript
+      - typescript
+      - java
+      - go
+    severity: WARNING
+    message: "Hardcoded Indian identifier literal detected in source code"
+    metadata:
+      cs01_rule_id: "CODE-DPDP-003"
+      dpdp_section: "§8(5)"
+      dpdp_rule: "Rule 6(1)(a)"
+      penalty_band: "250_crore"
+      remediation: "Remove hardcoded identity numbers from source code; load mock identifiers dynamically in test environments."
+      cwe: "CWE-798: Use of Hard-coded Credentials"
+    pattern-either:
+      - pattern-regex: '\b[2-9]\d{3}\s?\d{4}\s?\d{4}\b'
+      - pattern-regex: '\b[A-Z]{5}[0-9]{4}[A-Z]{1}\b'
+
+  # ----------------------------------------------------------------------------
+  # Rule 4: Personal Data Forwarded to Third-Party / Shadow AI (Sec 8(2) / Sec 7)
+  # ----------------------------------------------------------------------------
+  - id: DPDP-EGRESS-AI-001
+    languages:
+      - python
+      - javascript
+      - typescript
+    severity: ERROR
+    message: "Personal data payload forwarded to third-party AI or unapproved processor without consent check"
+    metadata:
+      cs01_rule_id: "CODE-DPDP-002"
+      dpdp_section: "§7"
+      dpdp_rule: "Rule 3(2)"
+      penalty_band: "50_crore"
+      remediation: "Verify explicit user consent and Data Protection Agreement (DPA) before dispatching personal data to external AI models."
+      cwe: "CWE-200: Exposure of Sensitive Information to an Unauthorized Actor"
+    pattern-either:
+      - pattern: openai.ChatCompletion.create(..., messages=$MSG, ...)
+      - pattern: client.chat.completions.create(..., messages=$MSG, ...)
+      - pattern: fetch("https://api.openai.com/...", ...)
+      - pattern: axios.post("https://api.openai.com/...", ...)
+
+  # ----------------------------------------------------------------------------
+  # Rule 5: Insecure Cloud Database Storage Encryption in IaC (Rule 6(1)(a))
+  # ----------------------------------------------------------------------------
+  - id: DPDP-IAC-ENC-001
+    languages:
+      - terraform
+    severity: ERROR
+    message: "Terraform database instance configured with storage_encrypted = false or publicly_accessible = true"
+    metadata:
+      cs01_rule_id: "IAC-DPDP-001"
+      dpdp_section: "§8(5)"
+      dpdp_rule: "Rule 6(1)(a)"
+      penalty_band: "250_crore"
+      remediation: "Set storage_encrypted = true and publicly_accessible = false on all database instances in Terraform."
+      cwe: "CWE-311: Missing Encryption of Sensitive Data"
+    pattern-either:
+      - pattern: storage_encrypted = false
+      - pattern: publicly_accessible = true

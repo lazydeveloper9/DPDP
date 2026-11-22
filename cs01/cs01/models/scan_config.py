@@ -24,6 +24,9 @@ class ApprovedProcessor(BaseModel):
 class EngineConfig(BaseModel):
     tree_sitter: bool = True
     opengrep: bool = False
+    opengrep_binary: Optional[str] = None      # Custom path to opengrep or semgrep binary
+    rules_dir: Optional[str] = None            # Custom directory for opengrep rules
+    timeout_seconds: float = 120.0             # Subprocess timeout in seconds
     ai_triage: bool = False
     ai_triage_endpoint: Optional[str] = None   # local vLLM endpoint URL
 

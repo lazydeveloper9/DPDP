@@ -58,9 +58,14 @@ def load_config(
         with open(cfg_file, "r", encoding="utf-8") as fh:
             raw = dict(yaml.load(fh) or {})
 
-    # Apply CLI overrides
+    # Apply CLI overrides (deep merge for nested dictionaries)
     if overrides:
-        raw.update({k: v for k, v in overrides.items() if v is not None})
+        for k, v in overrides.items():
+            if v is not None:
+                if isinstance(v, dict) and isinstance(raw.get(k), dict):
+                    raw[k].update(v)
+                else:
+                    raw[k] = v
 
     # Build nested models manually (keeps validation errors explicit)
     try:
