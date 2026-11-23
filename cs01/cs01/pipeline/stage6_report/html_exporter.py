@@ -10,6 +10,7 @@ from pathlib import Path
 from jinja2 import Template
 
 from cs01.models import ScoredFindingBundle, Severity
+from cs01.models.graph import DataFlowGraph
 
 HTML_TEMPLATE = """<!DOCTYPE html>
 <html lang="en">
@@ -115,6 +116,33 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     </div>
   </div>
 
+  {% if dataflow_graph %}
+  <div style="margin-bottom: 2.5rem; background: var(--surface); border: 1px solid var(--border); border-radius: 0.75rem; padding: 1.25rem;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+      <div>
+        <h2 style="margin: 0; font-size: 1.3rem; color: #38bdf8;">Interactive Personal Data-Flow &amp; Leak Visualization (2D + 3D)</h2>
+        <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 0.25rem;">
+          Dynamic architectural map tracing personal data flows across Collection, API, Storage, Infra, and Egress sinks.
+        </p>
+      </div>
+      <div>
+        <a href="cs01-dataflow.html" target="_blank" style="background: #2563eb; color: #ffffff; text-decoration: none; padding: 0.5rem 1rem; border-radius: 6px; font-weight: 600; font-size: 0.85rem; display: inline-flex; align-items: center; gap: 0.5rem;">
+          🚀 Open Fullscreen 2D/3D Cockpit ↗
+        </a>
+      </div>
+    </div>
+    <div style="display: flex; gap: 1rem; margin-bottom: 1rem; font-size: 0.82rem;">
+      <span style="color: #ef4444; font-weight: 700;">⚠️ PII Leaks: {{ dataflow_graph.summary_metrics.leak_edges }}</span>
+      <span style="color: #f59e0b; font-weight: 700;">⚠️ Unconsented Sinks: {{ dataflow_graph.summary_metrics.unconsented_storage_edges }}</span>
+      <span style="color: #10b981; font-weight: 700;">✔ Compliant Controls: {{ dataflow_graph.summary_metrics.compliant_edges }}</span>
+      <span style="color: #94a3b8;">Active Tiers: {{ dataflow_graph.summary_metrics.active_layers|join(', ') }}</span>
+    </div>
+    <div style="border: 1px solid var(--border); border-radius: 6px; overflow: hidden; height: 560px; background: #05070d;">
+      <iframe src="cs01-dataflow.html" style="width: 100%; height: 100%; border: none;"></iframe>
+    </div>
+  </div>
+  {% endif %}
+
   <h2>Statutory Remediation Backlog (Ranked by Priority Score)</h2>
   <table class="findings-table">
     <thead>
@@ -164,10 +192,14 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 """
 
 
-def export_html_report(bundle: ScoredFindingBundle, output_path: Path | str) -> None:
+def export_html_report(
+    bundle: ScoredFindingBundle,
+    output_path: Path | str,
+    dataflow_graph: Optional[DataFlowGraph] = None,
+) -> None:
     """Render the executive HTML audit report via Jinja2."""
     template = Template(HTML_TEMPLATE)
-    rendered = template.render(bundle=bundle)
+    rendered = template.render(bundle=bundle, dataflow_graph=dataflow_graph)
 
     p = Path(output_path)
     p.parent.mkdir(parents=True, exist_ok=True)

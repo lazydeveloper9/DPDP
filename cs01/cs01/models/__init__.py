@@ -26,6 +26,10 @@ from .scan_config import (
     ScanConfig, EngineConfig, AiConfig, BonusConfig,
     ApprovedProcessor, ThirdScheduleFlags,
 )
+from .graph import (
+    LayerTier, FlowStatus, GraphNodeType, GraphEdgeFlowType,
+    ControlChecklist, GraphNode, GraphEdge, GraphSummaryMetrics, DataFlowGraph,
+)
 
 __all__ = [
     "RepoManifest", "FileRecord", "Bucket", "StackProfile",
@@ -38,4 +42,6 @@ __all__ = [
     "ExposureContext", "PillarScore",
     "ScanConfig", "EngineConfig", "AiConfig", "BonusConfig",
     "ApprovedProcessor", "ThirdScheduleFlags",
+    "LayerTier", "FlowStatus", "GraphNodeType", "GraphEdgeFlowType",
+    "ControlChecklist", "GraphNode", "GraphEdge", "GraphSummaryMetrics", "DataFlowGraph",
 ]

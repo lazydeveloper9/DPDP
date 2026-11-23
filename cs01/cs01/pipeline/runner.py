@@ -137,7 +137,15 @@ def run_pipeline(cfg: ScanConfig) -> int:
 
             t = progress.add_task("[cyan]Stage 6 · Generate Reports...", total=None)
             from cs01.pipeline.stage6_report.reporter import run_report
-            run_report(bundle, cfg, output_dir, stage_durations=stage_durations)
+            run_report(
+                bundle,
+                cfg,
+                output_dir,
+                stage_durations=stage_durations,
+                repo_model=repo_model,
+                flow_graph=flow_graph,
+                pii_hits=pii_hits,
+            )
             progress.remove_task(t)
             console.print(f"[green]✔ Stage 6[/green] — Reports written to [cyan]{output_dir}[/cyan]")
 
