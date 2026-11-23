@@ -226,17 +226,68 @@ CS-01 automatically synthesizes an architectural data-flow graph across 5 ordere
 ---
 
 ### 4. Automated Compliance Artifacts
-- **Executive DPO HTML Dashboard (`cs01-dpo-report.html`):** Modern dark-themed dashboard presenting readiness scores, penalty ceiling matrices, and remediation roadmaps.
-- **Standalone 2D/3D Cockpit (`cs01-dataflow.html`):** 100% self-contained offline visualization that can be opened directly in any browser with zero network requests.
+CS-01 generates a comprehensive suite of 15 audit deliverables in the target output directory:
+- **Executive DPO HTML Dashboard (`cs01-dpo-report.html`):** Modern dark-themed dashboard presenting readiness scores, statutory penalty ceiling matrices, 8 compliance pillars, and remediation roadmaps.
+- **Standalone 2D/3D Cockpit (`cs01-dataflow.html`):** 100% self-contained offline visualization (1.35 MB) that can be opened directly in any browser with zero external network requests.
+- **Technical Assessment Report (`cs01-report.md`):** Complete human-readable markdown breakdown of all evaluated rules, file locations, and code snippets.
+- **Developer SARIF 2.1.0 (`cs01-findings.sarif`):** Standard static analysis format compatible with VS Code SARIF Viewer, GitHub Advanced Security, and SonarQube.
+- **GitLab SAST Report (`gl-sast-report.json`):** Direct integration format for GitLab Security Dashboards.
+- **Machine-Readable Compliance JSON (`cs01-compliance.json` & `stage5_bundle.json`):** Full serialized AST model, risk scores, and evidence pointers.
 - **Automated RoPA Draft (`ropa_map.json`):** A pre-filled technical Record of Processing Activities ready for legal review under Section 8.
-- **Tamper-Evident Evidence Bundle (`cs01-evidence-bundle.zip`):** Rule 13-compliant ZIP archive containing all scan artifacts along with a SHA-256 manifest and digital signatures.
-- **Automated Fix Patches (`remediation_patches/`):** Unified Git `.patch` files providing deterministic before/after code fixes.
+- **Consent Lifecycle Audit (`consent_audit.json`):** Detailed audit of consent collection, tracking, withdrawal routes, and notice multi-lingual support.
+- **Rule 13 Cryptographic Evidence Locker (`cs01-evidence-bundle.zip`):** Tamper-evident ZIP archive containing all scan artifacts along with SHA-256 manifests and digital signatures for statutory audit admissibility.
+- **Automated Fix Patches (`remediation_patches/` & `patches/`):** Unified Git `.patch` files providing deterministic before/after code fixes.
+- **Offline AI Executive Brief (`dpo_ai_executive_brief.md` & `ai_compliance_report.md`):** Structured markdown prompt and findings brief optimized for local LLM triage (e.g. Qwen 2.5 Coder).
 
 ---
 
 ## 6. User Guide
 
-### 1. Basic Audit Commands
+> For comprehensive walkthroughs, packaging architecture, and CI/CD setup, see the complete [User and Packaging Guide](file:///C:/DPDP/docs/user_and_packaging_guide.md).
+
+### 1. Launching the Desktop GUI Application
+
+For a visual, interactive experience, launch the corporate desktop auditor using any of the following:
+
+- **Standalone Windows Executable (Zero Python Dependency):**
+  Run `dist\CS-01\cs01-gui.exe` directly, or double-click [`launch_gui.bat`](file:///C:/DPDP/launch_gui.bat) (which automatically detects and launches the compiled standalone binary).
+- **Windows Batch Launcher:** Double-click [`launch_gui.bat`](file:///C:/DPDP/launch_gui.bat) in the project root.
+- **CLI Command:**
+  ```bash
+  cs01 gui
+  # or
+  cs01-gui
+  ```
+- **Python Module:**
+  ```bash
+  python -m cs01.gui
+  ```
+
+The desktop GUI automatically detects previously generated audit reports in `./cs01-reports/` on startup, runs genuine 6-stage compliance audits on a dedicated background Qt thread without UI locking, displays real-time pipeline progress and finding alerts, visualizes statutory penalties and the 8 compliance pillars, inspects detected Indian PII entities with zero-plaintext in-memory protection, and lets you open executive HTML reports or unified diff patches with a single click.
+
+---
+
+### 1.1 Standalone Windows Distribution & Packaging
+
+CS-01 can be packaged as a completely self-contained Windows application suite with dual binaries and enterprise installer:
+
+- **Standalone Package Directory:** `dist/CS-01/`
+  - `cs01-gui.exe`: High-DPI windowed desktop GUI with embedded multi-resolution shield icon (`assets/cs01.ico`).
+  - `cs01.exe`: Fast console CLI tool for CI/CD pipelines and headless environments.
+- **Building the Standalone Package:**
+  ```powershell
+  python scripts/build_dist.py
+  ```
+- **Inno Setup Installer Script:**
+  The build script automatically compiles `dist/CS-01-Setup.iss` for [Inno Setup 6](https://jrsoftware.org/isinfo.php). To compile the setup executable:
+  ```powershell
+  iscc dist\CS-01-Setup.iss
+  ```
+  This creates `dist\CS-01-DPDP-Auditor-Setup-v0.1.0-alpha.exe` with desktop shortcut and Program Files registration.
+
+---
+
+### 2. Basic Audit Commands
 
 #### Audit a Local Folder
 Scan any local codebase and write reports to `./cs01-reports`:

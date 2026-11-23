@@ -131,6 +131,8 @@ def detect_product_capabilities(
 
     # Inspect IaC trees for Cloud Providers & Databases
     for iac in model.iac_trees:
+        if not iac.resource_type:
+            continue
         if iac.resource_type.startswith("aws_"):
             stack.cloud_providers.append("AWS")
         elif iac.resource_type.startswith("google_"):

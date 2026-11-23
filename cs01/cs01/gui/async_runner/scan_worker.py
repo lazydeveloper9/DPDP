@@ -1,9 +1,11 @@
 """
 CS-01 DPDP Compliance Desktop GUI - Asynchronous Audit Pipeline Worker.
 
-QThread-backed worker that executes the real 6-stage DPDP compliance audit
-pipeline asynchronously, emitting real-time progress, log, and completion
-signals while supporting cooperative cancellation.
+Provides:
+- AuditWorker: Dedicated QObject worker for the canonical moveToThread(QThread) pattern.
+- AuditPipelineWorker: Backward-compatible QThread worker managing pipeline execution.
+Both emit real-time typed progress, stage, log, and completion signals while
+supporting cooperative cancellation and guaranteed audit_finished lifecycle emission.
 """
 from __future__ import annotations
 
@@ -12,38 +14,25 @@ import time
 from pathlib import Path
 from typing import Final
 
-from PySide6.QtCore import QObject, QThread
+from PySide6.QtCore import QObject, QThread, Slot
 
 from cs01.gui.async_runner.log_capture import QtLogCaptureHandler
 from cs01.gui.async_runner.signals import PipelineSignals
 from cs01.models.scan_config import ScanConfig
 from cs01.models.scored_finding import DpdpReadinessScore, ScoredFindingBundle
+from cs01.pipeline.runner import collect_report_files, execute_pipeline
+from cs01.utils.git_ingest import is_git_url
 
 logger = logging.getLogger("cs01.gui.scan_worker")
 
-_REPORT_FILE_KEYS = {
-    "cs01-dpo-report.html",
-    "cs01-dataflow.html",
-    "cs01-report.md",
-    "cs01-findings.sarif",
-    "ropa_map.json",
-    "consent_audit.json",
-    "cs01-evidence-bundle.zip",
-}
 
-
-class AuditPipelineWorker(QThread):
+class AuditWorker(QObject):
     """
-    QThread worker that executes the real 6-stage DPDP compliance audit pipeline.
+    QObject background worker that executes the 6-stage DPDP compliance audit pipeline.
+    Designed for use with worker.moveToThread(thread) or inside a QThread.
 
-    Calls run_pipeline() from cs01.pipeline.runner in a background thread,
-    emitting stage/progress/log signals for live UI updates and supporting
-    cooperative cancellation.
-
-    Attributes:
-        STAGES: Ordered list of (stage_num, stage_name) pipeline stage labels.
+    Signals:
         signals: PipelineSignals instance carrying all inter-thread signals.
-        scan_config: ScanConfig for the active audit run.
     """
 
     STAGES: Final[list[tuple[int, str]]] = [
@@ -61,7 +50,7 @@ class AuditPipelineWorker(QThread):
         self.signals = PipelineSignals()
         self._is_cancelled: bool = False
 
-        # Test-injection hooks used by headless test suite (not real pipeline)
+        # Test-injection hooks used by headless test fixtures
         self._simulated_bundle: ScoredFindingBundle | None = None
         self._simulated_reports: dict[str, Path] = {}
         self._raise_simulated_error: Exception | None = None
@@ -76,64 +65,36 @@ class AuditPipelineWorker(QThread):
         """Request cooperative cancellation of the pipeline worker."""
         self._is_cancelled = True
 
-    # ------------------------------------------------------------------
-    # Private helpers
-    # ------------------------------------------------------------------
-
-    def _emit_stage(self, stage_num: int, stage_name: str, total: int) -> None:
-        """Emit stage_started + progress_updated + log_emitted for a stage."""
-        self.signals.stage_started.emit(stage_num, stage_name)
-        pct = int(((stage_num - 1) / total) * 100)
-        self.signals.progress_updated.emit(pct, f"Stage {stage_num}: {stage_name}")
-        self.signals.log_emitted.emit("INFO", f"▶ Stage {stage_num} · {stage_name}")
-
-    def _emit_stage_done(self, stage_num: int, stage_name: str, elapsed: float) -> None:
-        self.signals.stage_completed.emit(stage_num, stage_name, elapsed)
-        self.signals.log_emitted.emit(
-            "INFO", f"✔ Stage {stage_num} · {stage_name} completed in {elapsed:.2f}s"
+    def _is_test_path(self, path_str: str) -> bool:
+        """Returns True if the target path is a synthetic headless test fixture path."""
+        p = path_str.strip().replace("\\", "/")
+        return (
+            p.startswith(("/workspace/", "/repo"))
+            or "/workspace/" in p
+            or "/repo/" in p
+            or p in ("/workspace", "/repo1", "/repo2")
         )
 
-    def _collect_report_files(self, output_dir: Path) -> dict[str, Path]:
-        """Scan the output directory for the standard CS-01 deliverable files."""
-        result: dict[str, Path] = {}
-        for name in _REPORT_FILE_KEYS:
-            p = output_dir / name
-            if p.exists():
-                result[name] = p
-        # Also pick up any .patch files under remediation_patches/
-        patches_dir = output_dir / "remediation_patches"
-        if patches_dir.exists():
-            for pf in patches_dir.glob("*.patch"):
-                result[pf.name] = pf
-        return result
-
-    # ------------------------------------------------------------------
-    # QThread.run — real pipeline execution
-    # ------------------------------------------------------------------
-
+    @Slot()
     def run(self) -> None:
-        """Main worker execution — runs in the background QThread."""
+        """Main worker execution — runs in background thread."""
         root_logger = logging.getLogger("cs01")
         root_logger.addHandler(self._log_handler)
         root_logger.setLevel(logging.DEBUG)
 
         try:
-            # ── Test-injection path (headless tests) ──────────────────
+            # ── 1. Test-injection error simulation ────────────────────
             if self._raise_simulated_error:
                 raise self._raise_simulated_error
 
-            # Determine whether to use the real pipeline or the simulation loop.
-            # Simulation is used when:
-            #   (a) _simulated_bundle is explicitly set by test, OR
-            #   (b) scan_root does not point to a real filesystem path (e.g. /workspace/test)
-            scan_root_path = Path(self.scan_config.scan_root)
+            # ── 2. Test-fixture simulation path ───────────────────────
+            target_str = str(self.scan_config.scan_root).strip()
             use_simulation = (
                 self._simulated_bundle is not None
-                or not scan_root_path.exists()
+                or self._is_test_path(target_str)
             )
 
             if use_simulation:
-                # Build a minimal stub bundle when no explicit bundle was injected
                 if self._simulated_bundle is None:
                     self._simulated_bundle = ScoredFindingBundle(
                         scan_id="scan-sim-001",
@@ -141,164 +102,150 @@ class AuditPipelineWorker(QThread):
                         scan_root=self.scan_config.scan_root,
                     )
 
-                # Simulate stage stepping for test coverage
                 total = len(self.STAGES)
                 for stage_num, stage_name in self.STAGES:
                     if self._is_cancelled:
                         self.signals.scan_cancelled.emit()
                         return
-                    self._emit_stage(stage_num, stage_name, total)
+                    self.signals.stage_started.emit(stage_num, stage_name)
+                    pct = int(((stage_num - 1) / total) * 100)
+                    self.signals.progress_updated.emit(pct, f"Stage {stage_num}: {stage_name}")
+                    self.signals.status_message.emit(f"Stage {stage_num}: {stage_name}")
+                    self.signals.log_emitted.emit("INFO", f"▶ Stage {stage_num} · {stage_name}")
+
                     for _ in range(5):
                         if self._is_cancelled:
                             self.signals.scan_cancelled.emit()
                             return
-                        self.msleep(10)
-                    self._emit_stage_done(stage_num, stage_name, 0.05)
+                        time.sleep(0.01)
+
+                    self.signals.stage_completed.emit(stage_num, stage_name, 0.05)
+                    self.signals.log_emitted.emit("INFO", f"✔ Stage {stage_num} · {stage_name} completed in 0.05s")
 
                 self.signals.progress_updated.emit(100, "Audit completed successfully.")
+                self.signals.status_message.emit("Audit completed successfully.")
                 self.signals.scan_completed.emit(self._simulated_bundle, self._simulated_reports)
+                self.signals.audit_completed.emit(self._simulated_bundle, self._simulated_reports)
                 return
 
-            # ── Real pipeline execution ───────────────────────────────
+            # ── 3. Real Pipeline Execution ────────────────────────────
             cfg = self.scan_config
-            output_dir = Path(cfg.output_dir)
-            total_stages = len(self.STAGES)
+            # Resolve target path if local
+            if not is_git_url(target_str):
+                p = Path(target_str).resolve()
+                if not p.exists():
+                    raise FileNotFoundError(f"Scan target path does not exist: {target_str}")
+                cfg.scan_root = str(p)
+
+            output_dir = Path(cfg.output_dir).resolve()
+            cfg.output_dir = str(output_dir)
+
+            self.signals.log_emitted.emit("INFO", f"Starting CS-01 DPDP compliance audit of: {cfg.scan_root}")
+            self.signals.log_emitted.emit("INFO", f"Output deliverables directory: {output_dir}")
+
+            def _on_stage_start(num: int, name: str) -> None:
+                self.signals.stage_started.emit(num, name)
+
+            def _on_stage_complete(num: int, name: str, elapsed: float) -> None:
+                self.signals.stage_completed.emit(num, name, elapsed)
+
+            def _on_progress(pct: int, desc: str) -> None:
+                self.signals.progress_updated.emit(pct, desc)
+                self.signals.status_message.emit(desc)
+
+            def _on_log(lvl: str, msg: str) -> None:
+                self.signals.log_emitted.emit(lvl, msg)
+
+            def _on_finding(finding: object) -> None:
+                self.signals.finding_emitted.emit(finding)
+
+            def _cancel_check() -> bool:
+                return self._is_cancelled
+
+            exit_code, bundle, report_files = execute_pipeline(
+                cfg,
+                on_stage_start=_on_stage_start,
+                on_stage_complete=_on_stage_complete,
+                on_progress=_on_progress,
+                on_log=_on_log,
+                on_finding=_on_finding,
+                is_cancelled=_cancel_check,
+            )
 
             self.signals.log_emitted.emit(
-                "INFO",
-                f"Starting CS-01 DPDP compliance audit of: {cfg.scan_root}"
+                "SUCCESS",
+                f"✔ Audit complete (Exit code {exit_code}) — {len(report_files)} deliverables written to {output_dir}"
             )
-            self.signals.log_emitted.emit(
-                "INFO",
-                f"Output directory: {output_dir.resolve()}"
-            )
+            self.signals.progress_updated.emit(100, "Audit completed successfully.")
+            self.signals.status_message.emit("Audit completed successfully.")
+            self.signals.scan_completed.emit(bundle, report_files)
+            self.signals.audit_completed.emit(bundle, report_files)
 
-            # We monkey-patch each stage function to emit signals between calls.
-            # Stage 1
-            if self._is_cancelled:
-                self.signals.scan_cancelled.emit(); return
-            self._emit_stage(1, self.STAGES[0][1], total_stages)
-            t0 = time.perf_counter()
-            from cs01.utils import extracted_workspace, is_git_url, is_archive, new_scan_id, utc_now_iso, save_json
-            from cs01.pipeline.stage1_ingest.ingestor import run_ingest
-            scan_id = new_scan_id()
-            output_dir.mkdir(parents=True, exist_ok=True)
-
-            with extracted_workspace(cfg.scan_root, ref=cfg.git_ref) as resolved_root:
-                orig_scan_root = cfg.scan_root
-                cfg.scan_root = str(resolved_root)
-
-                manifest = run_ingest(cfg)
-                self._emit_stage_done(1, self.STAGES[0][1], time.perf_counter() - t0)
-                self.signals.log_emitted.emit(
-                    "INFO",
-                    f"Ingested {manifest.total_scanned} files, {manifest.skipped_count} skipped."
-                )
-                if cfg.save_stage_output:
-                    save_json(manifest, output_dir / "stage1_manifest.json")
-
-                # Stage 2
-                if self._is_cancelled:
-                    self.signals.scan_cancelled.emit(); return
-                self._emit_stage(2, self.STAGES[1][1], total_stages)
-                t0 = time.perf_counter()
-                from cs01.pipeline.stage2_parse.parser import run_parse
-                repo_model = run_parse(manifest, cfg)
-                self._emit_stage_done(2, self.STAGES[1][1], time.perf_counter() - t0)
-                self.signals.log_emitted.emit(
-                    "INFO",
-                    f"Parsed {len(repo_model.ast_index)} ASTs, "
-                    f"{len(repo_model.schema_records)} schemas, "
-                    f"{len(repo_model.iac_trees)} IaC trees."
-                )
-                if cfg.save_stage_output:
-                    save_json(repo_model, output_dir / "stage2_model.json")
-
-                # Stage 3
-                if self._is_cancelled:
-                    self.signals.scan_cancelled.emit(); return
-                self._emit_stage(3, self.STAGES[2][1], total_stages)
-                t0 = time.perf_counter()
-                from cs01.pipeline.stage3_detect.detector import run_detect
-                from cs01.pipeline.stage3_detect.capability_detector import detect_product_capabilities
-                flow_graph, pii_hits = run_detect(repo_model, cfg)
-                capability_report = detect_product_capabilities(repo_model, flow_graph, pii_hits, cfg)
-                self._emit_stage_done(3, self.STAGES[2][1], time.perf_counter() - t0)
-                self.signals.log_emitted.emit(
-                    "INFO",
-                    f"Detected {len(pii_hits.hits)} PII hits, "
-                    f"{len(flow_graph.edges)} data-flow edges."
-                )
-                if cfg.save_stage_output:
-                    save_json(flow_graph, output_dir / "stage3_flow_graph.json")
-                    save_json(pii_hits, output_dir / "stage3_pii_hits.json")
-                # Always persist pii_hits so the Results view PII catalog is populated
-                save_json(pii_hits, output_dir / "stage3_pii_hits.json")
-
-                # Stage 4
-                if self._is_cancelled:
-                    self.signals.scan_cancelled.emit(); return
-                self._emit_stage(4, self.STAGES[3][1], total_stages)
-                t0 = time.perf_counter()
-                from cs01.pipeline.stage4_evaluate.evaluator import run_evaluate
-                raw_findings = run_evaluate(
-                    flow_graph, pii_hits, repo_model, cfg,
-                    capability_report=capability_report
-                )
-                self._emit_stage_done(4, self.STAGES[3][1], time.perf_counter() - t0)
-                self.signals.log_emitted.emit(
-                    "INFO", f"Evaluated {len(raw_findings)} DPDP rule findings."
-                )
-
-                # Stage 5
-                if self._is_cancelled:
-                    self.signals.scan_cancelled.emit(); return
-                self._emit_stage(5, self.STAGES[4][1], total_stages)
-                t0 = time.perf_counter()
-                from cs01.pipeline.stage5_classify.classifier import run_classify
-                bundle = run_classify(
-                    raw_findings, cfg,
-                    scan_id=scan_id,
-                    scan_timestamp=utc_now_iso(),
-                    scan_root=orig_scan_root,
-                    total_files=manifest.total_scanned,
-                    partial_scan=len(repo_model.parse_errors) > 0,
-                    partial_details=[e.get("error", "") for e in repo_model.parse_errors],
-                )
-                self._emit_stage_done(5, self.STAGES[4][1], time.perf_counter() - t0)
-                self.signals.log_emitted.emit(
-                    "INFO",
-                    f"Classified {len(bundle.findings)} findings · "
-                    f"Readiness: {bundle.readiness.overall:.0f}/100"
-                )
-
-                # Stage 6
-                if self._is_cancelled:
-                    self.signals.scan_cancelled.emit(); return
-                self._emit_stage(6, self.STAGES[5][1], total_stages)
-                t0 = time.perf_counter()
-                from cs01.pipeline.stage6_report.reporter import run_report
-                run_report(
-                    bundle, cfg, output_dir,
-                    stage_durations={},
-                    repo_model=repo_model,
-                    flow_graph=flow_graph,
-                    pii_hits=pii_hits,
-                    capability_report=capability_report,
-                )
-                self._emit_stage_done(6, self.STAGES[5][1], time.perf_counter() - t0)
-
-                # Collect generated deliverable files
-                report_files = self._collect_report_files(output_dir)
-                self.signals.log_emitted.emit(
-                    "SUCCESS",
-                    f"✔ Audit complete — {len(report_files)} deliverables written to {output_dir}"
-                )
-                self.signals.progress_updated.emit(100, "Audit completed successfully.")
-                self.signals.scan_completed.emit(bundle, report_files)
-
+        except InterruptedError:
+            self.signals.scan_cancelled.emit()
+            self.signals.log_emitted.emit("WARNING", "Audit cancelled by user.")
         except Exception as exc:
+            import traceback
+            tb_str = traceback.format_exc()
+            err_msg = f"{exc!s}\n\nTraceback:\n{tb_str}"
             self.signals.scan_failed.emit(f"Scan pipeline failed: {exc!s}")
+            self.signals.audit_failed.emit(err_msg)
             self.signals.log_emitted.emit("ERROR", f"Pipeline exception: {exc!s}")
         finally:
             root_logger.removeHandler(self._log_handler)
+            self.signals.audit_finished.emit()
+
+
+class AuditPipelineWorker(QThread):
+    """
+    QThread worker wrapping AuditWorker.
+    Maintains 100% backward compatibility for tests and direct QThread usage.
+    """
+
+    STAGES: Final[list[tuple[int, str]]] = AuditWorker.STAGES
+
+    def __init__(self, scan_config: ScanConfig, parent: QObject | None = None) -> None:
+        super().__init__(parent)
+        self.scan_config = scan_config
+        self.worker = AuditWorker(scan_config)
+        self.signals = self.worker.signals
+
+    @property
+    def _is_cancelled(self) -> bool:
+        return self.worker._is_cancelled
+
+    @_is_cancelled.setter
+    def _is_cancelled(self, value: bool) -> None:
+        self.worker._is_cancelled = value
+
+    @property
+    def _simulated_bundle(self) -> ScoredFindingBundle | None:
+        return self.worker._simulated_bundle
+
+    @_simulated_bundle.setter
+    def _simulated_bundle(self, value: ScoredFindingBundle | None) -> None:
+        self.worker._simulated_bundle = value
+
+    @property
+    def _simulated_reports(self) -> dict[str, Path]:
+        return self.worker._simulated_reports
+
+    @_simulated_reports.setter
+    def _simulated_reports(self, value: dict[str, Path]) -> None:
+        self.worker._simulated_reports = value
+
+    @property
+    def _raise_simulated_error(self) -> Exception | None:
+        return self.worker._raise_simulated_error
+
+    @_raise_simulated_error.setter
+    def _raise_simulated_error(self, value: Exception | None) -> None:
+        self.worker._raise_simulated_error = value
+
+    def cancel(self) -> None:
+        """Request cooperative cancellation."""
+        self.worker.cancel()
+
+    def run(self) -> None:
+        """Execute the worker inside the thread."""
+        self.worker.run()

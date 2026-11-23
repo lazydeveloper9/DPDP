@@ -10,9 +10,10 @@ from pathlib import Path
 from typing import Any
 
 from ruamel.yaml import YAML
+from cs01.utils.resources import get_resource_path
 
 yaml = YAML()
-RULES_DIR = Path(__file__).resolve().parent.parent.parent.parent / "rules"
+RULES_DIR = get_resource_path("rules")
 
 def load_all_rules(custom_rules_dir: Path | str | None = None) -> list[dict[str, Any]]:
     """Load all Pass A and Pass B rules from disk."""

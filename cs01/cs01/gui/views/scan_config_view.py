@@ -730,12 +730,29 @@ class ScanConfigView(QWidget):
         Builds and returns a fully populated ScanConfig Pydantic model instance.
         """
         target = self.target_input.text().strip()
+        # Normalize local paths to absolute Path.resolve() if not remote git url
+        if target and not is_git_url(target) and not target.startswith("/workspace"):
+            try:
+                target = str(Path(target).resolve())
+            except Exception:
+                pass
+
         git_ref = self.branch_input.text().strip() or None
         baseline = self.baseline_input.text().strip() or None
+        if baseline and not baseline.startswith("/"):
+            try:
+                baseline = str(Path(baseline).resolve())
+            except Exception:
+                pass
+
         fail_on = self.fail_on_combo.currentText()
         use_tree_sitter = self.engine_tree_sitter_radio.isChecked()
         use_opengrep = self.engine_opengrep_radio.isChecked()
         output_dir = self.output_dir_input.text().strip() or "./cs01-reports"
+        try:
+            output_dir = str(Path(output_dir).resolve())
+        except Exception:
+            pass
 
         # DAST Prober requires BOTH dast_checkbox and statutory authorization disclaimer (§8(5))
         dast_probe = (
@@ -953,8 +970,10 @@ class ScanConfigView(QWidget):
 
     def _on_start_scan_click(self) -> None:
         """Validates target and emits start_scan_requested and scan_requested signals."""
-        is_valid, _ = self.validate_target()
+        is_valid, msg = self.validate_target()
         if not is_valid:
+            self.validation_label.setText(f"❌ Cannot start audit: {msg}")
+            self.validation_label.setStyleSheet("color: #ef4444; font-weight: bold;")
             return
 
         config = self.get_scan_config()

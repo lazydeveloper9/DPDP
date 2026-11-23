@@ -11,7 +11,7 @@ from __future__ import annotations
 from typing import Final
 
 from PySide6.QtCore import QObject
-from PySide6.QtGui import QResizeEvent, QShortcut
+from PySide6.QtGui import QIcon, QResizeEvent, QShortcut
 from PySide6.QtWidgets import (
     QFileDialog,
     QFrame,
@@ -71,6 +71,14 @@ class MainWindow(QMainWindow):
         self.setWindowTitle(self.APP_TITLE)
         self.resize(WINDOW_DEFAULT_WIDTH, WINDOW_DEFAULT_HEIGHT)
         self.setMinimumSize(WINDOW_MIN_WIDTH, WINDOW_MIN_HEIGHT)
+
+        # Set application window icon
+        from cs01.utils.resources import get_resource_path
+        icon_path = get_resource_path("assets/cs01.ico")
+        if not icon_path.exists():
+            icon_path = get_resource_path("assets/cs01.png")
+        if icon_path.exists():
+            self.setWindowIcon(QIcon(str(icon_path)))
 
         # Tracks explicit user collapse intent to respect manual overrides
         # None = no manual user action yet (auto-collapse/expand freely)
@@ -174,6 +182,12 @@ class MainWindow(QMainWindow):
 
     def _on_start_scan_requested(self, scan_config: object) -> None:
         """Launch the audit pipeline worker and switch to execution view."""
+        if hasattr(self, "_worker") and self._worker.isRunning():
+            return  # Prevent starting multiple concurrent scans
+
+        # Lock scan controls while audit is running
+        self.scan_config_view.start_scan_btn.setEnabled(False)
+
         # Update HUD
         target = getattr(scan_config, "scan_root", str(scan_config))
         if hasattr(self, "hud_target_label"):
@@ -196,11 +210,17 @@ class MainWindow(QMainWindow):
         w.signals.scan_completed.connect(self._on_scan_completed)
         w.signals.scan_failed.connect(self._on_scan_failed)
         w.signals.scan_cancelled.connect(self._on_scan_cancelled)
+        w.signals.audit_finished.connect(self._on_audit_finished)
         w.start()
 
     def _on_cancel_scan(self) -> None:
         if hasattr(self, "_worker") and self._worker.isRunning():
             self._worker.cancel()
+
+    def _on_audit_finished(self) -> None:
+        """Guaranteed cleanup slot called when audit completes, fails, or cancels."""
+        self.scan_config_view.start_scan_btn.setEnabled(True)
+        self.scan_execution_view.cancel_btn.setEnabled(False)
 
     def _on_scan_completed(self, bundle: object, report_files: dict) -> None:
         self.scan_execution_view.on_scan_finished()
