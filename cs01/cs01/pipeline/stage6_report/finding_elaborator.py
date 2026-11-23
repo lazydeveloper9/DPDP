@@ -6,8 +6,17 @@ for each compliance finding in Section 5 of the DPDP Assessment Report.
 """
 
 from __future__ import annotations
+import re
 from pathlib import Path
 from cs01.models import ScoredFinding, ScanConfig
+
+def _mask_code(s: str) -> str:
+    res = s
+    res = re.sub(r"\b\d{4}[-\s]?\d{4}[-\s]?(\d{4})\b", r"XXXX-XXXX-\1", res)
+    res = re.sub(r"\b[A-Z]{5}[0-9]{4}[A-Z]\b", "[REDACTED-PAN]", res)
+    res = re.sub(r"\b\d{2}[A-Z]{5}\d{4}[A-Z]{1}[A-Z\d]{1}[Z]{1}[A-Z\d]{1}\b", "[REDACTED-GSTIN]", res)
+    res = re.sub(r"((?:api_?key|secret|password|token)\s*[:=]\s*['\"]).+?(['\"])", r"\1[REDACTED-SECRET]\2", res, flags=re.I)
+    return res
 
 def elaborate_finding(f: ScoredFinding, cfg: ScanConfig) -> dict[str, str]:
     """Produce an exhaustive technical, statutory, threat, and remediation elaboration for a finding."""
@@ -18,7 +27,8 @@ def elaborate_finding(f: ScoredFinding, cfg: ScanConfig) -> dict[str, str]:
     tech = ""
     statutory = ""
     threat = ""
-    before_code = f.redacted_snippet or f.snippet or f"# Vulnerable location: {f.file}:{f.line_start}"
+    raw_before = f.redacted_snippet or f.snippet or f"# Vulnerable location: {f.file}:{f.line_start}"
+    before_code = _mask_code(raw_before)
     after_code = ""
     verification = f"Run `cs01 audit {f.file or '.'}` to confirm finding `{f.rule_id}` is resolved."
 
@@ -230,6 +240,118 @@ def elaborate_finding(f: ScoredFinding, cfg: ScanConfig) -> dict[str, str]:
             f"1. Implement an age-gate middleware or validation check before storing date of birth.\n"
             f"2. Add test asserting users with age < 18 are rejected without verifiable guardian consent.\n"
             f"3. Run `cs01 audit .` to confirm `ARCH-DPDP-003` passes."
+        )
+
+    elif rid == "ARCH-DPDP-002":
+        tech = (
+            f"The application persistence schema defines personal data models (`{entity}`), but static architecture "
+            f"analysis detected zero automated data retention purging jobs or scheduled background workers (`apscheduler`, `celery`, or cron). "
+            f"Under modern persistence architectures, personal data remains in production database tables indefinitely after the processing purpose "
+            f"has completed or the customer relationship has terminated. Without automated, time-bound purging routines, database tables accumulate "
+            f"dormant historical personal records, directly violating the statutory purpose completion mandate."
+        )
+        statutory = (
+            f"**Statutory Provision:** Digital Personal Data Protection Act, 2023, **Section 8(7)** read with **DPDP Rules, 2025, Rule 8(2)**.\n"
+            f"- **Statutory Mandate:** Section 8(7) requires a Data Fiduciary to erase personal data upon the Data Principal withdrawing consent or "
+            f"as soon as it is reasonable to assume that the specified purpose is no longer being served. Rule 8(2) mandates automated, verifiable data "
+            f"erasure schedules aligned with Third Schedule inactivity thresholds (3 years general inactivity / 1 year for financial and e-commerce records).\n"
+            f"- **Penalty Exposure:** Falls under the **₹50 Crore Statutory Ceiling** for residual statutory non-compliance under Section 33."
+        )
+        threat = (
+            f"**Threat Scenario & Blast Radius:**\n"
+            f"Retaining personal data beyond its operational lifecycle turns historical databases into high-value targets. If a database compromise occurs, "
+            f"the blast radius includes not only active users but millions of inactive accounts that should have been permanently deleted years prior, "
+            f"vastly multiplying the organizational liability and mandatory breach notifications under Section 8(6)."
+        )
+        after_code = (
+            f"```python\n"
+            f"# ✔ COMPLIANT REMEDIATION (Automated Retention Purge Routine)\n"
+            f"from datetime import datetime, timezone, timedelta\n\n"
+            f"def purge_expired_retention_records(db_session, max_retention_days: int = 365) -> int:\n"
+            f"    cutoff = datetime.now(timezone.utc) - timedelta(days=max_retention_days)\n"
+            f"    deleted_count = db_session.query(User).filter(User.last_active < cutoff).delete()\n"
+            f"    db_session.commit()\n"
+            f"    return deleted_count\n"
+            f"```"
+        )
+        verification = (
+            f"1. Implement a scheduled retention job that purges inactive records after the retention threshold.\n"
+            f"2. Add a test asserting that expired records are purged during routine execution.\n"
+            f"3. Run `cs01 audit .` to confirm `ARCH-DPDP-002` passes."
+        )
+
+    elif rid == "ARCH-DPDP-005":
+        tech = (
+            f"The application declares a security audit logging model or invocation at `{f.file or 'schema'}`, but the telemetry "
+            f"construct either defines `target_resource_id` as nullable or permits null/empty arguments during runtime calls (`{entity}`). "
+            f"Under modern incident response standards, security audit events must establish non-repudiable linkage between the acting subject, "
+            f"the timestamped operation, and the specific Data Principal record impacted. When `target_resource_id` is null or omitted, security "
+            f"telemetry is incapable of scoping which Data Principals were compromised during an unauthorized exfiltration event."
+        )
+        statutory = (
+            f"**Statutory Provision:** Digital Personal Data Protection Act, 2023, **Section 8(6)** read with **DPDP Rules, 2025, Rule 7(1)**.\n"
+            f"- **Statutory Mandate:** Rule 7(1) mandates that every personal data breach report submitted to the Data Protection Board of India (DPBI) "
+            f"and affected Data Principals must identify the nature, extent, and specific categories of personal data compromised. Omission of target "
+            f"resource identifiers disables blast-radius scoping, preventing lawful compliance with the 72-hour notification timeline.\n"
+            f"- **Penalty Exposure:** Directly engages the **₹200 Crore Statutory Maximum Ceiling** under Item 2 of the Section 33 Schedule for failure to notify a personal data breach."
+        )
+        threat = (
+            f"**Threat Scenario & Blast Radius:**\n"
+            f"During an active forensic investigation, if an attacker queries sensitive patient or financial records, the audit log records the read operation "
+            f"without recording whose records were read. As a consequence, the organization cannot determine which users were breached, forcing either "
+            f"a catastrophic public panic notification to 100% of customers or failure to notify the actual victims, leading to severe regulatory penalties."
+        )
+        after_code = (
+            f"```python\n"
+            f"# ✔ COMPLIANT REMEDIATION (Enforce non-null target_resource_id in audit schema)\n"
+            f"class AuditLog(Base):\n"
+            f"    __tablename__ = 'audit_logs'\n"
+            f"    id = Column(Integer, primary_key=True)\n"
+            f"    timestamp = Column(DateTime, default=datetime.utcnow, nullable=False)\n"
+            f"    user_id = Column(String(64), nullable=False)\n"
+            f"    action = Column(String(64), nullable=False)\n"
+            f"    # Mandatory non-null target resource identifier for breach blast-radius scoping\n"
+            f"    target_resource_id = Column(String(128), nullable=False)\n"
+            f"```"
+        )
+        verification = (
+            f"1. Update the audit schema to enforce `nullable=False` on `target_resource_id`.\n"
+            f"2. Ensure all audit log calls supply a valid identifier for the target entity.\n"
+            f"3. Run `cs01 audit .` to confirm `ARCH-DPDP-005` passes."
+        )
+
+    elif rid == "ARCH-DPDP-008":
+        tech = (
+            f"The application captures date of birth or minor indicators, but introduces those data pipelines into third-party tracking, "
+            f"behavioral analytics, or targeted advertising SDKs (`{entity}`). "
+            f"Tracking scripts embed persistent device fingerprinting cookies, session replay recording, and behavioral analytics beacons "
+            f"that exfiltrate minors' browsing habits and application interactions to third-party ad networks without parental authorization."
+        )
+        statutory = (
+            f"**Statutory Provision:** Digital Personal Data Protection Act, 2023, **Section 9(2) & 9(3)** read with **DPDP Rules, 2025, Rule 12**.\n"
+            f"- **Statutory Mandate:** Section 9(2) explicitly bans tracking, behavioral monitoring, or targeted advertising directed at children. "
+            f"Rule 12 strictly forbids any processing that could cause harmful or detrimental effects on the well-being of a child.\n"
+            f"- **Penalty Exposure:** Directly engages the **₹200 Crore Statutory Maximum Ceiling** under Item 3 of the Section 33 Schedule for non-compliance with duties in respect of children."
+        )
+        threat = (
+            f"**Threat Scenario & Blast Radius:**\n"
+            f"Ad tech networks aggregate minor browsing telemetry across apps to build behavioral profiles for commercial exploitation. "
+            f"Regulators worldwide treat child tracking as a tier-1 privacy violation with strict liability and zero tolerance."
+        )
+        after_code = (
+            "```javascript\n"
+            "// ✔ COMPLIANT REMEDIATION (Conditional gating stripping tracking on minor sessions)\n"
+            "if (user.isMinor || user.age < 18) {\n"
+            "    // Disable all third-party analytics and tracking SDKs under DPDP Rule 12\n"
+            "    window['ga-disable-PROPERTY-ID'] = true;\n"
+            "    analytics.track = function() {}; // No-op\n"
+            "}\n"
+            "```"
+        )
+        verification = (
+            f"1. Implement guard preventing analytics initialization when user age is under 18.\n"
+            f"2. Add test asserting tracking calls are suppressed for minor profiles.\n"
+            f"3. Run `cs01 audit .` to confirm `ARCH-DPDP-008` passes."
         )
 
     else:

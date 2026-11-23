@@ -18,7 +18,10 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-from cs01.models import ScoredFindingBundle, ScanConfig, RepoModel, FlowGraph, PiiHitList
+from cs01.models import (
+    ScoredFindingBundle, ScanConfig, RepoModel, FlowGraph, PiiHitList,
+    ProductCapabilityReport,
+)
 from cs01.utils import save_json
 from .sarif_exporter import export_sarif
 from .gitlab_exporter import export_gitlab_sast
@@ -39,6 +42,7 @@ def run_report(
     repo_model: Optional[RepoModel] = None,
     flow_graph: Optional[FlowGraph] = None,
     pii_hits: Optional[PiiHitList] = None,
+    capability_report: Optional[ProductCapabilityReport] = None,
 ) -> dict[str, Path]:
     """Execute all report renderers and package the evidence bundle."""
     out_dir = Path(output_dir)
@@ -84,11 +88,11 @@ def run_report(
         generated_files["cs01-dpo-report.html"] = html_path
 
     md_path = out_dir / "cs01-report.md"
-    export_markdown_report(bundle, cfg, md_path, stage_durations=stage_durations)
+    export_markdown_report(bundle, cfg, md_path, stage_durations=stage_durations, capability_report=capability_report)
     generated_files["cs01-report.md"] = md_path
 
     ropa_path = out_dir / "ropa_map.json"
-    export_ropa_draft(bundle, ropa_path)
+    export_ropa_draft(bundle, ropa_path, capability_report=capability_report)
     generated_files["ropa_map.json"] = ropa_path
 
     consent_path = out_dir / "consent_audit.json"

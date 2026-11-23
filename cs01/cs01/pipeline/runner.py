@@ -85,23 +85,28 @@ def run_pipeline(cfg: ScanConfig) -> int:
             t_start = time.perf_counter()
             t = progress.add_task("[cyan]Stage 3 · Detect PII & Trace Flows...", total=None)
             from cs01.pipeline.stage3_detect.detector import run_detect
+            from cs01.pipeline.stage3_detect.capability_detector import detect_product_capabilities
             flow_graph, pii_hits = run_detect(repo_model, cfg)
+            capability_report = detect_product_capabilities(repo_model, flow_graph, pii_hits, cfg)
             progress.remove_task(t)
             stage_durations["stage3"] = time.perf_counter() - t_start
             console.print(
                 f"[green]✔ Stage 3[/green] — "
                 f"{len(pii_hits.hits)} PII hits, "
                 f"{len(flow_graph.edges)} flow edges "
-                f"({len(flow_graph.unguarded_edges())} unguarded)"
+                f"({len(flow_graph.unguarded_edges())} unguarded) · "
+                f"Capabilities: {len(capability_report.pii_inventory)} PII items, "
+                f"{len(capability_report.implemented_controls)} controls"
             )
             if cfg.save_stage_output:
                 save_json(flow_graph, output_dir / "stage3_flow_graph.json")
                 save_json(pii_hits, output_dir / "stage3_pii_hits.json")
+                save_json(capability_report, output_dir / "stage3_capability_report.json")
 
             t_start = time.perf_counter()
             t = progress.add_task("[cyan]Stage 4 · Evaluate DPDP Rules...", total=None)
             from cs01.pipeline.stage4_evaluate.evaluator import run_evaluate
-            raw_findings = run_evaluate(flow_graph, pii_hits, repo_model, cfg)
+            raw_findings = run_evaluate(flow_graph, pii_hits, repo_model, cfg, capability_report=capability_report)
             progress.remove_task(t)
             stage_durations["stage4"] = time.perf_counter() - t_start
             console.print(
@@ -145,6 +150,7 @@ def run_pipeline(cfg: ScanConfig) -> int:
                 repo_model=repo_model,
                 flow_graph=flow_graph,
                 pii_hits=pii_hits,
+                capability_report=capability_report,
             )
             progress.remove_task(t)
             console.print(f"[green]✔ Stage 6[/green] — Reports written to [cyan]{output_dir}[/cyan]")

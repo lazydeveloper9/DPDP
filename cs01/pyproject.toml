@@ -35,6 +35,7 @@ dev = [
 
 [project.scripts]
 cs01 = "cs01.cli.main:app"
+cs01-gui = "cs01.gui.__main__:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["cs01"]

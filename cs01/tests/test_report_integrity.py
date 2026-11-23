@@ -59,7 +59,13 @@ def test_report_integrity_and_math(tmp_path: Path):
         f"Layer matrix sum ({sum_layer_counts}) != severity breakdown total ({total_active_from_summary})"
     )
 
-    # 3. Roadmap Math: readiness + sum(lifts) <= 100
+    # 3. Rules 1 to 23 Statutory Matrix present
+    assert "### 3.3 Statutory DPDP Rules, 2025 (Rules 1 to 23) Evaluation Matrix" in content, "Missing Rules 1 to 23 Matrix"
+    assert "| **Rule 1** |" in content
+    assert "| **Rule 23** |" in content
+    assert "| **Rules 17–22** |" in content
+
+    # 4. Roadmap Math: readiness + sum(lifts) <= 100
     readiness = bundle.readiness.overall
     roadmap_lifts = [int(m) for m in re.findall(r"\+(\d+)\s*pts", content)]
     assert readiness + sum(roadmap_lifts) <= 100, (

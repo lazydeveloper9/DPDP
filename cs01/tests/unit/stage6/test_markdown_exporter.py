@@ -85,3 +85,54 @@ def test_export_markdown_report_structure():
         assert "#### 3. Real-World Threat Scenario & Data Principal Blast Radius" in content
         assert "#### 4. Production-Ready Refactored Code Fix" in content
         assert "#### 5. Engineering Verification & Automated Testing Plan" in content
+
+        # Section 3.3: Rules 1 to 23 Matrix
+        assert "### 3.3 Statutory DPDP Rules, 2025 (Rules 1 to 23) Evaluation Matrix" in content
+        assert "| **Rule 1** |" in content
+        assert "| **Rule 6** |" in content
+        assert "| **Rule 23** |" in content
+
+def test_contextual_snippet_in_memory_redaction():
+    """Verify that raw Aadhaar, PAN, and secrets inside source files are masked in snippet windows."""
+    with tempfile.TemporaryDirectory() as tmp:
+        repo_dir = Path(tmp)
+        src_file = repo_dir / "user_service.py"
+        src_file.write_text(
+            "def register():\n"
+            "    user_aadhaar = '2345 6789 0123'\n"
+            "    api_token = 'secret_key_abcdef123456'\n"
+            "    return True\n",
+            encoding="utf-8"
+        )
+        finding = ScoredFinding(
+            id="f_redact",
+            rule_id="CODE-DPDP-001",
+            pass_type=PassType.A,
+            file="user_service.py",
+            line_start=2,
+            line_end=2,
+            snippet="user_aadhaar = '2345 6789 0123'",
+            matched_entity="aadhaar",
+            dpdp_section="8(5)",
+            dpdp_rule="Rule 6(1)(a)",
+            penalty_band="250_crore",
+            severity=Severity.CRITICAL,
+            message="Logging unmasked Aadhaar",
+            remediation="Mask before logging",
+        )
+        bundle = ScoredFindingBundle(
+            scan_id="test_redact_scan",
+            scan_timestamp="2026-11-23T00:00:00Z",
+            scan_root=tmp,
+            total_files_scanned=1,
+            findings=[finding],
+            readiness=DpdpReadinessScore(overall=50.0),
+        )
+        cfg = ScanConfig()
+        out_file = repo_dir / "report.md"
+        export_markdown_report(bundle, cfg, out_file)
+
+        content = out_file.read_text(encoding="utf-8")
+        # Ensure raw Aadhaar number is NOT present in the output
+        assert "2345 6789 0123" not in content, "Found unmasked raw Aadhaar literal in generated report snippet"
+        assert "XXXX-XXXX-0123" in content, "Masked Aadhaar format not found in snippet window"

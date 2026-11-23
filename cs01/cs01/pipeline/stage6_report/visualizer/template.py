@@ -158,11 +158,24 @@ def render_standalone_html(graph: DataFlowGraph) -> str:
     height: calc(100vh - 110px);
   }}
 
-  #view-2d {{
+  #view-2d, #view-3d {{
     position: absolute;
     top: 0; left: 0; width: 100%; height: 100%;
-    display: block;
+    transition: opacity 0.15s ease;
   }}
+  .view-hidden {{
+    opacity: 0 !important;
+    pointer-events: none !important;
+    visibility: hidden !important;
+    z-index: 0 !important;
+  }}
+  .view-visible {{
+    opacity: 1 !important;
+    pointer-events: auto !important;
+    visibility: visible !important;
+    z-index: 10 !important;
+  }}
+
   #cy {{
     width: 100%;
     height: 100%;
@@ -171,13 +184,25 @@ def render_standalone_html(graph: DataFlowGraph) -> str:
     display: block;
   }}
 
-  #view-3d {{
-    position: absolute;
-    top: 0; left: 0; width: 100%; height: 100%;
-    display: none;
-  }}
   #three-container {{ width: 100%; height: 100%; background: #05070d; cursor: grab; }}
   #three-container:active {{ cursor: grabbing; }}
+
+  /* Interactive Hover Tooltip */
+  #hover-tooltip {{
+    display: none;
+    position: absolute;
+    pointer-events: none;
+    z-index: 160;
+    background: rgba(15, 23, 42, 0.95);
+    backdrop-filter: blur(8px);
+    border: 1px solid #38bdf8;
+    border-radius: 6px;
+    padding: 0.6rem 0.8rem;
+    font-size: 0.75rem;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.6);
+    max-width: 290px;
+    line-height: 1.4;
+  }}
 
   #webgl-fallback {{
     display: none;
@@ -296,6 +321,7 @@ def render_standalone_html(graph: DataFlowGraph) -> str:
     <button class="preset-btn" onclick="setCameraPreset('isometric')">Isometric</button>
     <button class="preset-btn" onclick="setCameraPreset('top')">Top-Down</button>
     <button class="preset-btn" onclick="setCameraPreset('leaks')">Focus Leaks</button>
+    <button id="btn-toggle-labels" class="preset-btn" onclick="toggleLabels()">🏷️ Labels: ON</button>
   </div>
 </div>
 
@@ -329,12 +355,12 @@ def render_standalone_html(graph: DataFlowGraph) -> str:
 <!-- Viewports -->
 <div id="viewport-container">
   <!-- 2D Viewport -->
-  <div id="view-2d">
+  <div id="view-2d" class="view-visible">
     <div id="cy"></div>
   </div>
 
   <!-- 3D Viewport -->
-  <div id="view-3d">
+  <div id="view-3d" class="view-hidden">
     <div id="three-container"></div>
     <div id="webgl-fallback">
       <h3>WebGL Acceleration Unavailable</h3>
@@ -342,6 +368,9 @@ def render_standalone_html(graph: DataFlowGraph) -> str:
       <button class="preset-btn" onclick="switchView('2d')">Return to 2D View</button>
     </div>
   </div>
+
+  <!-- Interactive Hover Tooltip -->
+  <div id="hover-tooltip"></div>
 
   <!-- Legend -->
   <div id="legend-overlay">
@@ -394,31 +423,26 @@ let cy = null;
 let currentView = '2d';
 let activeFilter = 'all';
 
-// Helper to create 3D Billboard Canvas Text Sprites
-function createTextSprite(message, opts) {{
+// Helper to create Crisp 3D Billboard Canvas Text Sprites (Power of 2 for WebGL)
+function createCrispTextSprite(message, opts) {{
   opts = opts || {{}};
-  const fontSize = opts.fontSize || 20;
+  const fontSize = opts.fontSize || 32;
   const textColor = opts.textColor || '#ffffff';
-  const bgColor = opts.bgColor || 'rgba(15, 23, 42, 0.88)';
+  const bgColor = opts.bgColor || 'rgba(15, 23, 42, 0.94)';
   const borderColor = opts.borderColor || '#38bdf8';
 
   const canvas = document.createElement('canvas');
+  canvas.width = 512;
+  canvas.height = 128;
   const ctx = canvas.getContext('2d');
-  ctx.font = 'bold ' + fontSize + 'px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
 
-  const textMetrics = ctx.measureText(message);
-  const textWidth = textMetrics.width;
-  canvas.width = Math.max(textWidth + 24, 120);
-  canvas.height = fontSize + 20;
-
-  // Draw rounded pill background
-  ctx.font = 'bold ' + fontSize + 'px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+  // Background rounded pill
   ctx.fillStyle = bgColor;
   ctx.strokeStyle = borderColor;
-  ctx.lineWidth = 3;
+  ctx.lineWidth = 6;
 
-  const r = 6;
-  const x = 3, y = 3, w = canvas.width - 6, h = canvas.height - 6;
+  const r = 20;
+  const x = 10, y = 10, w = 492, h = 108;
   ctx.beginPath();
   ctx.moveTo(x + r, y);
   ctx.lineTo(x + w - r, y);
@@ -434,22 +458,28 @@ function createTextSprite(message, opts) {{
   ctx.stroke();
 
   // Draw text
+  ctx.font = 'bold ' + fontSize + 'px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
   ctx.fillStyle = textColor;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillText(message, canvas.width / 2, canvas.height / 2);
+  ctx.fillText(message, 256, 64);
 
   const texture = new THREE.CanvasTexture(canvas);
   texture.minFilter = THREE.LinearFilter;
-  const spriteMat = new THREE.SpriteMaterial({{
+  texture.generateMipmaps = true;
+  texture.needsUpdate = true;
+
+  const mat = new THREE.SpriteMaterial({{
     map: texture,
     depthTest: false,
+    depthWrite: false,
     transparent: true
   }});
-  const sprite = new THREE.Sprite(spriteMat);
-  const aspect = canvas.width / canvas.height;
-  const spriteHeight = opts.spriteHeight || 6.0;
-  sprite.scale.set(spriteHeight * aspect, spriteHeight, 1);
+  const sprite = new THREE.Sprite(mat);
+  sprite.renderOrder = 999;
+  const wWorld = opts.worldWidth || 32;
+  const hWorld = opts.worldHeight || 8;
+  sprite.scale.set(wWorld, hWorld, 1);
   return sprite;
 }}
 
@@ -461,12 +491,12 @@ function init2DGraph() {{
   const validNodeIds = new Set(CS01_GRAPH_DATA.nodes.map(n => n.id));
   const elements = [];
 
-  const tierXMap = {{
-    0: 120,  // Collection
-    1: 440,  // API Logic
-    2: 780,  // Storage
-    3: 1120, // Infra Cloud
-    4: 1460  // Egress Sink
+  const tierBaseX = {{
+    0: 160,  // Collection
+    1: 500,  // API Logic
+    2: 820,  // Storage
+    3: 1100, // Infra Cloud
+    4: 1420  // Egress Sink
   }};
 
   const tierNames = {{
@@ -489,18 +519,27 @@ function init2DGraph() {{
         nodeColor: '#0f172a',
         borderColor: '#0284c7'
       }},
-      position: {{ x: tierXMap[tier] || 500, y: 35 }},
+      position: {{ x: tierBaseX[tier] || 500, y: 40 }},
       locked: true,
       grabbable: false
     }});
   }});
 
+  // Layout nodes in 2 columns per tier swimlane if > 5 nodes to avoid vertical stretching
   const tierCounts = {{ 0: 0, 1: 0, 2: 0, 3: 0, 4: 0 }};
 
   CS01_GRAPH_DATA.nodes.forEach(n => {{
     const tier = n.layer;
-    tierCounts[tier] = (tierCounts[tier] || 0) + 1;
-    const yPos = 85 + (tierCounts[tier] * 72);
+    const count = tierCounts[tier] || 0;
+    tierCounts[tier] = count + 1;
+
+    const cols = (tier === 4 || tier === 1 || tier === 0) && (CS01_GRAPH_DATA.nodes.filter(x => x.layer === tier).length > 5) ? 2 : 1;
+    const subCol = count % cols;
+    const subRow = Math.floor(count / cols);
+
+    const baseX = tierBaseX[tier] || 500;
+    const xPos = cols === 2 ? (baseX + (subCol === 0 ? -70 : 70)) : baseX;
+    const yPos = 100 + (subRow * 75);
 
     let nodeColor = '#0f172a';
     let borderColor = '#38bdf8';
@@ -534,7 +573,7 @@ function init2DGraph() {{
         borderColor: borderColor,
         rawNode: n
       }},
-      position: {{ x: tierXMap[tier] || 500, y: yPos }}
+      position: {{ x: xPos, y: yPos }}
     }});
   }});
 
@@ -589,14 +628,15 @@ function init2DGraph() {{
             'background-color': '#0f172a',
             'border-color': '#0284c7',
             'border-width': 2,
-            'width': 180,
-            'height': 30,
+            'width': 220,
+            'height': 34,
             'label': 'data(label)',
             'color': '#38bdf8',
-            'font-size': '11px',
+            'font-size': '12px',
             'font-weight': 'bold',
             'text-valign': 'center',
-            'text-halign': 'center'
+            'text-halign': 'center',
+            'min-zoomed-font-size': 0
           }}
         }},
         {{
@@ -610,13 +650,21 @@ function init2DGraph() {{
             'text-valign': 'bottom',
             'text-halign': 'center',
             'text-margin-y': 6,
-            'text-wrap': 'wrap',
-            'text-max-width': '130px',
+            'text-wrap': 'ellipsis',
+            'text-max-width': '120px',
             'background-color': 'data(nodeColor)',
             'border-width': 2.5,
             'border-color': 'data(borderColor)',
-            'width': 36,
-            'height': 36
+            'width': 38,
+            'height': 38,
+            'text-background-color': '#090d16',
+            'text-background-opacity': 0.88,
+            'text-background-padding': '3px',
+            'text-background-shape': 'roundrectangle',
+            'text-border-color': 'data(borderColor)',
+            'text-border-width': 1,
+            'text-border-opacity': 0.5,
+            'min-zoomed-font-size': 0
           }}
         }},
         {{
@@ -646,11 +694,12 @@ function init2DGraph() {{
     setTimeout(() => {{
       if (cy) {{
         cy.resize();
-        cy.fit(null, 40);
+        cy.fit(null, 35);
       }}
     }}, 50);
 
-    // Hover highlighting
+    // Hover highlighting and tooltip in 2D
+    const hoverTooltip = document.getElementById('hover-tooltip');
     cy.on('mouseover', 'node', function(evt) {{
       const node = evt.target;
       if (node.data('isHeader')) return;
@@ -661,10 +710,32 @@ function init2DGraph() {{
       node.removeClass('dimmed').addClass('highlighted');
       connectedNodes.removeClass('dimmed').addClass('highlighted');
       connectedEdges.removeClass('dimmed').addClass('highlighted');
+
+      const raw = node.data('rawNode');
+      if (raw && hoverTooltip) {{
+        let statusBadge = '<span class="badge-tag badge-info">INFORMATIONAL</span>';
+        if (raw.status === 'pii_leak') statusBadge = '<span class="badge-tag badge-leak">⚠️ PII LEAK (§8(5))</span>';
+        else if (raw.status === 'unconsented_storage') statusBadge = '<span class="badge-tag badge-unconsented">⚠️ NO CONSENT (§6(1))</span>';
+        else if (raw.status === 'compliant') statusBadge = '<span class="badge-tag badge-compliant">✔ COMPLIANT</span>';
+
+        const piiTags = (raw.pii_types || []).map(p => `<span class="pii-pill">${{p}}</span>`).join(' ');
+        hoverTooltip.innerHTML = `
+          <div style="font-weight: 700; margin-bottom: 3px; font-size: 0.85rem; color: #f8fafc;">${{raw.label}}</div>
+          <div style="font-size: 0.72rem; color: #94a3b8; font-family: monospace; margin-bottom: 5px;">${{raw.file_path || 'Repository'}}:${{raw.start_line || 1}}</div>
+          <div style="margin-bottom: 5px;">${{statusBadge}}</div>
+          ${{piiTags ? `<div style="display: flex; flex-wrap: wrap; gap: 3px; margin-bottom: 5px;">${{piiTags}}</div>` : ''}}
+          <div style="font-size: 0.68rem; color: #38bdf8;">Click node to inspect findings &amp; remediation</div>
+        `;
+        const renderedPos = node.renderedPosition();
+        hoverTooltip.style.display = 'block';
+        hoverTooltip.style.left = (renderedPos.x + 20) + 'px';
+        hoverTooltip.style.top = (renderedPos.y + 40) + 'px';
+      }}
     }});
 
     cy.on('mouseout', 'node', function() {{
       cy.elements().removeClass('dimmed').removeClass('highlighted');
+      if (hoverTooltip) hoverTooltip.style.display = 'none';
     }});
 
     // Click on node
@@ -840,7 +911,16 @@ function closeDrawer() {{
 let threeScene, threeCamera, threeRenderer, threeControls;
 let threeParticles = [];
 let threeNodeMeshes = [];
+let threeNodeSprites = [];
 let threeInitialized = false;
+let labelsVisible = true;
+
+function toggleLabels() {{
+  labelsVisible = !labelsVisible;
+  const btn = document.getElementById('btn-toggle-labels');
+  if (btn) btn.innerText = labelsVisible ? '🏷️ Labels: ON' : '🏷️ Labels: OFF';
+  threeNodeSprites.forEach(s => s.visible = labelsVisible);
+}}
 
 function init3DGraph() {{
   if (threeInitialized) return;
@@ -889,11 +969,11 @@ function init3DGraph() {{
   // Stacked Layer Glass Planes
   const layerY = {{ 0: 80, 1: 40, 2: 0, 3: -40, 4: -80 }};
   const layerNames = {{
-    0: "TIER 0: COLLECTION (Frontend & Forms)",
+    0: "TIER 0: CLIENT ENTRYPOINTS (Forms & UI)",
     1: "TIER 1: API & AUTH LOGIC",
-    2: "TIER 2: STORAGE (Databases & Uploads)",
+    2: "TIER 2: STORAGE (DB & Disk)",
     3: "TIER 3: CLOUD INFRASTRUCTURE",
-    4: "TIER 4: EGRESS SINKS (Logs / Static Mounts)"
+    4: "TIER 4: EGRESS SINKS (Logs & Mounts)"
   }};
 
   const activeTiers = new Set(CS01_GRAPH_DATA.nodes.map(n => n.layer));
@@ -917,14 +997,15 @@ function init3DGraph() {{
     threeScene.add(grid);
 
     // Add 3D Floating Tier Banner Billboard
-    const tierBanner = createTextSprite(layerNames[tier] || ('TIER ' + tier), {{
-      fontSize: 22,
+    const tierBanner = createCrispTextSprite(layerNames[tier] || ('TIER ' + tier), {{
+      fontSize: 34,
       textColor: '#38bdf8',
-      bgColor: 'rgba(15, 23, 42, 0.92)',
+      bgColor: 'rgba(15, 23, 42, 0.94)',
       borderColor: '#0284c7',
-      spriteHeight: 9.0
+      worldWidth: 68,
+      worldHeight: 17
     }});
-    tierBanner.position.set(-110, y + 6, -110);
+    tierBanner.position.set(-110, y + 10, -110);
     threeScene.add(tierBanner);
   }});
 
@@ -985,14 +1066,17 @@ function init3DGraph() {{
     let labelText = n.label;
     if (labelText.length > 24) labelText = labelText.substring(0, 22) + '..';
 
-    const sprite = createTextSprite(labelText, {{
-      fontSize: 18,
+    const sprite = createCrispTextSprite(labelText, {{
+      fontSize: 32,
       borderColor: badgeBorder,
       textColor: badgeText,
-      spriteHeight: 5.5
+      worldWidth: 32,
+      worldHeight: 8
     }});
-    sprite.position.set(posX, posY + 11, posZ);
+    sprite.position.set(posX, posY + 12, posZ);
+    sprite.visible = labelsVisible;
     threeScene.add(sprite);
+    threeNodeSprites.push(sprite);
   }});
 
   // Render 3D Edges & Particle Tubes
@@ -1032,9 +1116,54 @@ function init3DGraph() {{
     }});
   }});
 
-  // 3D Raycasting click listener on container
+  // 3D Raycasting hover & click listeners on container
   const raycaster = new THREE.Raycaster();
   const mouse = new THREE.Vector2();
+  const hoverTooltip = document.getElementById('hover-tooltip');
+  let hoveredMesh = null;
+
+  container.addEventListener('mousemove', (event) => {{
+    const rect = container.getBoundingClientRect();
+    mouse.x = ((event.clientX - rect.left) / container.clientWidth) * 2 - 1;
+    mouse.y = -((event.clientY - rect.top) / container.clientHeight) * 2 + 1;
+
+    raycaster.setFromCamera(mouse, threeCamera);
+    const intersects = raycaster.intersectObjects(threeNodeMeshes, false);
+    if (intersects.length > 0) {{
+      const mesh = intersects[0].object;
+      const n = mesh.userData && mesh.userData.node;
+      if (n && hoverTooltip) {{
+        hoveredMesh = mesh;
+        container.style.cursor = 'pointer';
+        let statusBadge = '<span class="badge-tag badge-info">INFORMATIONAL</span>';
+        if (n.status === 'pii_leak') statusBadge = '<span class="badge-tag badge-leak">⚠️ PII LEAK (§8(5))</span>';
+        else if (n.status === 'unconsented_storage') statusBadge = '<span class="badge-tag badge-unconsented">⚠️ NO CONSENT (§6(1))</span>';
+        else if (n.status === 'compliant') statusBadge = '<span class="badge-tag badge-compliant">✔ COMPLIANT</span>';
+
+        const piiTags = (n.pii_types || []).map(p => `<span class="pii-pill">${{p}}</span>`).join(' ');
+        hoverTooltip.innerHTML = `
+          <div style="font-weight: 700; margin-bottom: 3px; font-size: 0.85rem; color: #f8fafc;">${{n.label}}</div>
+          <div style="font-size: 0.72rem; color: #94a3b8; font-family: monospace; margin-bottom: 5px;">${{n.file_path || 'Repository'}}:${{n.start_line || 1}}</div>
+          <div style="margin-bottom: 5px;">${{statusBadge}}</div>
+          ${{piiTags ? `<div style="display: flex; flex-wrap: wrap; gap: 3px; margin-bottom: 5px;">${{piiTags}}</div>` : ''}}
+          <div style="font-size: 0.68rem; color: #38bdf8;">Click node to inspect findings &amp; remediation</div>
+        `;
+        hoverTooltip.style.display = 'block';
+        hoverTooltip.style.left = (event.clientX + 16) + 'px';
+        hoverTooltip.style.top = (event.clientY + 16) + 'px';
+        return;
+      }}
+    }}
+    if (hoveredMesh) {{
+      hoveredMesh = null;
+      container.style.cursor = 'grab';
+      if (hoverTooltip) hoverTooltip.style.display = 'none';
+    }}
+  }});
+
+  container.addEventListener('mouseleave', () => {{
+    if (hoverTooltip) hoverTooltip.style.display = 'none';
+  }});
 
   container.addEventListener('click', (event) => {{
     const rect = container.getBoundingClientRect();
@@ -1085,28 +1214,41 @@ function switchView(view) {{
   const view2d = document.getElementById('view-2d');
   const view3d = document.getElementById('view-3d');
   const camPresets = document.getElementById('camera-presets-group');
+  const hoverTooltip = document.getElementById('hover-tooltip');
+  if (hoverTooltip) hoverTooltip.style.display = 'none';
 
   if (view === '2d') {{
     btn2d.classList.add('active');
     btn3d.classList.remove('active');
-    view2d.style.display = 'block';
-    view3d.style.display = 'none';
+    view2d.classList.remove('view-hidden');
+    view2d.classList.add('view-visible');
+    view3d.classList.remove('view-visible');
+    view3d.classList.add('view-hidden');
     camPresets.style.display = 'none';
-    if (cy) {{
-      setTimeout(() => {{
+
+    requestAnimationFrame(() => {{
+      if (cy) {{
         cy.resize();
-        cy.fit(null, 40);
-      }}, 50);
-    }} else {{
-      init2DGraph();
-    }}
+        cy.fit(null, 35);
+      }} else {{
+        init2DGraph();
+      }}
+    }});
   }} else {{
     btn3d.classList.add('active');
     btn2d.classList.remove('active');
-    view2d.style.display = 'none';
-    view3d.style.display = 'block';
+    view2d.classList.remove('view-visible');
+    view2d.classList.add('view-hidden');
+    view3d.classList.remove('view-hidden');
+    view3d.classList.add('view-visible');
     camPresets.style.display = 'flex';
     init3DGraph();
+    const container = document.getElementById('three-container');
+    if (threeRenderer && container) {{
+      threeCamera.aspect = container.clientWidth / container.clientHeight;
+      threeCamera.updateProjectionMatrix();
+      threeRenderer.setSize(container.clientWidth, container.clientHeight);
+    }}
   }}
 }}
 

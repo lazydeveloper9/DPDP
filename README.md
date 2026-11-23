@@ -236,7 +236,27 @@ CS-01 automatically synthesizes an architectural data-flow graph across 5 ordere
 
 ## 6. User Guide
 
-### 1. Basic Audit Commands
+### 1. Launching the Desktop GUI Application
+
+For a visual, interactive experience, launch the corporate desktop auditor using any of the following:
+
+- **Windows Shortcut:** Double-click [`launch_gui.bat`](file:///C:/DPDP/launch_gui.bat) in the project root.
+- **CLI Command:**
+  ```bash
+  cs01 gui
+  # or
+  cs01-gui
+  ```
+- **Python Module:**
+  ```bash
+  python -m cs01.gui
+  ```
+
+The desktop GUI automatically detects previously generated audit reports in `./cs01-reports/` on startup, displays real-time 6-stage pipeline progress, visualizes statutory penalties and the 8 compliance pillars, inspects detected Indian PII entities with zero-plaintext in-memory protection, and lets you open executive HTML reports or unified diff patches with a single click.
+
+---
+
+### 2. Basic Audit Commands
 
 #### Audit a Local Folder
 Scan any local codebase and write reports to `./cs01-reports`:

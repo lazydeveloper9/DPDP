@@ -30,6 +30,10 @@ from .graph import (
     LayerTier, FlowStatus, GraphNodeType, GraphEdgeFlowType,
     ControlChecklist, GraphNode, GraphEdge, GraphSummaryMetrics, DataFlowGraph,
 )
+from .capability import (
+    StackCapabilities, PersonalDataInventoryItem,
+    ImplementedControl, MissingControl, ProductCapabilityReport,
+)
 
 __all__ = [
     "RepoManifest", "FileRecord", "Bucket", "StackProfile",
@@ -44,4 +48,6 @@ __all__ = [
     "ApprovedProcessor", "ThirdScheduleFlags",
     "LayerTier", "FlowStatus", "GraphNodeType", "GraphEdgeFlowType",
     "ControlChecklist", "GraphNode", "GraphEdge", "GraphSummaryMetrics", "DataFlowGraph",
+    "StackCapabilities", "PersonalDataInventoryItem",
+    "ImplementedControl", "MissingControl", "ProductCapabilityReport",
 ]

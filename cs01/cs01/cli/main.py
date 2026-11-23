@@ -601,5 +601,11 @@ def explain(
     from rich.markdown import Markdown
     console.print(Markdown(explanation))
 
+@app.command()
+def gui() -> None:
+    """Launch the CS-01 DPDP Compliance Desktop GUI."""
+    from cs01.gui.__main__ import main as gui_main
+    gui_main()
+
 if __name__ == "__main__":
     app()

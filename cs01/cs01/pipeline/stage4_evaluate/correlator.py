@@ -22,6 +22,7 @@ from typing import Optional
 
 from cs01.models import (
     RawFinding, FlowGraph, PiiHitList, RepoModel, Severity, ScanConfig,
+    ProductCapabilityReport,
 )
 
 def correlate_findings(
@@ -30,6 +31,7 @@ def correlate_findings(
     pii_hits: PiiHitList,
     model: RepoModel,
     cfg: ScanConfig,
+    capability_report: Optional[ProductCapabilityReport] = None,
 ) -> list[RawFinding]:
     """Correlate findings across static analysis layers."""
     if not findings:

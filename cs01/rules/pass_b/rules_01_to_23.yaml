@@ -1,0 +1,133 @@
+# ==============================================================================
+# CS-01 Statutory Rules: DPDP Rules, 2025 (Rules 1 to 23 Complete Mapping)
+# ==============================================================================
+
+- rule_id: "ARCH-DPDP-006"
+  pass: "B"
+  description: "Personal data collected without dedicated API endpoints for Data Principal Rights (Access, Correction, Nomination) or 30-day Grievance SLA"
+  dpdp_section: "§11, §12, §13, §14"
+  dpdp_rule: "Rule 14"
+  penalty_band: "50_crore"
+  severity: "HIGH"
+  remediation: "Implement dedicated endpoints for Right to Access (GET /user/data-summary), Correction (PATCH /user/profile), Nomination (POST /user/nominee), and grievance redressal within a 30-day SLA under Rule 14(3)."
+  tags: ["principal-rights", "access", "correction", "nomination", "dpdp-s11-14", "high"]
+
+- rule_id: "ARCH-DPDP-007"
+  pass: "B"
+  description: "Application collects personal data but does not publish Data Protection Officer (DPO) or designated grievance contact details in India"
+  dpdp_section: "§8(9)"
+  dpdp_rule: "Rule 9"
+  penalty_band: "50_crore"
+  severity: "MEDIUM"
+  remediation: "Publish the contact details (name, email, physical address in India, and phone number) of the Data Protection Officer or designated privacy officer on application contact pages."
+  tags: ["dpo-contact", "grievance-officer", "dpdp-s8-9", "medium"]
+
+- rule_id: "ARCH-DPDP-008"
+  pass: "B"
+  description: "Children's or minor data is processed with tracking SDKs, behavioral monitoring, or targeted advertising pipelines"
+  dpdp_section: "§9(2), §9(3)"
+  dpdp_rule: "Rule 12"
+  penalty_band: "200_crore_children"
+  severity: "CRITICAL"
+  remediation: "Under Section 9(2) and DPDP Rule 12, strip all third-party tracking, behavioral telemetry, and ad targeting SDKs from processing pipelines that handle minors' data."
+  tags: ["child-tracking", "behavioral-ads", "dpdp-s9-2", "critical"]
+
+- rule_id: "ARCH-DPDP-009"
+  pass: "B"
+  description: "Significant Data Fiduciary (SDF) target lacks periodic data audit logging hooks, DPIA metadata, or algorithmic risk assessments"
+  dpdp_section: "§10"
+  dpdp_rule: "Rule 13"
+  penalty_band: "150_crore"
+  severity: "HIGH"
+  remediation: "Configure Data Protection Impact Assessment (DPIA) review hooks, independent data audit logging trails, and algorithmic risk registers required for Significant Data Fiduciaries."
+  tags: ["sdf-obligations", "dpia", "audit-trail", "dpdp-s10", "high"]
+
+- rule_id: "ARCH-DPDP-010"
+  pass: "B"
+  description: "Outbound personal data egress or cloud storage targets jurisdictions not permitted under notified cross-border transfer rules"
+  dpdp_section: "§16"
+  dpdp_rule: "Rule 15"
+  penalty_band: "50_crore"
+  severity: "HIGH"
+  remediation: "Restrict cross-border data replication and external API calls to countries or territories permitted under Central Government transfer notifications under Section 16."
+  tags: ["cross-border", "data-transfer", "dpdp-s16", "high"]
+
+- rule_id: "ARCH-DPDP-011"
+  pass: "B"
+  description: "Organization profile commencement timeline configuration deviates from statutory phased enforcement schedule"
+  dpdp_section: "§1(2)"
+  dpdp_rule: "Rule 1"
+  penalty_band: "50_crore"
+  severity: "LOW"
+  remediation: "Review cs01.yaml commencement milestones against the statutory timeline (Nov 2025 general, Nov 2026 children/general fiduciaries, May 2027 SDF requirements)."
+  tags: ["commencement", "timeline", "dpdp-s1", "low"]
+
+- rule_id: "ARCH-DPDP-012"
+  pass: "B"
+  description: "User account model lacks explicit personal data boundary tagging between Data Fiduciary and third-party Data Processors"
+  dpdp_section: "§2(j), §2(t)"
+  dpdp_rule: "Rule 2"
+  penalty_band: "50_crore"
+  severity: "LOW"
+  remediation: "Tag user account models with boundary metadata distinguishing primary Fiduciary storage from Processor delegates."
+  tags: ["definitions", "user-account", "fiduciary-boundary", "dpdp-s2", "low"]
+
+- rule_id: "ARCH-DPDP-013"
+  pass: "B"
+  description: "Consent management lacks open interoperable API interface for registered Consent Managers under the First Schedule"
+  dpdp_section: "§6(7)"
+  dpdp_rule: "Rule 4"
+  penalty_band: "50_crore"
+  severity: "MEDIUM"
+  remediation: "Implement interoperable Consent Manager webhook/API adapters conforming to open technical specifications under the First Schedule of DPDP Rules, 2025."
+  tags: ["consent-manager", "first-schedule", "interoperability", "dpdp-s6-7", "medium"]
+
+- rule_id: "ARCH-DPDP-015"
+  pass: "B"
+  description: "Application lacks structured 72-hour personal data breach intimation and incident containment reporting mechanism"
+  dpdp_section: "§8(6)"
+  dpdp_rule: "Rule 7"
+  penalty_band: "200_crore_breach"
+  severity: "HIGH"
+  remediation: "Implement a dedicated incident response module capable of generating structured breach notifications (nature, extent, timing, mitigation, DPO contact) within 72 hours."
+  tags: ["breach-intimation", "72-hour-notice", "dpdp-s8-6", "high"]
+
+- rule_id: "ARCH-DPDP-016"
+  pass: "B"
+  description: "User inactivity threshold exceeds Third Schedule limits or lacks mandatory 48-hour pre-erasure notification routine"
+  dpdp_section: "§8(7), §12(3)"
+  dpdp_rule: "Rule 8"
+  penalty_band: "50_crore"
+  severity: "MEDIUM"
+  remediation: "Enforce Third Schedule inactivity limits (3 years general / 1 year financial without transactions) and implement 48-hour pre-erasure email/SMS notifications."
+  tags: ["third-schedule", "inactivity-purge", "pre-erasure-notice", "dpdp-s8-7", "medium"]
+
+- rule_id: "ARCH-DPDP-017"
+  pass: "B"
+  description: "Processing sensitive data of persons with disabilities without verified lawful guardian consent mechanism"
+  dpdp_section: "§9(2)"
+  dpdp_rule: "Rule 11"
+  penalty_band: "50_crore"
+  severity: "HIGH"
+  remediation: "Implement verification for legal guardianship before processing personal data of individuals with disability under Section 9(2) and Rule 11."
+  tags: ["pwd-protection", "guardian-consent", "dpdp-s9-2", "high"]
+
+- rule_id: "ARCH-DPDP-018"
+  pass: "B"
+  description: "Research, statistical, or archival data pipelines lack cryptographic de-identification and operational decision segregation"
+  dpdp_section: "§17(2)(b)"
+  dpdp_rule: "Rule 16"
+  penalty_band: "50_crore"
+  severity: "MEDIUM"
+  remediation: "Apply irreversible pseudonymization or k-anonymity to research datasets and ensure they are segregated from user decision-making engines."
+  tags: ["research-exemption", "de-identification", "anonymization", "dpdp-s17-2", "medium"]
+
+- rule_id: "ARCH-DPDP-019"
+  pass: "B"
+  description: "Application audit trail records lack digital non-repudiation or cryptographic exportability for Board inspection"
+  dpdp_section: "§27"
+  dpdp_rule: "Rule 23"
+  penalty_band: "50_crore"
+  severity: "MEDIUM"
+  remediation: "Ensure security audit logs and consent records use cryptographic hashing (SHA-256) or digital signatures to support Board compliance inspection under Section 27."
+  tags: ["board-inspection", "audit-tamper-resistance", "dpdp-s27", "medium"]
