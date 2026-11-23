@@ -37,6 +37,9 @@ class SchemaRecord(BaseModel):
     has_retention_comment: bool = False
     constraints: list[str] = Field(default_factory=list)
     line: Optional[int] = None
+    is_soft_delete_column: bool = False
+    has_hard_purge_reference: bool = False
+    has_consent_linkage: bool = False
 
 class IacTree(BaseModel):
     """
@@ -62,6 +65,7 @@ class EnvVar(BaseModel):
     source_file: str
     line: int
     is_potential_secret: bool = False
+    non_secret_value: Optional[str] = None
 
 class RepoModel(BaseModel):
     """

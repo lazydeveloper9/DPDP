@@ -14,6 +14,7 @@ from cs01.models import (
 )
 from .pass_a_engine import evaluate_pass_a
 from .pass_b_engine import evaluate_pass_b
+from .correlator import correlate_findings
 
 def run_evaluate(
     flow_graph: FlowGraph,
@@ -35,4 +36,4 @@ def run_evaluate(
         opengrep_findings = bridge.run_scan(cfg.scan_root, cfg)
         findings.extend(opengrep_findings)
 
-    return findings
+    return correlate_findings(findings, flow_graph, pii_hits, model, cfg)

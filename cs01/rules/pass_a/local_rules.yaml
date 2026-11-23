@@ -77,3 +77,83 @@
   severity: "CRITICAL"
   remediation: "Enforce TLS for database connections: set sslmode=require or sslmode=verify-full."
   tags: ["ssl-tls", "environment-config", "dpdp-s8-5", "critical"]
+
+- rule_id: "SQL-DPDP-003"
+  pass: "A"
+  description: "Soft-delete only table lacking hard purge policy per DPDP Section 12 erasure requirement"
+  dpdp_section: "§12(3)"
+  dpdp_rule: "Rule 8(1)"
+  penalty_band: "50_crore"
+  severity: "HIGH"
+  remediation: "Implement hard purge routines alongside soft-delete columns (e.g. is_deleted) to guarantee irrevocable erasure per DPDP Act Section 12."
+  tags: ["soft-delete", "erasure", "dpdp-s12", "high"]
+
+- rule_id: "SQL-DPDP-004"
+  pass: "A"
+  description: "Log or audit table schema configured with retention period below CERT-In / DPDP 365-day threshold"
+  dpdp_section: "§8(3)"
+  dpdp_rule: "Rule 8(3)"
+  penalty_band: "50_crore"
+  severity: "HIGH"
+  remediation: "Ensure log and audit tables specify a retention duration of at least 365 days in line with DPDP Rules 2025 and CERT-In directions."
+  tags: ["audit-log", "cert-in", "dpdp-r8-3", "high"]
+
+- rule_id: "SQL-DPDP-005"
+  pass: "A"
+  description: "Personal data table schema missing verifiable consent ledger linkage reference"
+  dpdp_section: "§6(1)"
+  dpdp_rule: "Rule 3(1)"
+  penalty_band: "50_crore"
+  severity: "MEDIUM"
+  remediation: "Link personal data records to a consent ledger or consent token column (e.g. consent_id / consent_token)."
+  tags: ["consent-linkage", "schema", "dpdp-s6", "medium"]
+
+- rule_id: "IAC-DPDP-003"
+  pass: "A"
+  description: "Cloud storage bucket configured with public access enabled or missing public access block"
+  dpdp_section: "§8(5)"
+  dpdp_rule: "Rule 6(1)(a)"
+  penalty_band: "250_crore"
+  severity: "CRITICAL"
+  remediation: "Enable block_public_acls and block_public_policy on storage buckets containing personal data."
+  tags: ["storage-public-access", "cloud-security", "dpdp-s8-5", "critical"]
+
+- rule_id: "IAC-DPDP-004"
+  pass: "A"
+  description: "Container configured to run as root user or in privileged mode"
+  dpdp_section: "§8(5)"
+  dpdp_rule: "Rule 6(1)(a)"
+  penalty_band: "250_crore"
+  severity: "HIGH"
+  remediation: "Enforce a non-root USER in Dockerfiles and containers (e.g. runAsNonRoot: true)."
+  tags: ["container-root", "least-privilege", "dpdp-s8-5", "high"]
+
+- rule_id: "IAC-DPDP-005"
+  pass: "A"
+  description: "Cloud infrastructure deployed in non-compliant cross-border region without authorization"
+  dpdp_section: "§16"
+  dpdp_rule: "Rule 15"
+  penalty_band: "250_crore"
+  severity: "CRITICAL"
+  remediation: "Restrict personal data infrastructure to India regions (e.g. ap-south-1, ap-south-2) or approved cross-border transfer jurisdictions."
+  tags: ["cross-border", "data-localization", "dpdp-s16", "critical"]
+
+- rule_id: "IAC-DPDP-006"
+  pass: "A"
+  description: "Production database configured without automated backup retention policy"
+  dpdp_section: "§8(5)"
+  dpdp_rule: "Rule 6(1)(d)"
+  penalty_band: "250_crore"
+  severity: "HIGH"
+  remediation: "Configure backup_retention_period >= 7 days on production database instances."
+  tags: ["backup-resilience", "disaster-recovery", "dpdp-s8-5", "high"]
+
+- rule_id: "IAC-DPDP-007"
+  pass: "A"
+  description: "Infrastructure or container missing CERT-In compliant NTP synchronization server"
+  dpdp_section: "§8(3)"
+  dpdp_rule: "Rule 8(3)"
+  penalty_band: "50_crore"
+  severity: "MEDIUM"
+  remediation: "Configure NTP synchronization to National Physical Laboratory (NPL) or NIC servers per CERT-In 2022 Directions."
+  tags: ["ntp-sync", "cert-in", "dpdp-r8-3", "medium"]

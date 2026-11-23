@@ -1,0 +1,366 @@
+{
+  "timestamp": "2026-11-23T04:47:51.896122+00:00",
+  "fixtures_dir": "C:\\DPDP\\cs01\\tests\\accuracy_bench\\fixtures",
+  "rules": {
+    "ARCH-DPDP-001": {
+      "tp": 1,
+      "fp": 0,
+      "tn": 1,
+      "fn": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "fpr": 0.0,
+      "fixtures": [
+        {
+          "scenario": "tn_has_withdrawal",
+          "expected_fired": false,
+          "actual_fired": false,
+          "outcome": "TN",
+          "detected_rules": [
+            "ARCH-DPDP-002",
+            "SQL-DPDP-001",
+            "SQL-DPDP-002"
+          ]
+        },
+        {
+          "scenario": "tp_no_withdrawal",
+          "expected_fired": true,
+          "actual_fired": true,
+          "outcome": "TP",
+          "detected_rules": [
+            "ARCH-DPDP-001",
+            "ARCH-DPDP-002",
+            "SQL-DPDP-001",
+            "SQL-DPDP-002"
+          ]
+        }
+      ]
+    },
+    "ARCH-DPDP-002": {
+      "tp": 1,
+      "fp": 0,
+      "tn": 1,
+      "fn": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "fpr": 0.0,
+      "fixtures": [
+        {
+          "scenario": "tn_has_purge",
+          "expected_fired": false,
+          "actual_fired": false,
+          "outcome": "TN",
+          "detected_rules": [
+            "ARCH-DPDP-001",
+            "SQL-DPDP-001",
+            "SQL-DPDP-002"
+          ]
+        },
+        {
+          "scenario": "tp_no_purge",
+          "expected_fired": true,
+          "actual_fired": true,
+          "outcome": "TP",
+          "detected_rules": [
+            "ARCH-DPDP-001",
+            "ARCH-DPDP-002",
+            "SQL-DPDP-001",
+            "SQL-DPDP-002"
+          ]
+        }
+      ]
+    },
+    "ARCH-DPDP-003": {
+      "tp": 1,
+      "fp": 0,
+      "tn": 1,
+      "fn": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "fpr": 0.0,
+      "fixtures": [
+        {
+          "scenario": "tn_has_age_gate",
+          "expected_fired": false,
+          "actual_fired": false,
+          "outcome": "TN",
+          "detected_rules": [
+            "ARCH-DPDP-001",
+            "ARCH-DPDP-002",
+            "SQL-DPDP-001",
+            "SQL-DPDP-002"
+          ]
+        },
+        {
+          "scenario": "tp_no_age_gate",
+          "expected_fired": true,
+          "actual_fired": true,
+          "outcome": "TP",
+          "detected_rules": [
+            "ARCH-DPDP-001",
+            "ARCH-DPDP-002",
+            "ARCH-DPDP-003",
+            "SQL-DPDP-001",
+            "SQL-DPDP-002"
+          ]
+        }
+      ]
+    },
+    "CODE-DPDP-001": {
+      "tp": 1,
+      "fp": 0,
+      "tn": 1,
+      "fn": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "fpr": 0.0,
+      "fixtures": [
+        {
+          "scenario": "tn_masked_logger",
+          "expected_fired": false,
+          "actual_fired": false,
+          "outcome": "TN",
+          "detected_rules": []
+        },
+        {
+          "scenario": "tp_unmasked_logger",
+          "expected_fired": true,
+          "actual_fired": true,
+          "outcome": "TP",
+          "detected_rules": [
+            "CODE-DPDP-001"
+          ]
+        }
+      ]
+    },
+    "CODE-DPDP-002": {
+      "tp": 1,
+      "fp": 0,
+      "tn": 1,
+      "fn": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "fpr": 0.0,
+      "fixtures": [
+        {
+          "scenario": "tn_guarded_egress",
+          "expected_fired": false,
+          "actual_fired": false,
+          "outcome": "TN",
+          "detected_rules": []
+        },
+        {
+          "scenario": "tp_unguarded_egress",
+          "expected_fired": true,
+          "actual_fired": true,
+          "outcome": "TP",
+          "detected_rules": [
+            "CODE-DPDP-002"
+          ]
+        }
+      ]
+    },
+    "CODE-DPDP-003": {
+      "tp": 1,
+      "fp": 0,
+      "tn": 2,
+      "fn": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "fpr": 0.0,
+      "fixtures": [
+        {
+          "scenario": "tn_random_number",
+          "expected_fired": false,
+          "actual_fired": false,
+          "outcome": "TN",
+          "detected_rules": []
+        },
+        {
+          "scenario": "tn_test_file",
+          "expected_fired": false,
+          "actual_fired": false,
+          "outcome": "TN",
+          "detected_rules": []
+        },
+        {
+          "scenario": "tp_hardcoded_aadhaar",
+          "expected_fired": true,
+          "actual_fired": true,
+          "outcome": "TP",
+          "detected_rules": [
+            "CODE-DPDP-003"
+          ]
+        }
+      ]
+    },
+    "ENV-DPDP-001": {
+      "tp": 1,
+      "fp": 0,
+      "tn": 1,
+      "fn": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "fpr": 0.0,
+      "fixtures": [
+        {
+          "scenario": "tn_ssl_require",
+          "expected_fired": false,
+          "actual_fired": false,
+          "outcome": "TN",
+          "detected_rules": []
+        },
+        {
+          "scenario": "tp_ssl_disable",
+          "expected_fired": true,
+          "actual_fired": true,
+          "outcome": "TP",
+          "detected_rules": [
+            "ENV-DPDP-001"
+          ]
+        }
+      ]
+    },
+    "IAC-DPDP-001": {
+      "tp": 1,
+      "fp": 0,
+      "tn": 1,
+      "fn": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "fpr": 0.0,
+      "fixtures": [
+        {
+          "scenario": "tn_encrypted_rds",
+          "expected_fired": false,
+          "actual_fired": false,
+          "outcome": "TN",
+          "detected_rules": []
+        },
+        {
+          "scenario": "tp_unencrypted_rds",
+          "expected_fired": true,
+          "actual_fired": true,
+          "outcome": "TP",
+          "detected_rules": [
+            "IAC-DPDP-001"
+          ]
+        }
+      ]
+    },
+    "IAC-DPDP-002": {
+      "tp": 1,
+      "fp": 0,
+      "tn": 1,
+      "fn": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "fpr": 0.0,
+      "fixtures": [
+        {
+          "scenario": "tn_compliant_retention",
+          "expected_fired": false,
+          "actual_fired": false,
+          "outcome": "TN",
+          "detected_rules": []
+        },
+        {
+          "scenario": "tp_low_retention",
+          "expected_fired": true,
+          "actual_fired": true,
+          "outcome": "TP",
+          "detected_rules": [
+            "IAC-DPDP-002"
+          ]
+        }
+      ]
+    },
+    "SQL-DPDP-001": {
+      "tp": 1,
+      "fp": 0,
+      "tn": 1,
+      "fn": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "fpr": 0.0,
+      "fixtures": [
+        {
+          "scenario": "tn_encrypted",
+          "expected_fired": false,
+          "actual_fired": false,
+          "outcome": "TN",
+          "detected_rules": [
+            "ARCH-DPDP-001",
+            "ARCH-DPDP-002",
+            "SQL-DPDP-002"
+          ]
+        },
+        {
+          "scenario": "tp_unencrypted",
+          "expected_fired": true,
+          "actual_fired": true,
+          "outcome": "TP",
+          "detected_rules": [
+            "ARCH-DPDP-001",
+            "ARCH-DPDP-002",
+            "ARCH-DPDP-003",
+            "SQL-DPDP-001",
+            "SQL-DPDP-002"
+          ]
+        }
+      ]
+    },
+    "SQL-DPDP-002": {
+      "tp": 1,
+      "fp": 0,
+      "tn": 1,
+      "fn": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "fpr": 0.0,
+      "fixtures": [
+        {
+          "scenario": "tn_has_retention",
+          "expected_fired": false,
+          "actual_fired": false,
+          "outcome": "TN",
+          "detected_rules": []
+        },
+        {
+          "scenario": "tp_no_retention",
+          "expected_fired": true,
+          "actual_fired": true,
+          "outcome": "TP",
+          "detected_rules": [
+            "ARCH-DPDP-001",
+            "ARCH-DPDP-002",
+            "SQL-DPDP-001",
+            "SQL-DPDP-002"
+          ]
+        }
+      ]
+    }
+  },
+  "aggregate": {
+    "total_fixtures": 23,
+    "tp": 11,
+    "fp": 0,
+    "tn": 12,
+    "fn": 0,
+    "precision": 1.0,
+    "recall": 1.0,
+    "f1": 1.0,
+    "fpr": 0.0
+  }
+}

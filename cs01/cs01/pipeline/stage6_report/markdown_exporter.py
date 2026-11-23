@@ -247,7 +247,20 @@ def export_markdown_report(
         col_str = "Col 1"
         md.append(f"| **Evidence Location** | `{f.file}` (Lines `{f.line_start or 1}–{f.line_end or 1}`, {col_str}) |")
         md.append(f"| **Detected PII Categories** | `{f.matched_entity or 'Personal Data'}` |")
-        md.append(f"| **Correlated Findings** | None |\n")
+        corr_str = ", ".join(f.related_finding_ids) if f.related_finding_ids else "None"
+        md.append(f"| **Correlated Findings** | `{corr_str}` |\n")
+
+        if f.correlation_chain:
+            md.append("**Multi-Layer Breach Correlation Chain:**")
+            for step in f.correlation_chain:
+                md.append(f"- ⚠ {step}")
+            md.append("")
+
+        if f.compensating_controls:
+            md.append("**Verified Compensating Controls:**")
+            for ctrl in f.compensating_controls:
+                md.append(f"- ✔ {ctrl}")
+            md.append("")
 
         snippet_content = f.redacted_snippet or f.snippet or f"# {f.message}"
         lang = "python" if (f.file or "").endswith(".py") else ("terraform" if (f.file or "").endswith(".tf") else "javascript")

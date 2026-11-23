@@ -57,7 +57,6 @@ def parse_terraform_file(abs_path: Path, rel_path: str) -> list[IacTree]:
                 
                 line_map: dict[str, int] = {"__self__": start_line}
                 if isinstance(attrs, dict):
-                    current_line = start_line
                     for i in range(start_line - 1, min(len(raw_lines), start_line + 60)):
                         am = attribute_line_pattern.match(raw_lines[i])
                         if am and am.group(1) in attrs:
@@ -116,6 +115,47 @@ def parse_kubernetes_yaml(abs_path: Path, rel_path: str) -> list[IacTree]:
                 line_map=line_map,
             )
         )
+
+    return trees
+
+def parse_docker_compose(abs_path: Path, rel_path: str) -> list[IacTree]:
+    """Parse Docker Compose files into IacTree records."""
+    trees: list[IacTree] = []
+    try:
+        yaml_loader = YAML()
+        yaml_loader.preserve_quotes = True
+        content = abs_path.read_text(encoding="utf-8", errors="replace")
+        data = yaml_loader.load(content)
+    except Exception as exc:
+        return [IacTree(
+            source_file=rel_path,
+            file_type="docker_compose",
+            parse_error=str(exc),
+        )]
+
+    if not isinstance(data, dict):
+        return []
+
+    services = data.get("services", {})
+    if isinstance(services, dict):
+        for sname, sconfig in services.items():
+            if not isinstance(sconfig, dict):
+                continue
+            line = 1
+            if hasattr(services, "lc") and hasattr(services.lc, "data"):
+                pos = services.lc.data.get(sname)
+                if pos and isinstance(pos, (list, tuple)):
+                    line = pos[0] + 1
+            trees.append(
+                IacTree(
+                    source_file=rel_path,
+                    file_type="docker_compose",
+                    resource_type="compose_service",
+                    resource_name=str(sname),
+                    attributes=dict(sconfig),
+                    line_map={"__self__": line},
+                )
+            )
 
     return trees
 
@@ -180,6 +220,14 @@ def parse_iac_file(abs_path: Path, rel_path: str) -> list[IacTree]:
         return parse_terraform_file(abs_path, rel_path)
     elif "dockerfile" in name:
         return parse_dockerfile(abs_path, rel_path)
+    elif "compose" in name and (name.endswith(".yaml") or name.endswith(".yml")):
+        return parse_docker_compose(abs_path, rel_path)
     elif name.endswith(".yaml") or name.endswith(".yml"):
+        try:
+            content = abs_path.read_text(encoding="utf-8", errors="replace")
+            if "services:" in content and "version:" in content:
+                return parse_docker_compose(abs_path, rel_path)
+        except Exception:
+            pass
         return parse_kubernetes_yaml(abs_path, rel_path)
     return []

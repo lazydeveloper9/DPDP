@@ -35,7 +35,15 @@ def run_classify(
     for raw in deduped_raw:
         confidence = 0.90
         exposure = ExposureContext.PRODUCTION
-        if raw.file and any(p in raw.file.replace("\\", "/").lower() for p in ("/tests/", "/test/", "/spec/")):
+        is_non_prod = raw.file and any(
+            p in raw.file.replace("\\", "/").lower()
+            for p in (
+                "/tests/", "/test/", "/spec/", "/__tests__/", "test_",
+                "_backup", "backup_", "_before_", "_candidate", "_copy",
+                "/fixtures/", "/fixture/", "fixture_"
+            )
+        )
+        if is_non_prod:
             exposure = ExposureContext.INTERNAL
             confidence = 0.30
 

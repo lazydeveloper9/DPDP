@@ -24,13 +24,16 @@ PILLARS_METADATA = [
     {
         "id": "notice_consent",
         "label": "Notice & Consent",
-        "rule_prefixes": ["CODE-DPDP-002", "ARCH-DPDP-001"],
+        "rule_prefixes": ["CODE-DPDP-002", "ARCH-DPDP-001", "SQL-DPDP-005"],
         "sections": ["§5", "§6", "§7"],
     },
     {
         "id": "security_safeguards",
         "label": "Security Safeguards",
-        "rule_prefixes": ["CODE-DPDP-001", "CODE-DPDP-003", "SQL-DPDP-001", "IAC-DPDP-001", "ENV-DPDP-001"],
+        "rule_prefixes": [
+            "CODE-DPDP-001", "CODE-DPDP-003", "SQL-DPDP-001", "IAC-DPDP-001", "ENV-DPDP-001",
+            "IAC-DPDP-003", "IAC-DPDP-004", "IAC-DPDP-006",
+        ],
         "sections": ["§8(5)"],
     },
     {
@@ -42,7 +45,7 @@ PILLARS_METADATA = [
     {
         "id": "retention_erasure",
         "label": "Retention & Erasure",
-        "rule_prefixes": ["SQL-DPDP-002", "ARCH-DPDP-002"],
+        "rule_prefixes": ["SQL-DPDP-002", "SQL-DPDP-003", "ARCH-DPDP-002"],
         "sections": ["Rule 6(1)(e)", "Rule 8"],
     },
     {
@@ -66,7 +69,7 @@ PILLARS_METADATA = [
     {
         "id": "cross_border_cert_in",
         "label": "Cross-Border & CERT-In Controls",
-        "rule_prefixes": ["IAC-DPDP-002", "ARCH-DPDP-004"],
+        "rule_prefixes": ["IAC-DPDP-002", "IAC-DPDP-005", "IAC-DPDP-007", "SQL-DPDP-004", "ARCH-DPDP-004"],
         "sections": ["Rule 15", "CERT-In 2022"],
     },
 ]

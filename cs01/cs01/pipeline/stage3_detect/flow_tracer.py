@@ -1,8 +1,9 @@
 """
 Stage 3 Source-Sink-Guard Flow Tracer
 =====================================
-Builds an intra-procedural taint flow graph connecting PII ingress points (sources),
+Builds an interprocedural taint flow graph connecting PII ingress points (sources),
 intercepting security controls (guards), and outbound egress operations (sinks).
+Uses CallGraph to trace multi-function and cross-file flows with reachability tagging.
 """
 
 from __future__ import annotations
@@ -13,6 +14,7 @@ from cs01.models import (
     RepoModel, PiiHitList, FlowGraph, DataSource, DataSink, DataGuard,
     FlowEdge, SourceType, SinkType, GuardType, PiiType, ScanConfig,
 )
+from .call_graph import CallGraph
 
 LOGGER_PATTERNS = re.compile(
     r"(logger\.(info|debug|warn|error|critical)|logging\.(info|debug|warning|error)|console\.(log|info|warn|error)|System\.out\.print)",
@@ -35,12 +37,12 @@ HTTP_RESPONSE_PATTERNS = re.compile(
 )
 
 REQUEST_SOURCE_PATTERNS = re.compile(
-    r"(req\.body|request\.json|request\.form|request\.args|@RequestBody|request\.data)",
+    r"(req\.body|request\.(get_json|json|form|args|values|data|POST)|req\.query|req\.params|@RequestBody|Depends\(|Body\()",
     re.I,
 )
 
 GUARD_MASKING_PATTERNS = re.compile(
-    r"(mask|redact|anonymize|obfuscate|hash|sha256)",
+    r"(mask|redact|anonymize|obfuscate|hash|sha256|tokeniz)",
     re.I,
 )
 
@@ -50,7 +52,7 @@ GUARD_ENCRYPTION_PATTERNS = re.compile(
 )
 
 GUARD_CONSENT_PATTERNS = re.compile(
-    r"(consent|is_consented|user_consent|opt_in|check_consent)",
+    r"(consent|is_consented|user_consent|opt_in|check_consent|has_consent|require_consent)",
     re.I,
 )
 
@@ -59,29 +61,26 @@ def trace_flows(
     pii_hits: PiiHitList,
     cfg: ScanConfig,
 ) -> FlowGraph:
-    """Construct the intra-procedural FlowGraph from parsed AST functions."""
+    """Construct the interprocedural FlowGraph from parsed AST functions and CallGraph."""
+    call_graph = CallGraph(model)
+
     sources: list[DataSource] = []
     sinks: list[DataSink] = []
     guards: list[DataGuard] = []
     edges: list[FlowEdge] = []
+    seen_edge_ids: set[str] = set()
 
-    file_hits: dict[str, list] = {}
-    for h in pii_hits.hits:
-        file_hits.setdefault(h.file, []).append(h)
+    sources_by_func: dict[tuple[str, str], list[DataSource]] = {}
+    sinks_by_func: dict[tuple[str, str], list[DataSink]] = {}
+    guards_by_func: dict[tuple[str, str], list[DataGuard]] = {}
 
     for ast_file in model.ast_index:
-        hits_in_file = file_hits.get(ast_file.path, [])
-
         for func in ast_file.functions:
             func_name = func.get("name", "anonymous")
+            func_key = (ast_file.path, func_name)
             start_l = func.get("start_line", 1)
-            end_l = func.get("end_line", start_l)
             calls = func.get("calls", [])
             params = func.get("params", [])
-
-            func_sources: list[DataSource] = []
-            func_sinks: list[DataSink] = []
-            func_guards: list[DataGuard] = []
 
             for p in params:
                 p_lower = p.lower()
@@ -102,7 +101,7 @@ def trace_flows(
                         pii_types_suspected=suspected,
                     )
                     sources.append(src)
-                    func_sources.append(src)
+                    sources_by_func.setdefault(func_key, []).append(src)
 
             for call in calls:
                 snippet = call.get("snippet", "")
@@ -120,7 +119,7 @@ def trace_flows(
                         variable_name=callee,
                     )
                     sources.append(src)
-                    func_sources.append(src)
+                    sources_by_func.setdefault(func_key, []).append(src)
 
             for call in calls:
                 snippet = call.get("snippet", "")
@@ -146,7 +145,7 @@ def trace_flows(
                         guard_function_name=callee,
                     )
                     guards.append(guard)
-                    func_guards.append(guard)
+                    guards_by_func.setdefault(func_key, []).append(guard)
 
             for call in calls:
                 snippet = call.get("snippet", "")
@@ -174,24 +173,66 @@ def trace_flows(
                         call_expression=snippet[:80],
                     )
                     sinks.append(sink)
-                    func_sinks.append(sink)
+                    sinks_by_func.setdefault(func_key, []).append(sink)
 
-            if func_sources and func_sinks:
-                active_guard = func_guards[0] if func_guards else None
-                for src in func_sources:
-                    for snk in func_sinks:
-                        edge_id = f"EDGE:{src.id}->{snk.id}"
-                        edge = FlowEdge(
+    # 1. Direct intra-procedural edges
+    for func_key, f_sources in sources_by_func.items():
+        f_file, f_name = func_key
+        f_sinks = sinks_by_func.get(func_key, [])
+        f_guards = guards_by_func.get(func_key, [])
+        active_guard = f_guards[0] if f_guards else None
+        reachability = call_graph.compute_reachability(f_file, f_name)
+
+        for src in f_sources:
+            for snk in f_sinks:
+                edge_id = f"EDGE:{src.id}->{snk.id}"
+                if edge_id not in seen_edge_ids:
+                    seen_edge_ids.add(edge_id)
+                    edges.append(
+                        FlowEdge(
                             id=edge_id,
                             source_id=src.id,
                             sink_id=snk.id,
                             guard_id=active_guard.id if active_guard else None,
                             guard_type=active_guard.guard_type if active_guard else None,
-                            file=ast_file.path,
-                            function_name=func_name,
+                            file=f_file,
+                            function_name=f_name,
                             is_unguarded=active_guard is None,
+                            reachability=reachability,
                         )
-                        edges.append(edge)
+                    )
+
+    # 2. Inter-procedural two-hop edges (cross-function & cross-file)
+    for func_key, f_sources in sources_by_func.items():
+        caller_file, caller_name = func_key
+        caller_guards = guards_by_func.get(func_key, [])
+        callees = call_graph.get_callees(caller_file, caller_name)
+        reachability = call_graph.compute_reachability(caller_file, caller_name)
+
+        for callee_file, callee_name in callees:
+            callee_key = (callee_file, callee_name)
+            callee_sinks = sinks_by_func.get(callee_key, [])
+            callee_guards = guards_by_func.get(callee_key, [])
+            active_guard = callee_guards[0] if callee_guards else (caller_guards[0] if caller_guards else None)
+
+            for src in f_sources:
+                for snk in callee_sinks:
+                    edge_id = f"EDGE_INTER:{src.id}->{snk.id}"
+                    if edge_id not in seen_edge_ids:
+                        seen_edge_ids.add(edge_id)
+                        edges.append(
+                            FlowEdge(
+                                id=edge_id,
+                                source_id=src.id,
+                                sink_id=snk.id,
+                                guard_id=active_guard.id if active_guard else None,
+                                guard_type=active_guard.guard_type if active_guard else None,
+                                file=caller_file,
+                                function_name=f"{caller_name}->{callee_name}",
+                                is_unguarded=active_guard is None,
+                                reachability=reachability,
+                            )
+                        )
 
     return FlowGraph(
         sources=sources,

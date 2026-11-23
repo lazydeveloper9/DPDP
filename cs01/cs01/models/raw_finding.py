@@ -47,3 +47,6 @@ class RawFinding(BaseModel):
 
     contributing_pii_hit_ids: list[str] = Field(default_factory=list)
     contributing_flow_edge_ids: list[str] = Field(default_factory=list)
+    related_finding_ids: list[str] = Field(default_factory=list)
+    correlation_chain: list[str] = Field(default_factory=list)
+    compensating_controls: list[str] = Field(default_factory=list)

@@ -51,6 +51,7 @@ def parse_env_file(abs_path: Path, rel_path: str) -> list[EnvVar]:
                 source_file=rel_path,
                 line=line_idx,
                 is_potential_secret=is_secret,
+                non_secret_value=None if is_secret else val,
             )
         )
 
@@ -82,6 +83,7 @@ def parse_json_config(abs_path: Path, rel_path: str) -> list[EnvVar]:
                     source_file=rel_path,
                     line=line,
                     is_potential_secret=is_secret,
+                    non_secret_value=None if is_secret else str_val,
                 )
             )
 

@@ -53,7 +53,7 @@ def _process_file(
         except Exception as exc:
             result["errors"].append({"file": rel_path, "stage": "secrets", "error": str(exc)})
 
-    if Bucket.DB_SCHEMA in buckets:
+    if Bucket.DB_SCHEMA in buckets or Bucket.BACKEND in buckets:
         try:
             schemas = parse_db_schema(abs_path, rel_path)
             result["schemas"].extend(schemas)

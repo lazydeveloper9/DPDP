@@ -33,6 +33,9 @@ class PiiType(str, Enum):
     DATE_OF_BIRTH = "DATE_OF_BIRTH"
     BIOMETRIC = "BIOMETRIC"
     FINANCIAL = "FINANCIAL"
+    DRIVING_LICENCE = "DRIVING_LICENCE"
+    ABHA_HEALTH_ID = "ABHA_HEALTH_ID"
+    PAYMENT_CARD = "PAYMENT_CARD"
 
 class PiiHit(BaseModel):
     """A single detected PII instance anywhere in the codebase."""
@@ -46,6 +49,7 @@ class PiiHit(BaseModel):
     value_sha256: str
     context_tokens: list[str] = Field(default_factory=list)
     validator_result: str = "not_validated"
+    line_snippet: Optional[str] = None
 class PiiHitList(BaseModel):
     """All PII hits detected across the full codebase."""
     hits: list[PiiHit] = Field(default_factory=list)
@@ -116,6 +120,7 @@ class FlowEdge(BaseModel):
     file: str
     function_name: Optional[str] = None
     is_unguarded: bool = True
+    reachability: str = "REACHABLE_EXTERNAL"
 
     def model_post_init(self, __context: object) -> None:
         self.is_unguarded = self.guard_id is None

@@ -59,6 +59,8 @@ TEST_PATH_PATTERNS = [
     "\\tests\\", "\\test\\", "\\spec\\",
     ".test.", ".spec.", "_test.", "_spec.",
     "test_",
+    "_backup", "backup_", "_before_", "_candidate", "_copy",
+    "/fixtures/", "/fixture/", "fixture_",
 ]
 
 def run_ingest(cfg: ScanConfig) -> RepoManifest:

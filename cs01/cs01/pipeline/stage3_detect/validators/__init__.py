@@ -14,6 +14,9 @@ from .identifiers import (
     validate_email,
     validate_ip_address,
 )
+from .driving_licence import validate_driving_licence
+from .abha import validate_abha
+from .payment_card import validate_payment_card, luhn_checksum
 
 __all__ = [
     "validate_aadhaar",
@@ -28,4 +31,8 @@ __all__ = [
     "validate_ifsc",
     "validate_email",
     "validate_ip_address",
+    "validate_driving_licence",
+    "validate_abha",
+    "validate_payment_card",
+    "luhn_checksum",
 ]
