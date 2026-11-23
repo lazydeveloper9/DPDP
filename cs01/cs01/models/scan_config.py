@@ -31,7 +31,7 @@ class AiConfig(BaseModel):
     enabled: bool = True
     model: str = "qwen2.5-coder:3b"
     endpoint: str = "http://localhost:11434"
-    temperature: float = 0.2
+    temperature: float = 0.5
     timeout_seconds: float = 300.0
 
 class BonusConfig(BaseModel):
