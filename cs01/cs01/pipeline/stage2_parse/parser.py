@@ -28,7 +28,6 @@ from .env_parser import parse_secrets_and_env
 
 console = Console(stderr=True)
 
-
 def _process_file(
     file_rec,
     scan_root_path: Path,
@@ -47,7 +46,6 @@ def _process_file(
         "errors": [],
     }
 
-    # 1. SECRETS
     if Bucket.SECRETS in buckets:
         try:
             evs = parse_secrets_and_env(abs_path, rel_path)
@@ -55,7 +53,6 @@ def _process_file(
         except Exception as exc:
             result["errors"].append({"file": rel_path, "stage": "secrets", "error": str(exc)})
 
-    # 2. DB_SCHEMA
     if Bucket.DB_SCHEMA in buckets:
         try:
             schemas = parse_db_schema(abs_path, rel_path)
@@ -63,7 +60,6 @@ def _process_file(
         except Exception as exc:
             result["errors"].append({"file": rel_path, "stage": "schema", "error": str(exc)})
 
-    # 3. INFRA
     if Bucket.INFRA in buckets:
         try:
             trees = parse_iac_file(abs_path, rel_path)
@@ -74,7 +70,6 @@ def _process_file(
         except Exception as exc:
             result["errors"].append({"file": rel_path, "stage": "iac", "error": str(exc)})
 
-    # 4. FRONTEND / BACKEND (Source code AST)
     if (Bucket.FRONTEND in buckets or Bucket.BACKEND in buckets) and file_rec.language:
         try:
             ast_rec = parse_source_ast(abs_path, rel_path, file_rec.language)
@@ -85,7 +80,6 @@ def _process_file(
             result["errors"].append({"file": rel_path, "stage": "ast", "error": str(exc)})
 
     return result
-
 
 def run_parse(manifest: RepoManifest, cfg: ScanConfig) -> RepoModel:
     """
@@ -101,7 +95,6 @@ def run_parse(manifest: RepoManifest, cfg: ScanConfig) -> RepoModel:
     env_vars: list[EnvVar] = []
     parse_errors: list[dict] = []
 
-    # Use ThreadPoolExecutor for I/O and tree-sitter parsing across files
     max_workers = min(16, max(4, len(accepted) // 4 + 1))
     with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
         futures = {

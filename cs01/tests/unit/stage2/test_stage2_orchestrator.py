@@ -3,9 +3,7 @@ from pathlib import Path
 from cs01.models import RepoManifest, FileRecord, Bucket, ScanConfig
 from cs01.pipeline.stage2_parse.parser import run_parse
 
-
 def test_run_parse_orchestrator(tmp_path: Path):
-    # Setup test files
     py_file = tmp_path / "app.py"
     py_file.write_text("def hello(): return 'world'", encoding="utf-8")
 

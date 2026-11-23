@@ -3,30 +3,23 @@ from pathlib import Path
 from cs01.models import ScanConfig, Bucket
 from cs01.pipeline.stage1_ingest.ingestor import run_ingest
 
-
 def test_ingest_skips_binary_and_dpdpignore(tmp_path: Path):
-    # Setup test directory
     (tmp_path / "src").mkdir()
     (tmp_path / "node_modules").mkdir()
     (tmp_path / "tests").mkdir()
 
-    # Normal file
     normal_file = tmp_path / "src" / "app.py"
     normal_file.write_text("print('hello')", encoding="utf-8")
 
-    # Test file
     test_file = tmp_path / "tests" / "test_app.py"
     test_file.write_text("def test_dummy(): pass", encoding="utf-8")
 
-    # Binary file
     binary_file = tmp_path / "src" / "data.bin"
     binary_file.write_bytes(b"\x00\x01\x02\x03\x04")
 
-    # Node modules (should be skipped by default exclusion)
     node_dep = tmp_path / "node_modules" / "dep.js"
     node_dep.write_text("console.log('dep')", encoding="utf-8")
 
-    # Custom .dpdpignore
     dpdpignore = tmp_path / ".dpdpignore"
     dpdpignore.write_text("secret_folder/\n*.tmp\n", encoding="utf-8")
 
@@ -40,7 +33,6 @@ def test_ingest_skips_binary_and_dpdpignore(tmp_path: Path):
     cfg = ScanConfig(scan_root=str(tmp_path))
     manifest = run_ingest(cfg)
 
-    # Check assertions
     accepted = manifest.accepted_files()
     accepted_paths = [f.path for f in accepted]
 
@@ -49,7 +41,6 @@ def test_ingest_skips_binary_and_dpdpignore(tmp_path: Path):
     test_record = next(f for f in accepted if f.path == "tests/test_app.py")
     assert test_record.is_test_file is True
 
-    # Ignored and binary files shouldn't be in accepted
     assert "src/data.bin" not in accepted_paths
     assert "node_modules/dep.js" not in accepted_paths
     assert "secret_folder/secret.txt" not in accepted_paths

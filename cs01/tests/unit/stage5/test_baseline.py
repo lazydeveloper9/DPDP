@@ -8,7 +8,6 @@ from cs01.models import RawFinding, PassType, Severity, ScanConfig
 from cs01.pipeline.stage5_classify.classifier import run_classify
 from cs01.utils import save_json
 
-
 def test_baseline_suppresses_known_findings():
     raw1 = RawFinding(
         id="f1",
@@ -42,17 +41,14 @@ def test_baseline_suppresses_known_findings():
     )
 
     with tempfile.TemporaryDirectory() as tmp:
-        # First scan without baseline to compute dedupe_keys
         cfg_init = ScanConfig(policy_profiles_dir="./policy_profiles")
         bundle_init = run_classify([raw1, raw2], cfg_init)
 
         f1_key = next(f.dedupe_key for f in bundle_init.findings if f.rule_id == "CODE-DPDP-001")
 
-        # Create baseline with only f1
         baseline_file = Path(tmp) / ".cs01-baseline.json"
         save_json({"fingerprints": [f1_key]}, baseline_file)
 
-        # Second scan with baseline configured
         cfg_with_base = ScanConfig(
             policy_profiles_dir="./policy_profiles",
             baseline_path=str(baseline_file),

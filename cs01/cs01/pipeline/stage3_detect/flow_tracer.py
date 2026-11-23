@@ -54,7 +54,6 @@ GUARD_CONSENT_PATTERNS = re.compile(
     re.I,
 )
 
-
 def trace_flows(
     model: RepoModel,
     pii_hits: PiiHitList,
@@ -66,7 +65,6 @@ def trace_flows(
     guards: list[DataGuard] = []
     edges: list[FlowEdge] = []
 
-    # Map of file -> hits for fast lookup
     file_hits: dict[str, list] = {}
     for h in pii_hits.hits:
         file_hits.setdefault(h.file, []).append(h)
@@ -85,8 +83,6 @@ def trace_flows(
             func_sinks: list[DataSink] = []
             func_guards: list[DataGuard] = []
 
-            # ── 1. Identify Sources in Function ─────────────────────────────
-            # A: Parameters containing PII names
             for p in params:
                 p_lower = p.lower()
                 suspected: list[PiiType] = []
@@ -108,7 +104,6 @@ def trace_flows(
                     sources.append(src)
                     func_sources.append(src)
 
-            # B: Calls reading request payloads
             for call in calls:
                 snippet = call.get("snippet", "")
                 callee = call.get("callee", "")
@@ -127,7 +122,6 @@ def trace_flows(
                     sources.append(src)
                     func_sources.append(src)
 
-            # ── 2. Identify Guards in Function ──────────────────────────────
             for call in calls:
                 snippet = call.get("snippet", "")
                 callee = call.get("callee", "")
@@ -154,7 +148,6 @@ def trace_flows(
                     guards.append(guard)
                     func_guards.append(guard)
 
-            # ── 3. Identify Sinks in Function ───────────────────────────────
             for call in calls:
                 snippet = call.get("snippet", "")
                 callee = call.get("callee", "")
@@ -183,7 +176,6 @@ def trace_flows(
                     sinks.append(sink)
                     func_sinks.append(sink)
 
-            # ── 4. Construct Edges (Source → (Guard?) → Sink) ───────────────
             if func_sources and func_sinks:
                 active_guard = func_guards[0] if func_guards else None
                 for src in func_sources:

@@ -18,7 +18,6 @@ from cs01.models.scan_config import (
 yaml = YAML()
 yaml.preserve_quotes = True
 
-# --- Hard-coded default exclusions (always applied, regardless of .dpdpignore) ---
 DEFAULT_EXCLUSIONS = [
     "node_modules/", ".venv/", "venv/", "env/",
     "dist/", "build/", "__pycache__/",
@@ -27,7 +26,6 @@ DEFAULT_EXCLUSIONS = [
     "*.min.js", "*.min.css", "*.lock", "*.map", "*.pyc",
     "*.whl", "*.egg-info/",
 ]
-
 
 def load_config(
     config_path: Optional[str] = None,
@@ -48,7 +46,6 @@ def load_config(
     """
     raw: dict = {}
 
-    # Locate config file
     if config_path:
         cfg_file = Path(config_path)
     else:
@@ -58,7 +55,6 @@ def load_config(
         with open(cfg_file, "r", encoding="utf-8") as fh:
             raw = dict(yaml.load(fh) or {})
 
-    # Apply CLI overrides (deep merge for nested dictionaries)
     if overrides:
         for k, v in overrides.items():
             if v is not None:
@@ -67,7 +63,6 @@ def load_config(
                 else:
                     raw[k] = v
 
-    # Build nested models manually (keeps validation errors explicit)
     try:
         cfg = ScanConfig(
             org_name=raw.get("org_name", "Unknown Org"),
@@ -101,7 +96,6 @@ def load_config(
 
     return cfg
 
-
 def load_dpdpignore(scan_root: str, custom_path: Optional[str] = None) -> list[str]:
     """
     Load .dpdpignore patterns from the scan root (or custom path).
@@ -109,7 +103,6 @@ def load_dpdpignore(scan_root: str, custom_path: Optional[str] = None) -> list[s
     """
     patterns = list(DEFAULT_EXCLUSIONS)
 
-    # Try custom path first, then scan_root/.dpdpignore
     candidates = []
     if custom_path:
         candidates.append(Path(custom_path))
@@ -122,6 +115,6 @@ def load_dpdpignore(scan_root: str, custom_path: Optional[str] = None) -> list[s
                     line = line.strip()
                     if line and not line.startswith("#"):
                         patterns.append(line)
-            break  # only load the first found
+            break
 
     return patterns

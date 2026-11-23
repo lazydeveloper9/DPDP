@@ -20,7 +20,6 @@ from .validators import (
     validate_ifsc, validate_email, validate_ip_address,
 )
 
-# Field/Column name patterns indicating PII
 PII_FIELD_NAME_PATTERNS: list[tuple[re.Pattern, PiiType]] = [
     (re.compile(r"(aadhaar|uidai|adhaar)", re.I), PiiType.AADHAAR),
     (re.compile(r"(pan_?no|pan_?num|pan_?card|permanent_acc)", re.I), PiiType.PAN),
@@ -39,11 +38,9 @@ PII_FIELD_NAME_PATTERNS: list[tuple[re.Pattern, PiiType]] = [
     (re.compile(r"(salary|bank_?acc|account_?no|credit_?card|debit_?card)", re.I), PiiType.FINANCIAL),
 ]
 
-
 def _is_test_path(path: str) -> bool:
     normalized = path.replace("\\", "/").lower()
     return any(p in normalized for p in ("/tests/", "/test/", "/spec/", "/__tests__/", "test_"))
-
 
 def detect_pii(model: RepoModel, cfg: ScanConfig) -> PiiHitList:
     """Detect PII instances across all structured layers of the RepoModel."""
@@ -69,7 +66,6 @@ def detect_pii(model: RepoModel, cfg: ScanConfig) -> PiiHitList:
         is_test = _is_test_path(file)
         role = FileRole.TEST if is_test else FileRole.PRODUCTION
         
-        # In test files, cap confidence unless strict test scanning is explicitly set
         final_conf = confidence
         if is_test and not cfg.strict_test_scanning:
             final_conf = min(0.30, confidence)
@@ -89,77 +85,66 @@ def detect_pii(model: RepoModel, cfg: ScanConfig) -> PiiHitList:
             )
         )
 
-    # ── 1. Scan AST String Literals for Concrete PII Values ────────────────
     for ast_file in model.ast_index:
         for lit in ast_file.string_literals:
             val = lit["value"].strip()
             line = lit["line"]
             col = lit["col"]
 
-            # Aadhaar check
             if re.match(r"^\d{4}\s?\d{4}\s?\d{4}$", val):
                 is_valid, reason = validate_aadhaar(val)
                 if is_valid:
                     _add_hit(PiiType.AADHAAR, ast_file.path, line, col, val, 0.95, "verhoeff_pass")
                     continue
 
-            # PAN check
             if len(val) == 10 and re.match(r"^[A-Za-z0-9]{10}$", val):
                 is_valid, reason = validate_pan(val)
                 if is_valid:
                     _add_hit(PiiType.PAN, ast_file.path, line, col, val, 0.90, reason)
                     continue
 
-            # GSTIN check
             if len(val) == 15:
                 is_valid, reason = validate_gstin(val)
                 if is_valid:
                     _add_hit(PiiType.GSTIN, ast_file.path, line, col, val, 0.95, "gstin_mod36_pass")
                     continue
 
-            # UPI / VPA check
             if "@" in val and len(val) <= 128:
                 is_valid, reason = validate_upi_id(val, psp_handles)
                 if is_valid:
                     _add_hit(PiiType.UPI_HANDLE, ast_file.path, line, col, val, 0.85, reason)
                     continue
 
-            # Mobile check
             if re.match(r"^(?:\+91|91|0)?[6-9]\d{9}$", val.replace(" ", "").replace("-", "")):
                 is_valid, reason = validate_mobile(val)
                 if is_valid:
                     _add_hit(PiiType.MOBILE, ast_file.path, line, col, val, 0.80, "valid_indian_mobile")
                     continue
 
-            # Email check
             if "@" in val and "." in val:
                 is_valid, _ = validate_email(val)
                 if is_valid:
                     _add_hit(PiiType.EMAIL, ast_file.path, line, col, val, 0.85, "valid_email")
                     continue
 
-            # Passport check
             if len(val) == 8:
                 is_valid, _ = validate_passport(val)
                 if is_valid:
                     _add_hit(PiiType.PASSPORT, ast_file.path, line, col, val, 0.80, "valid_passport")
                     continue
 
-            # Voter ID check
             if len(val) == 10:
                 is_valid, _ = validate_voter_id(val)
                 if is_valid:
                     _add_hit(PiiType.VOTER_ID, ast_file.path, line, col, val, 0.80, "valid_voter_id")
                     continue
 
-            # IFSC check
             if len(val) == 11 and val[4] == "0":
                 is_valid, _ = validate_ifsc(val)
                 if is_valid:
                     _add_hit(PiiType.IFSC, ast_file.path, line, col, val, 0.85, "valid_ifsc")
                     continue
 
-    # ── 2. Scan Schema Records for Column Field Names ───────────────────────
     for schema in model.schema_records:
         col_name = schema.column_or_field
         for pat, ptype in PII_FIELD_NAME_PATTERNS:
@@ -176,7 +161,6 @@ def detect_pii(model: RepoModel, cfg: ScanConfig) -> PiiHitList:
                 )
                 break
 
-    # ── 3. Scan Env Variables for PII Keys ─────────────────────────────────
     for ev in model.env_vars:
         for pat, ptype in PII_FIELD_NAME_PATTERNS:
             if pat.search(ev.key):

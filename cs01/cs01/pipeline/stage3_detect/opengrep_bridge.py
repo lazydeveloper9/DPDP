@@ -27,7 +27,6 @@ from cs01.models import RawFinding, PassType, Severity, ScanConfig
 logger = logging.getLogger("cs01.opengrep_bridge")
 console = Console(stderr=True)
 
-
 class OpengrepBridge:
     """
     Subprocess bridge to Opengrep / Semgrep CLI.
@@ -51,7 +50,6 @@ class OpengrepBridge:
         for cand in candidates:
             resolved = shutil.which(cand) or (cand if os.path.isfile(cand) and os.access(cand, os.X_OK) else None)
             if resolved:
-                # Determine flavor and verify it works
                 flavor = "opengrep" if "opengrep" in Path(resolved).name.lower() else "semgrep"
                 return str(resolved), flavor
 
@@ -60,7 +58,6 @@ class OpengrepBridge:
     @staticmethod
     def get_default_rules_path() -> Path:
         """Return the default packaged DPDP rules file for Opengrep / Semgrep."""
-        # Check project root rules directory first, then package rules directory
         this_dir = Path(__file__).resolve()
         candidate1 = this_dir.parent.parent.parent.parent / "rules" / "opengrep" / "dpdp_rules.yaml"
         candidate2 = this_dir.parent.parent.parent / "rules" / "opengrep" / "dpdp_rules.yaml"
@@ -180,7 +177,6 @@ class OpengrepBridge:
             check_id = item.get("check_id", "DPDP-OPENGREP")
             raw_path = item.get("path", "")
             
-            # Normalize path relative to scan_root
             try:
                 abs_item_path = Path(raw_path).resolve()
                 if abs_item_path.is_relative_to(scan_root_path):
@@ -198,7 +194,6 @@ class OpengrepBridge:
             extra = item.get("extra", {})
             metadata = extra.get("metadata", {})
 
-            # Rule mappings
             cs01_rule_id = metadata.get("cs01_rule_id") or check_id
             dpdp_section = metadata.get("dpdp_section", "§8(5)")
             dpdp_rule = metadata.get("dpdp_rule", "Rule 6(1)(a)")
@@ -208,7 +203,6 @@ class OpengrepBridge:
                 "Apply reasonable security safeguards and tokenization pursuant to DPDP Act 2023.",
             )
 
-            # Determine severity
             raw_sev = (metadata.get("severity") or extra.get("severity") or "HIGH").upper()
             severity = severity_map.get(raw_sev, Severity.HIGH)
 

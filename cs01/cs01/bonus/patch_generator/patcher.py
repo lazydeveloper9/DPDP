@@ -11,7 +11,6 @@ import re
 from pathlib import Path
 from cs01.models import ScoredFindingBundle, ScoredFinding, Severity
 
-
 def generate_patches(bundle: ScoredFindingBundle, output_dir: Path | str) -> list[Path]:
     """Generate unified diffs for remediable findings."""
     patch_dir = Path(output_dir) / "patches"
@@ -28,7 +27,6 @@ def generate_patches(bundle: ScoredFindingBundle, output_dir: Path | str) -> lis
 
         patch_content: str | None = None
 
-        # 1. Terraform storage_encrypted = false -> true
         if f.rule_id == "IAC-DPDP-001":
             patch_content = (
                 f"--- a/{f.file}\n"
@@ -38,7 +36,6 @@ def generate_patches(bundle: ScoredFindingBundle, output_dir: Path | str) -> lis
                 f"+  storage_encrypted = true\n"
             )
 
-        # 2. CloudWatch retention < 365 -> 365
         elif f.rule_id == "IAC-DPDP-002":
             patch_content = (
                 f"--- a/{f.file}\n"
@@ -48,7 +45,6 @@ def generate_patches(bundle: ScoredFindingBundle, output_dir: Path | str) -> lis
                 f"+  retention_in_days = 365\n"
             )
 
-        # 3. Insecure SSL -> sslmode=require
         elif f.rule_id == "ENV-DPDP-001":
             patch_content = (
                 f"--- a/{f.file}\n"

@@ -12,12 +12,10 @@ from typing import Any
 
 from cs01.models import ScoredFindingBundle
 
-
 def export_ropa_draft(bundle: ScoredFindingBundle, output_path: Path | str) -> dict[str, Any]:
     """Generate an automated draft Record of Processing Activities from findings."""
     ropa_entries: list[dict[str, Any]] = []
 
-    # Aggregate by matched personal data entities
     entities: dict[str, list] = {}
     for f in bundle.findings:
         ent = f.matched_entity or "Personal Data"

@@ -14,12 +14,10 @@ from cs01.models import (
     PassType, Severity,
 )
 
-
 def test_ai_client_rejects_external_endpoints():
     """Verify that cloud/external endpoints are rejected to enforce zero cloud egress."""
     with pytest.raises(ValueError, match="Security Guardrail"):
         LocalLLMClient(endpoint="https://api.openai.com/v1")
-
 
 def test_ai_client_accepts_local_endpoints():
     """Verify local hostnames are allowed."""
@@ -28,7 +26,6 @@ def test_ai_client_accepts_local_endpoints():
 
     client_ip = LocalLLMClient(endpoint="http://127.0.0.1:8000")
     assert client_ip.endpoint == "http://127.0.0.1:8000"
-
 
 class MockLLMClient:
     def __init__(self):
@@ -39,7 +36,6 @@ class MockLLMClient:
         self.last_prompt = prompt
         self.last_system = system_prompt
         return "# Executive DPDP Brief\n\nCompliance posture is acceptable."
-
 
 def test_generate_executive_dpo_brief():
     mock_client = MockLLMClient()
@@ -82,12 +78,11 @@ def test_generate_executive_dpo_brief():
         readiness=readiness,
     )
 
-    result = generate_executive_dpo_brief(bundle, mock_client)  # type: ignore[arg-type]
+    result = generate_executive_dpo_brief(bundle, mock_client)
     assert "Executive DPDP Brief" in result
     assert "CODE-DPDP-001" in mock_client.last_prompt
     assert "§8(5)" in mock_client.last_prompt
     assert "Security Safeguards" in mock_client.last_prompt
-
 
 def test_explain_finding_in_depth():
     mock_client = MockLLMClient()
@@ -108,11 +103,10 @@ def test_explain_finding_in_depth():
         statutory_ceiling_display="§8(5) up to ₹250 Crore",
     )
 
-    result = explain_finding_in_depth(finding, mock_client)  # type: ignore[arg-type]
+    result = explain_finding_in_depth(finding, mock_client)
     assert "Executive DPDP Brief" in result
     assert "CODE-DPDP-001" in mock_client.last_prompt
     assert "logger.info(aadhaar)" in mock_client.last_prompt
-
 
 def test_generate_full_compliance_report():
     mock_client = MockLLMClient()
@@ -160,7 +154,7 @@ def test_generate_full_compliance_report():
         readiness=readiness,
     )
 
-    report = generate_full_compliance_report(bundle, mock_client)  # type: ignore[arg-type]
+    report = generate_full_compliance_report(bundle, mock_client)
     assert report is not None
     assert "Executive Summary" in mock_client.last_prompt
     assert "Methodology" in mock_client.last_prompt

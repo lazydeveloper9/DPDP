@@ -3,7 +3,6 @@ from pathlib import Path
 from cs01.pipeline.stage2_parse.env_parser import parse_env_file, parse_json_config
 from cs01.utils import sha256_of
 
-
 def test_parse_env_file(tmp_path: Path):
     env_file = tmp_path / ".env"
     env_file.write_text(
@@ -22,9 +21,7 @@ def test_parse_env_file(tmp_path: Path):
     assert pwd_record.is_potential_secret is True
     assert pwd_record.line == 2
 
-    # Verify zero-leak: raw secret is not stored
     assert not hasattr(pwd_record, "value")
-
 
 def test_parse_json_config(tmp_path: Path):
     cfg_file = tmp_path / "config.json"

@@ -71,7 +71,6 @@ PILLARS_METADATA = [
     },
 ]
 
-# Penalty band rank order for determining maximum statutory ceiling engaged
 BAND_HIERARCHY = ["250_crore", "200_crore_children", "200_crore_breach", "150_crore", "50_crore"]
 BAND_DISPLAY = {
     "250_crore": "₹250 Crore (§8(5) Security Safeguards)",
@@ -81,13 +80,11 @@ BAND_DISPLAY = {
     "50_crore": "₹50 Crore (Residual / Procedural)",
 }
 
-
 def calculate_readiness_score(findings: list[ScoredFinding]) -> DpdpReadinessScore:
     """Calculate the 8-pillar compliance scorecard and apply dynamic penalty capping."""
     critical_count = sum(1 for f in findings if f.severity == Severity.CRITICAL)
     high_count = sum(1 for f in findings if f.severity == Severity.HIGH)
 
-    # Determine highest statutory ceiling band engaged
     max_band: str | None = None
     for band in BAND_HIERARCHY:
         if any(f.penalty_band == band for f in findings):
@@ -100,14 +97,12 @@ def calculate_readiness_score(findings: list[ScoredFinding]) -> DpdpReadinessSco
     pillar_pcts: list[float] = []
 
     for pillar in PILLARS_METADATA:
-        # Check how many rules matched in this pillar
         matching_findings = [
             f for f in findings
             if any(f.rule_id.startswith(p) for p in pillar["rule_prefixes"])
             or any(sec in f.dpdp_section for sec in pillar["sections"])
         ]
         
-        # Deduce score: 100 base, deductions for findings
         deductions = 0.0
         failing_rules: list[str] = []
         for f in matching_findings:
@@ -135,11 +130,8 @@ def calculate_readiness_score(findings: list[ScoredFinding]) -> DpdpReadinessSco
             )
         )
 
-    # Compute unweighted average
     unweighted_overall = sum(pillar_pcts) / len(pillar_pcts) if pillar_pcts else 100.0
 
-    # Apply CRITICAL Cap: If unresolved CRITICAL findings exist in >=200Cr bands,
-    # the overall readiness score is capped at max 60.
     is_capped = False
     cap_reason = None
     final_score = unweighted_overall

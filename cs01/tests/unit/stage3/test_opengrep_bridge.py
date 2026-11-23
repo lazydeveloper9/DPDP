@@ -17,7 +17,6 @@ from cs01.models import ScanConfig, EngineConfig, RawFinding, Severity, PassType
 from cs01.pipeline.stage4_evaluate.evaluator import run_evaluate
 from cs01.models import FlowGraph, PiiHitList, RepoModel
 
-
 def test_default_rules_exist_and_valid():
     """Verify packaged DPDP rules exist and conform to Semgrep YAML specification."""
     rules_path = OpengrepBridge.get_default_rules_path()
@@ -44,7 +43,6 @@ def test_default_rules_exist_and_valid():
         assert "penalty_band" in meta
         assert "remediation" in meta
 
-
 def test_build_command_zero_egress():
     """Ensure command formulation includes mandatory zero-egress, local-only flags."""
     cmd = OpengrepBridge.build_command(
@@ -58,12 +56,10 @@ def test_build_command_zero_egress():
     assert "scan" in cmd
     assert "--json" in cmd
     assert "--config" in cmd
-    # Mandatory zero-egress flags
     assert "--metrics=off" in cmd
     assert "--disable-version-check" in cmd
     assert "--verbose" in cmd
     assert cmd[-1] == "/workspace/repo"
-
 
 def test_detect_binary_fallback():
     """When no binary is present on the PATH, detect_binary returns (None, None)."""
@@ -72,7 +68,6 @@ def test_detect_binary_fallback():
         assert binary is None
         assert flavor is None
 
-
 def test_detect_binary_opengrep():
     """When opengrep is in PATH, detect_binary returns opengrep path and flavor."""
     with patch("shutil.which", side_effect=lambda x: "/usr/bin/opengrep" if x == "opengrep" else None):
@@ -80,14 +75,12 @@ def test_detect_binary_opengrep():
         assert binary == "/usr/bin/opengrep"
         assert flavor == "opengrep"
 
-
 def test_detect_binary_semgrep():
     """When semgrep is in PATH (and opengrep is not), detect_binary returns semgrep."""
     with patch("shutil.which", side_effect=lambda x: "/usr/bin/semgrep" if x == "semgrep" else None):
         binary, flavor = OpengrepBridge.detect_binary()
         assert binary == "/usr/bin/semgrep"
         assert flavor == "semgrep"
-
 
 def test_parse_semgrep_json():
     """Verify parsing standard Semgrep / Opengrep JSON output into CS-01 RawFindings."""
@@ -159,7 +152,6 @@ def test_parse_semgrep_json():
     assert f2.line_start == 10
     assert f2.severity == Severity.CRITICAL
 
-
 def test_run_scan_graceful_missing_binary():
     """Verify run_scan returns [] gracefully without error when binary is missing."""
     bridge = OpengrepBridge()
@@ -168,7 +160,6 @@ def test_run_scan_graceful_missing_binary():
     with patch.object(OpengrepBridge, "detect_binary", return_value=(None, None)):
         findings = bridge.run_scan(".", cfg)
         assert findings == []
-
 
 def test_run_scan_timeout_handling():
     """Verify run_scan handles subprocess timeout cleanly."""
@@ -179,7 +170,6 @@ def test_run_scan_timeout_handling():
          patch("subprocess.run", side_effect=subprocess.TimeoutExpired(cmd="opengrep", timeout=1.0)):
         findings = bridge.run_scan(".", cfg)
         assert findings == []
-
 
 def test_evaluator_integration_with_opengrep():
     """Verify Stage 4 evaluator merges Opengrep findings when engine.opengrep is enabled."""

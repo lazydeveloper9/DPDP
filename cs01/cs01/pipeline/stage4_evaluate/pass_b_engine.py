@@ -35,11 +35,10 @@ RETENTION_JOB_PATTERN = re.compile(
     re.I,
 )
 
-
 class RepoInventory:
     """Aggregated whole-repo architectural facts extracted from RepoModel."""
     def __init__(self, model: RepoModel):
-        self.api_routes: list[dict[str, str]] = []  # {path, method, file, line}
+        self.api_routes: list[dict[str, str]] = []
         self.schema_pii_tables: set[str] = set()
         self.has_children_dob_data: bool = False
         self.has_age_gate: bool = False
@@ -50,7 +49,6 @@ class RepoInventory:
     def _build_inventory(self, model: RepoModel) -> None:
         from cs01.pipeline.stage3_detect.pii_detector import PII_FIELD_NAME_PATTERNS
 
-        # 1. Inspect DB schemas
         for schema in model.schema_records:
             col = schema.column_or_field.lower()
             if any(pat.search(col) for pat, _ in PII_FIELD_NAME_PATTERNS):
@@ -58,7 +56,6 @@ class RepoInventory:
             if any(k in col for k in ("dob", "date_of_birth", "birth_date", "child_age", "minor")):
                 self.has_children_dob_data = True
 
-        # 2. Inspect AST for routes, age-gates, and scheduled routines
         for ast_file in model.ast_index:
             for dec in ast_file.decorators:
                 d_name = dec.get("name", "")
@@ -80,7 +77,6 @@ class RepoInventory:
                     self.has_age_gate = True
                 if RETENTION_JOB_PATTERN.search(combined_func_text):
                     self.has_retention_routine = True
-
 
 def evaluate_pass_b(
     model: RepoModel,
@@ -115,7 +111,6 @@ def evaluate_pass_b(
             )
         )
 
-    # ── Assertion ARCH-DPDP-001: PII in DB but no consent withdrawal / erasure route ──
     if inventory.schema_pii_tables:
         has_withdrawal_endpoint = any(
             CONSENT_WITHDRAWAL_ROUTE_PATTERN.search(r["path"]) for r in inventory.api_routes
@@ -128,7 +123,6 @@ def evaluate_pass_b(
                 matched_entity="repo_routes",
             )
 
-    # ── Assertion ARCH-DPDP-002: PII in DB but no scheduled retention purge routine ──
     if inventory.schema_pii_tables and not inventory.has_retention_routine:
         _create_assertion_finding(
             rule_id="ARCH-DPDP-002",
@@ -136,7 +130,6 @@ def evaluate_pass_b(
             matched_entity="background_jobs",
         )
 
-    # ── Assertion ARCH-DPDP-003: Children data in DB but no age-gate in code ──
     if inventory.has_children_dob_data and not inventory.has_age_gate:
         _create_assertion_finding(
             rule_id="ARCH-DPDP-003",

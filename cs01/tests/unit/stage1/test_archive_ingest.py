@@ -12,7 +12,6 @@ from cs01.utils.archive import is_archive, safe_extract_zip, extracted_workspace
 from cs01.models.scan_config import ScanConfig
 from cs01.pipeline.stage1_ingest.ingestor import run_ingest
 
-
 def test_is_archive():
     with tempfile.NamedTemporaryFile(suffix=".zip", delete=False) as f:
         with zipfile.ZipFile(f.name, "w") as zf:
@@ -25,12 +24,10 @@ def test_is_archive():
     finally:
         zip_path.unlink(missing_ok=True)
 
-
 def test_safe_extract_zip_prevents_zip_slip():
     """Verify that any archive member with directory traversal causes ValueError."""
     zip_bytes = io.BytesIO()
     with zipfile.ZipFile(zip_bytes, "w") as zf:
-        # Create a malicious member attempting Zip Slip
         zf.writestr("../../etc/passwd", "malicious")
     zip_bytes.seek(0)
 
@@ -44,7 +41,6 @@ def test_safe_extract_zip_prevents_zip_slip():
         with pytest.raises(ValueError, match="Zip Slip"):
             safe_extract_zip(temp_zip, extract_target)
 
-
 def test_extracted_workspace_with_zip():
     """Verify scanning works directly on a zip archive."""
     with tempfile.TemporaryDirectory() as tmp:
@@ -53,7 +49,6 @@ def test_extracted_workspace_with_zip():
             zf.writestr("main.py", "import os\nprint('hello world')\n")
             zf.writestr("requirements.txt", "fastapi==0.100.0\n")
 
-        # Scan using extracted_workspace
         with extracted_workspace(zip_file) as ws:
             assert (ws / "main.py").exists()
             assert (ws / "requirements.txt").exists()

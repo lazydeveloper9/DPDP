@@ -13,9 +13,7 @@ from contextlib import contextmanager
 from pathlib import Path
 from typing import Generator
 
-
 ARCHIVE_EXTENSIONS = {".zip", ".tar", ".gz", ".tgz", ".bz2", ".tar.gz", ".tar.bz2"}
-
 
 def is_archive(path: str | Path) -> bool:
     """Check if the given path is an archive file (zip, tar, tgz)."""
@@ -26,7 +24,6 @@ def is_archive(path: str | Path) -> bool:
     if any(name_lower.endswith(ext) for ext in ARCHIVE_EXTENSIONS):
         return True
     return zipfile.is_zipfile(p) or tarfile.is_tarfile(p)
-
 
 def safe_extract_zip(zip_path: Path, dest_dir: Path) -> Path:
     """Extract a ZIP file safely, preventing directory traversal (Zip Slip)."""
@@ -41,7 +38,6 @@ def safe_extract_zip(zip_path: Path, dest_dir: Path) -> Path:
         zf.extractall(dest_dir)
     return dest_dir
 
-
 def safe_extract_tar(tar_path: Path, dest_dir: Path) -> Path:
     """Extract a TAR file safely, preventing directory traversal."""
     dest_dir = dest_dir.resolve()
@@ -54,7 +50,6 @@ def safe_extract_tar(tar_path: Path, dest_dir: Path) -> Path:
                 )
         tf.extractall(dest_dir)
     return dest_dir
-
 
 @contextmanager
 def extracted_workspace(
@@ -89,7 +84,6 @@ def extracted_workspace(
             elif tarfile.is_tarfile(p):
                 safe_extract_tar(p, temp_path)
             else:
-                # Fallback attempt via zipfile
                 safe_extract_zip(p, temp_path)
             yield temp_path
         finally:

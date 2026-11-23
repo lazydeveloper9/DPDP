@@ -37,7 +37,6 @@ app = typer.Typer(
 )
 console = Console(stderr=True)
 
-# --- cs01 scan ---
 @app.command()
 def scan(
     path: str = typer.Argument(..., help="Path to local repository, zip/tar archive, or remote GitHub URL (e.g. https://github.com/org/repo)"),
@@ -100,17 +99,12 @@ def scan(
         border_style="blue",
     ))
 
-    # Import pipeline runner lazily (keeps startup fast)
     from cs01.pipeline.runner import run_pipeline
     exit_code = run_pipeline(cfg)
     sys.exit(exit_code)
 
-
-# Register 'audit' as a direct alias for 'scan'
 app.command("audit", help="All-in-one compliance audit command (alias for scan).")(scan)
 
-
-# --- Individual stage debug commands ---
 @app.command()
 def ingest(
     path: str = typer.Argument(..., help="Path to local repository, archive file, or remote GitHub URL"),
@@ -131,7 +125,6 @@ def ingest(
         else:
             import json
             console.print(json.dumps(manifest.model_dump(mode="json"), indent=2))
-
 
 @app.command()
 def parse(
@@ -162,7 +155,6 @@ def parse(
         console.print(f"[green]RepoModel saved to {output}[/green]")
     else:
         console.print(json.dumps(repo_model.model_dump(mode="json"), indent=2))
-
 
 @app.command()
 def detect(
@@ -200,7 +192,6 @@ def detect(
     else:
         console.print(json.dumps(combined, indent=2))
 
-
 @app.command()
 def evaluate(
     target: str = typer.Argument(..., help="Path to directory or scan target"),
@@ -228,7 +219,6 @@ def evaluate(
         console.print(f"[green]{len(findings)} findings saved to {output}[/green]")
     else:
         console.print(json.dumps(output_payload, indent=2))
-
 
 @app.command()
 def classify(
@@ -266,7 +256,6 @@ def classify(
     else:
         console.print(json.dumps(bundle.model_dump(mode="json"), indent=2))
 
-
 @app.command()
 def report(
     bundle_path: str = typer.Argument(..., help="Path to ScoredFindingBundle JSON file"),
@@ -289,7 +278,6 @@ def report(
     for name in generated:
         console.print(f"  • {name}")
 
-
 @app.command("verify-evidence")
 def verify_evidence(
     bundle_zip: str = typer.Argument(..., help="Path to cs01-evidence-bundle.zip"),
@@ -311,7 +299,6 @@ def verify_evidence(
     else:
         console.print("[bold red]✖ TAMPERING OR CORRUPTION DETECTED[/bold red]")
         raise typer.Exit(1)
-
 
 @app.command()
 def rules(
@@ -350,8 +337,6 @@ def rules(
             )
         console.print(table)
 
-
-# --- DAST live probe command ---
 @app.command()
 def probe(
     url: str = typer.Argument(..., help="Target HTTP(S) URL to probe"),
@@ -397,11 +382,8 @@ def probe(
         save_json(result.model_dump(mode="json"), output)
         console.print(f"[green]Probe results saved to {output}[/green]")
 
-
-# --- Baseline management subcommands ---
 baseline_app = typer.Typer(name="baseline", help="Manage DPDP baseline files for CI/CD suppression.")
 app.add_typer(baseline_app, name="baseline")
-
 
 @baseline_app.command("create")
 def baseline_create(
@@ -417,7 +399,6 @@ def baseline_create(
         data = load_json(target_path)
         findings = data.get("findings", []) if isinstance(data, dict) else data
     else:
-        # Run stages 1-5 to classify
         with extracted_workspace(target) as resolved:
             cfg = load_config(config_path=config, overrides={"scan_root": str(resolved)})
             from cs01.pipeline.stage1_ingest.ingestor import run_ingest
@@ -452,7 +433,6 @@ def baseline_create(
     }
     save_json(baseline_payload, output)
     console.print(f"[bold green]✔ Baseline created with {len(fingerprints)} fingerprints in [cyan]{output}[/cyan][/bold green]")
-
 
 @baseline_app.command("diff")
 def baseline_diff(
@@ -507,8 +487,6 @@ def baseline_diff(
     )
     console.print(table)
 
-
-# --- Local AI (Qwen 2.5 Coder 3B) Commands ---
 @app.command("report-ai", help="Generate an audit-grade DPDP Compliance Report using local Qwen 2.5 Coder 3B.")
 @app.command("summarize", help="Generate an Executive DPO Compliance Brief using local Qwen 2.5 Coder 3B.")
 def summarize(
@@ -563,7 +541,6 @@ def summarize(
         from rich.markdown import Markdown
         console.print(Markdown(report_md))
 
-
 @app.command()
 def explain(
     target: str = typer.Argument(..., help="Path to repository, archive, or stage5_bundle.json"),
@@ -607,7 +584,6 @@ def explain(
         console.print("[green]No findings in this bundle to explain![/green]")
         return
 
-    # Select finding
     target_finding = None
     if rule_or_id:
         for f in bundle.findings:
@@ -624,7 +600,6 @@ def explain(
     explanation = explain_finding_in_depth(target_finding, client)
     from rich.markdown import Markdown
     console.print(Markdown(explanation))
-
 
 if __name__ == "__main__":
     app()

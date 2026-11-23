@@ -14,7 +14,6 @@ from cs01.models import RawFinding, Severity, ExposureContext
 
 yaml = YAML()
 
-# Default scoring weights (overridden by policy_profiles/penalty_bands.yaml if present)
 DEFAULT_SEVERITY_WEIGHTS: dict[Severity, float] = {
     Severity.CRITICAL: 1.00,
     Severity.HIGH: 0.75,
@@ -36,7 +35,6 @@ DEFAULT_EXPOSURE_MULTIPLIERS: dict[str, float] = {
     ExposureContext.PRODUCTION: 1.00,
     ExposureContext.INTERNAL: 0.50,
 }
-
 
 class PriorityScorer:
     """Computes statutory priority scores for findings."""

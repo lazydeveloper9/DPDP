@@ -16,12 +16,7 @@ from typing import Optional
 
 from cs01.models import FileRecord, StackProfile
 
-# ---------------------------------------------------------------------------
-# Stack signatures — ordered by specificity (more specific first)
-# Each entry: {filename_pattern, content_key, framework, language, orm_type}
-# ---------------------------------------------------------------------------
 STACK_SIGNATURES: list[dict] = [
-    # Node.js frameworks (detected via package.json dependency keys)
     {
         "filename": "package.json",
         "content_key": "express",
@@ -57,7 +52,6 @@ STACK_SIGNATURES: list[dict] = [
         "language": "typescript",
         "orm_type": None,
     },
-    # Node ORM detection
     {
         "filename": "package.json",
         "content_key": "mongoose",
@@ -86,7 +80,6 @@ STACK_SIGNATURES: list[dict] = [
         "language": "typescript",
         "orm_type": "typeorm",
     },
-    # Python frameworks (requirements.txt / pyproject.toml)
     {
         "filename": "requirements.txt",
         "content_key": "fastapi",
@@ -129,7 +122,6 @@ STACK_SIGNATURES: list[dict] = [
         "language": "python",
         "orm_type": "django_orm",
     },
-    # Java / Kotlin (pom.xml, build.gradle)
     {
         "filename": "pom.xml",
         "content_key": "spring-boot",
@@ -151,7 +143,6 @@ STACK_SIGNATURES: list[dict] = [
         "language": "kotlin",
         "orm_type": "jpa",
     },
-    # Go
     {
         "filename": "go.mod",
         "content_key": None,
@@ -159,7 +150,6 @@ STACK_SIGNATURES: list[dict] = [
         "language": "go",
         "orm_type": None,
     },
-    # Dart / Flutter
     {
         "filename": "pubspec.yaml",
         "content_key": None,
@@ -167,7 +157,6 @@ STACK_SIGNATURES: list[dict] = [
         "language": "dart",
         "orm_type": None,
     },
-    # Prisma schema (standalone)
     {
         "filename": "schema.prisma",
         "content_key": None,
@@ -176,7 +165,6 @@ STACK_SIGNATURES: list[dict] = [
         "orm_type": "prisma",
     },
 ]
-
 
 def detect_stacks(
     scan_root: str,
@@ -187,12 +175,10 @@ def detect_stacks(
     Scan the accepted file list for stack-identifying files and produce
     one StackProfile per detected root (handles monorepos).
     """
-    # Group files by directory root (for monorepo support)
-    root_dirs: set[str] = {""}  # always include the top-level root
+    root_dirs: set[str] = {""}
     for rec in accepted_files:
         parts = rec.path.split("/")
         if len(parts) > 2:
-            # treat top-level subdirectories as potential sub-roots
             root_dirs.add(parts[0])
 
     stacks: list[StackProfile] = []
@@ -206,7 +192,6 @@ def detect_stacks(
             if filename.lower() != sig["filename"].lower():
                 continue
 
-            # Read file content to check for the content key (if required)
             matches = True
             if sig["content_key"]:
                 try:
@@ -218,7 +203,6 @@ def detect_stacks(
             if not matches:
                 continue
 
-            # Determine root for this stack profile
             parts = file_rec.path.split("/")
             sub_root = parts[0] if len(parts) > 2 else "."
 
@@ -235,10 +219,8 @@ def detect_stacks(
                 detected_from=file_rec.path,
             ))
 
-    # Deduplicate: if same sub_root has multiple detections, merge orm_type
     merged = _merge_stacks(stacks)
     return merged
-
 
 def _merge_stacks(stacks: list[StackProfile]) -> list[StackProfile]:
     """Merge multiple detections for the same root (e.g. framework from one file, ORM from another)."""
@@ -248,7 +230,6 @@ def _merge_stacks(stacks: list[StackProfile]) -> list[StackProfile]:
             by_root[s.root] = s
         else:
             existing = by_root[s.root]
-            # Fill in missing fields
             if not existing.framework and s.framework:
                 existing = existing.model_copy(update={"framework": s.framework})
             if not existing.language and s.language:

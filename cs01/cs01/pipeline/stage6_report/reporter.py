@@ -29,7 +29,6 @@ from .evidence_locker import create_evidence_bundle
 from cs01.bonus.patch_generator.patcher import generate_patches
 from cs01.bonus.consent_auditor.auditor import audit_consent_flow
 
-
 def run_report(
     bundle: ScoredFindingBundle,
     cfg: ScanConfig,
@@ -41,47 +40,38 @@ def run_report(
 
     generated_files: dict[str, Path] = {}
 
-    # 1. Canonical JSON Compliance Register
     json_path = out_dir / "cs01-compliance.json"
     save_json(bundle, json_path)
     generated_files["cs01-compliance.json"] = json_path
 
-    # 2. SARIF 2.1.0 (GitHub Code Scanning)
     if "sarif" in cfg.output_formats or "all" in cfg.output_formats:
         sarif_path = out_dir / "cs01-findings.sarif"
         export_sarif(bundle, sarif_path)
         generated_files["cs01-findings.sarif"] = sarif_path
 
-    # 3. GitLab SAST JSON
     gl_path = out_dir / "gl-sast-report.json"
     export_gitlab_sast(bundle, gl_path)
     generated_files["gl-sast-report.json"] = gl_path
 
-    # 4. Executive HTML DPO Report
     if "html" in cfg.output_formats or "all" in cfg.output_formats:
         html_path = out_dir / "cs01-dpo-report.html"
         export_html_report(bundle, html_path)
         generated_files["cs01-dpo-report.html"] = html_path
 
-    # 4b. Canonical Assessment Markdown Report
     md_path = out_dir / "cs01-report.md"
     export_markdown_report(bundle, cfg, md_path)
     generated_files["cs01-report.md"] = md_path
 
-    # 5. RoPA Technical Draft
     ropa_path = out_dir / "ropa_map.json"
     export_ropa_draft(bundle, ropa_path)
     generated_files["ropa_map.json"] = ropa_path
 
-    # 6. Bonus: Consent Flow Audit
     consent_path = out_dir / "consent_audit.json"
     audit_consent_flow(bundle, consent_path)
     generated_files["consent_audit.json"] = consent_path
 
-    # 7. Bonus: Patch Generator
     generate_patches(bundle, out_dir)
 
-    # 7b. Local AI Compliance Report (Qwen 2.5 Coder 3B)
     if cfg.ai.enabled or cfg.engine.ai_triage:
         from cs01.ai import LocalLLMClient, generate_full_compliance_report
         client = LocalLLMClient(
@@ -107,7 +97,6 @@ def run_report(
         elif cfg.debug:
             print(f"[dim]Local LLM endpoint {cfg.ai.endpoint} not reachable. Skipping AI brief.[/dim]")
 
-    # 8. Cryptographic Rule 13 Evidence Bundle
     bundle_zip_path = out_dir / "cs01-evidence-bundle.zip"
     create_evidence_bundle(
         report_files=generated_files,

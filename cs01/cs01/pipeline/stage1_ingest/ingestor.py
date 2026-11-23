@@ -27,7 +27,6 @@ from .bucket_patterns import classify_bucket
 
 console = Console(stderr=True)
 
-# File extensions considered source code (used for language detection)
 EXTENSION_TO_LANGUAGE: dict[str, str] = {
     ".py": "python",
     ".js": "javascript",
@@ -55,14 +54,12 @@ EXTENSION_TO_LANGUAGE: dict[str, str] = {
     ".graphql": "graphql",
 }
 
-# Patterns that mark a file as a test file
 TEST_PATH_PATTERNS = [
     "/tests/", "/test/", "/spec/", "/__tests__/",
     "\\tests\\", "\\test\\", "\\spec\\",
     ".test.", ".spec.", "_test.", "_spec.",
     "test_",
 ]
-
 
 def run_ingest(cfg: ScanConfig) -> RepoManifest:
     """
@@ -77,13 +74,11 @@ def run_ingest(cfg: ScanConfig) -> RepoManifest:
         console.print(f"[dim]Stage 1 · scan_root={scan_root}[/dim]")
         console.print(f"[dim]Stage 1 · {len(ignore_patterns)} ignore patterns loaded[/dim]")
 
-    # --- Phase A: Collect all files via os.walk ---
     all_files: list[FileRecord] = []
     skipped = 0
     total = 0
 
     for dirpath, dirnames, filenames in os.walk(scan_root):
-        # Prune ignored directories in-place (prevents descending into node_modules, etc.)
         rel_dir = relative_posix(dirpath, scan_root)
         dirnames[:] = [
             d for d in dirnames
@@ -95,7 +90,6 @@ def run_ingest(cfg: ScanConfig) -> RepoManifest:
             rel_path = relative_posix(abs_path, scan_root)
             total += 1
 
-            # 1. Check .dpdpignore / default exclusions
             if spec.match_file(rel_path):
                 all_files.append(FileRecord(
                     path=rel_path,
@@ -105,7 +99,6 @@ def run_ingest(cfg: ScanConfig) -> RepoManifest:
                 skipped += 1
                 continue
 
-            # 2. Check binary
             if is_binary_file(abs_path):
                 all_files.append(FileRecord(
                     path=rel_path,
@@ -115,17 +108,13 @@ def run_ingest(cfg: ScanConfig) -> RepoManifest:
                 skipped += 1
                 continue
 
-            # 3. Detect language
             ext = Path(filename).suffix.lower()
             language = EXTENSION_TO_LANGUAGE.get(ext)
 
-            # 4. Classify into semantic bucket
             bucket, extra_buckets = classify_bucket(rel_path, filename, ext)
 
-            # 5. Detect test file
             is_test = any(pat in rel_path.replace("\\", "/") for pat in TEST_PATH_PATTERNS)
 
-            # 6. Get file size
             try:
                 size = os.path.getsize(abs_path)
             except OSError:
@@ -147,7 +136,6 @@ def run_ingest(cfg: ScanConfig) -> RepoManifest:
                     f"{'  [TEST]' if is_test else ''}[/dim]"
                 )
 
-    # --- Phase B: Stack fingerprinting ---
     accepted = [f for f in all_files if not f.is_skipped]
     stacks = detect_stacks(scan_root, accepted, cfg.debug)
 

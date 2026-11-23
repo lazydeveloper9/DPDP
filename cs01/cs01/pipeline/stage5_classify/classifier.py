@@ -21,7 +21,6 @@ from .priority_scorer import PriorityScorer
 from .readiness_scorer import calculate_readiness_score
 from .evidence_packager import package_evidence
 
-
 def run_classify(
     raw_findings: list[RawFinding],
     cfg: ScanConfig,
@@ -30,13 +29,10 @@ def run_classify(
     """Stage 5 execution: deduplicate, score, and package findings."""
     scorer = PriorityScorer(cfg.policy_profiles_dir)
 
-    # 1. Deduplicate
     deduped_raw = deduplicate_findings(raw_findings)
 
-    # 2. Score and package each finding
     scored_list: list[ScoredFinding] = []
     for raw in deduped_raw:
-        # Determine confidence and exposure
         confidence = 0.90
         exposure = ExposureContext.PRODUCTION
         if raw.file and any(p in raw.file.replace("\\", "/").lower() for p in ("/tests/", "/test/", "/spec/")):
@@ -61,7 +57,6 @@ def run_classify(
         )
         scored_list.append(scored)
 
-    # 2b. Apply baseline suppression if configured
     if cfg.baseline_path:
         from pathlib import Path
         bpath = Path(cfg.baseline_path)
@@ -84,10 +79,8 @@ def run_classify(
             except Exception:
                 pass
 
-    # 3. Sort by priority score descending
     scored_list.sort(key=lambda s: s.priority_score, reverse=True)
 
-    # 4. Calculate 8-pillar readiness scorecard
     readiness = calculate_readiness_score(scored_list)
 
     return ScoredFindingBundle(

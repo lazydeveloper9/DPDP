@@ -12,7 +12,6 @@ from ruamel.yaml import YAML
 
 yaml = YAML()
 
-# Built-in fallback PSP handles
 DEFAULT_PSP_HANDLES: set[str] = {
     "@sbi", "@oksbi", "@ybl", "@okaxis", "@axisbank",
     "@okhdfcbank", "@hdfc", "@icici", "@okicici", "@ibl",
@@ -24,7 +23,6 @@ DEFAULT_PSP_HANDLES: set[str] = {
 }
 
 VPA_PATTERN = re.compile(r"^[a-zA-Z0-9.\-_]{2,256}@[a-zA-Z]{2,64}$")
-
 
 def load_psp_handles(policy_profiles_dir: str | Path | None = None) -> set[str]:
     """Load active PSP handles from YAML policy profile if available."""
@@ -40,7 +38,6 @@ def load_psp_handles(policy_profiles_dir: str | Path | None = None) -> set[str]:
             except Exception:
                 pass
     return handles
-
 
 def validate_upi_id(candidate: str, handles: set[str] | None = None) -> tuple[bool, str]:
     """

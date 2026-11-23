@@ -32,7 +32,6 @@ GIT_URL_PATTERNS = [
     re.compile(r"^(git|ssh)://", re.IGNORECASE),
 ]
 
-
 def is_git_url(target: str | Path) -> bool:
     """Check if the given target string is a remote Git/GitHub URL."""
     if isinstance(target, Path):
@@ -59,7 +58,6 @@ def is_git_url(target: str | Path) -> bool:
             pass
     return False
 
-
 def parse_git_url(url: str) -> tuple[str, Optional[str]]:
     """
     Parse a Git or GitHub URL into a clean clone URL and an optional branch/ref.
@@ -70,14 +68,12 @@ def parse_git_url(url: str) -> tuple[str, Optional[str]]:
     url = url.strip()
     parsed = urllib.parse.urlparse(url)
 
-    # Check for github.com/owner/repo/(tree|blob)/<ref>
     match = re.search(r"github\.com/([^/]+)/([^/]+)/(?:tree|blob)/(.+)", url, re.IGNORECASE)
     if match:
         owner, repo, ref = match.group(1), match.group(2), match.group(3)
         clean_url = f"https://github.com/{owner}/{repo}.git"
         return clean_url, ref
 
-    # Standard URL
     clean_url = url
     if not clean_url.endswith(".git") and not clean_url.startswith("git@"):
         clean_url = clean_url.rstrip("/")
@@ -85,7 +81,6 @@ def parse_git_url(url: str) -> tuple[str, Optional[str]]:
             clean_url = f"{clean_url}.git"
 
     return clean_url, None
-
 
 def clone_git_repo(
     url: str,
@@ -129,9 +124,7 @@ def clone_git_repo(
         except subprocess.TimeoutExpired:
             raise TimeoutError(f"Git clone timed out after {timeout_seconds} seconds.")
 
-    # Fallback to direct GitHub zip download if git CLI is not on PATH
     return _download_github_zip(clean_url, dest_dir, ref=target_ref)
-
 
 def _download_github_zip(url: str, dest_dir: Path, ref: Optional[str] = None) -> Path:
     """Download public GitHub repository as a ZIP archive when git CLI is unavailable."""
@@ -159,7 +152,6 @@ def _download_github_zip(url: str, dest_dir: Path, ref: Optional[str] = None) ->
         extract_tmp.mkdir(parents=True, exist_ok=True)
         safe_extract_zip(tmp_zip_path, extract_tmp)
 
-        # GitHub archives contain an internal root folder: repo-branch/
         subdirs = [d for d in extract_tmp.iterdir() if d.is_dir()]
         if subdirs:
             root_content = subdirs[0]
@@ -173,7 +165,6 @@ def _download_github_zip(url: str, dest_dir: Path, ref: Optional[str] = None) ->
                 tmp_zip_path.unlink()
             except OSError:
                 pass
-
 
 @contextmanager
 def cloned_workspace(url: str, ref: Optional[str] = None) -> Generator[Path, None, None]:

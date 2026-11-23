@@ -28,20 +28,14 @@ from .scan_config import (
 )
 
 __all__ = [
-    # Stage 1
     "RepoManifest", "FileRecord", "Bucket", "StackProfile",
-    # Stage 2
     "RepoModel", "SchemaRecord", "IacTree", "EnvVar", "AstFileRecord",
-    # Stage 3
     "FlowGraph", "PiiHitList", "PiiHit", "PiiType", "FileRole",
     "DataSource", "DataSink", "DataGuard", "FlowEdge",
     "SourceType", "SinkType", "GuardType",
-    # Stage 4
     "RawFinding", "PassType", "Severity",
-    # Stage 5
     "ScoredFinding", "ScoredFindingBundle", "DpdpReadinessScore",
     "ExposureContext", "PillarScore",
-    # Config
     "ScanConfig", "EngineConfig", "AiConfig", "BonusConfig",
     "ApprovedProcessor", "ThirdScheduleFlags",
 ]

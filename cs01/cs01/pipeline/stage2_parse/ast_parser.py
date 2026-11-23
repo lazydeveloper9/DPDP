@@ -22,11 +22,9 @@ SUPPORTED_LANGUAGES = {
     "go": "go",
 }
 
-
 def _node_text(node, source_bytes: bytes) -> str:
     """Return UTF-8 decoded text of an AST node."""
     return source_bytes[node.start_byte:node.end_byte].decode("utf-8", errors="replace")
-
 
 def parse_source_ast(abs_path: Path, rel_path: str, language: str) -> AstFileRecord:
     """Parse a single source file with tree-sitter and extract structural summary."""
@@ -59,11 +57,9 @@ def parse_source_ast(abs_path: Path, rel_path: str, language: str) -> AstFileRec
 
     record = AstFileRecord(path=rel_path, language=language)
 
-    # Recursive AST walker to extract components
     def _walk(node, current_func: Optional[dict] = None) -> None:
         ntype = node.type
 
-        # --- Functions ---
         if ntype in (
             "function_definition",
             "method_definition",
@@ -72,13 +68,11 @@ def parse_source_ast(abs_path: Path, rel_path: str, language: str) -> AstFileRec
             "arrow_function",
         ):
             func_name = "anonymous"
-            # Find identifier child for name
             for ch in node.children:
                 if ch.type in ("identifier", "name", "property_identifier"):
                     func_name = _node_text(ch, source_bytes)
                     break
 
-            # Find parameters
             params: list[str] = []
             for ch in node.children:
                 if "parameter" in ch.type or ch.type == "formal_parameters":
@@ -95,12 +89,10 @@ def parse_source_ast(abs_path: Path, rel_path: str, language: str) -> AstFileRec
             }
             record.functions.append(func_dict)
 
-            # Traverse function body with current_func pointer
             for ch in node.children:
                 _walk(ch, func_dict)
             return
 
-        # --- Classes ---
         if ntype in ("class_definition", "class_declaration"):
             class_name = "UnknownClass"
             for ch in node.children:
@@ -114,10 +106,8 @@ def parse_source_ast(abs_path: Path, rel_path: str, language: str) -> AstFileRec
                 "end_line": node.end_point[0] + 1,
             })
 
-        # --- Function Calls ---
         if ntype in ("call", "call_expression"):
             call_text = _node_text(node, source_bytes)
-            # Find target function name/callee
             callee = ""
             for ch in node.children:
                 if ch.type in ("identifier", "attribute", "member_expression", "field_expression"):
@@ -132,7 +122,6 @@ def parse_source_ast(abs_path: Path, rel_path: str, language: str) -> AstFileRec
             if current_func is not None:
                 current_func["calls"].append(call_entry)
 
-        # --- String Literals ---
         if ntype in ("string", "string_literal", "raw_string_literal"):
             val = _node_text(node, source_bytes).strip("'\"`")
             if val and len(val) >= 3:
@@ -142,7 +131,6 @@ def parse_source_ast(abs_path: Path, rel_path: str, language: str) -> AstFileRec
                     "col": node.start_point[1] + 1,
                 })
 
-        # --- Assignments ---
         if ntype in ("assignment", "variable_declarator", "short_var_declaration"):
             var_name = ""
             for ch in node.children:
@@ -156,17 +144,14 @@ def parse_source_ast(abs_path: Path, rel_path: str, language: str) -> AstFileRec
                     "line": node.start_point[0] + 1,
                 })
 
-        # --- Imports ---
         if ntype in ("import_statement", "import_from_statement", "import_declaration"):
             record.imports.append({
                 "snippet": _node_text(node, source_bytes).strip(),
                 "line": node.start_point[0] + 1,
             })
 
-        # --- Decorators / Annotations ---
         if ntype in ("decorator", "annotation", "decorated_definition"):
             dec_text = _node_text(node, source_bytes).strip()
-            # If decorated_definition, extract the decorator child
             if ntype == "decorated_definition":
                 for ch in node.children:
                     if ch.type == "decorator":
@@ -180,7 +165,6 @@ def parse_source_ast(abs_path: Path, rel_path: str, language: str) -> AstFileRec
                     "line": node.start_point[0] + 1,
                 })
 
-        # Recurse children
         for child in node.children:
             _walk(child, current_func)
 

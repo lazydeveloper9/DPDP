@@ -24,14 +24,12 @@ You must strictly adhere to the following 7 Core Rules for Compliance Reporting:
 7. VERIFICATION STEP: Provide concrete steps for developers to verify the fix works.
 """
 
-
 def generate_executive_dpo_brief(
     bundle: ScoredFindingBundle,
     client: LocalLLMClient,
     on_token: Optional[Callable[[str], None]] = None,
 ) -> str:
     """Generate a structured, authoritative Executive DPO Compliance Brief for a scan bundle."""
-    # Group and count occurrences per rule to represent all findings
     rule_counts: dict[str, int] = {}
     rule_samples: dict[str, ScoredFinding] = {}
     for f in bundle.findings:
@@ -93,7 +91,6 @@ Bulleted checklist of prioritized remediation tasks for the engineering team.
 """
 
     return client.generate(prompt=prompt, system_prompt=DPO_SYSTEM_PROMPT, on_token=on_token)
-
 
 def explain_finding_in_depth(
     finding: ScoredFinding,

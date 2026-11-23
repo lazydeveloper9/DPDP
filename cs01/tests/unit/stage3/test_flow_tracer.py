@@ -5,9 +5,7 @@ from cs01.models import (
 from cs01.pipeline.stage3_detect.flow_tracer import trace_flows
 from cs01.pipeline.stage3_detect.pii_detector import detect_pii
 
-
 def test_unguarded_flow_detection():
-    # Setup AST function where request payload flows directly to a logger
     ast_file = AstFileRecord(
         path="api/user.py",
         language="python",
@@ -37,9 +35,7 @@ def test_unguarded_flow_detection():
     assert edge.is_unguarded is True
     assert edge.guard_id is None
 
-
 def test_guarded_flow_detection():
-    # Setup AST function where PII passes through a masking guard before logger
     ast_file = AstFileRecord(
         path="api/secure.py",
         language="python",

@@ -8,15 +8,13 @@ from enum import Enum
 from typing import Optional
 from pydantic import BaseModel, Field
 
-
 class FileRole(str, Enum):
     """Influences default severity of PII hits found in this file context."""
     PRODUCTION = "production"
-    TEST = "test"           # PII hits → INFO severity by default
-    FIXTURE = "fixture"     # PII hits → INFO severity by default
-    DOCS = "docs"           # PII hits → INFO severity by default
+    TEST = "test"
+    FIXTURE = "fixture"
+    DOCS = "docs"
     CONFIG = "config"
-
 
 class PiiType(str, Enum):
     """All recognised Indian PII identifier types."""
@@ -33,26 +31,21 @@ class PiiType(str, Enum):
     GEOLOCATION = "GEOLOCATION"
     DEVICE_ID = "DEVICE_ID"
     DATE_OF_BIRTH = "DATE_OF_BIRTH"
-    BIOMETRIC = "BIOMETRIC"         # detected via field name pattern
-    FINANCIAL = "FINANCIAL"         # detected via field name pattern
-
+    BIOMETRIC = "BIOMETRIC"
+    FINANCIAL = "FINANCIAL"
 
 class PiiHit(BaseModel):
     """A single detected PII instance anywhere in the codebase."""
-    id: str                         # unique ID: f"{pii_type}:{file}:{line}:{col}"
+    id: str
     pii_type: PiiType
-    file: str                       # root-relative path
+    file: str
     line: int
     col: int
-    confidence: float               # 0.0–1.0 — validator result + context score
+    confidence: float
     file_role: FileRole
-    value_sha256: str               # SHA-256 of the matched raw value (never store raw)
+    value_sha256: str
     context_tokens: list[str] = Field(default_factory=list)
-    # nearby identifier tokens that boosted confidence (e.g. ["aadhaar_no", "user"])
     validator_result: str = "not_validated"
-    # "valid" | "invalid_checksum" | "pattern_only" | "field_name_match"
-
-
 class PiiHitList(BaseModel):
     """All PII hits detected across the full codebase."""
     hits: list[PiiHit] = Field(default_factory=list)
@@ -63,14 +56,12 @@ class PiiHitList(BaseModel):
     def production_hits(self) -> list[PiiHit]:
         return [h for h in self.hits if h.file_role == FileRole.PRODUCTION]
 
-
 class SourceType(str, Enum):
     REQUEST_BODY = "request_body"
     QUERY_PARAM = "query_param"
     FORM_INPUT = "form_input"
     DB_READ = "db_read"
     API_RESPONSE_INBOUND = "api_response_inbound"
-
 
 class SinkType(str, Enum):
     LOGGER = "logger"
@@ -79,7 +70,6 @@ class SinkType(str, Enum):
     THIRD_PARTY_SDK = "third_party_sdk"
     FILE_WRITE = "file_write"
 
-
 class GuardType(str, Enum):
     MASKING = "masking"
     ENCRYPTION = "encryption"
@@ -87,16 +77,14 @@ class GuardType(str, Enum):
     CONSENT_CHECK = "consent_check"
     REDACTION = "redaction"
 
-
 class DataSource(BaseModel):
     id: str
     source_type: SourceType
     file: str
     line: int
     function_name: Optional[str] = None
-    variable_name: Optional[str] = None   # the variable that holds the PII value
+    variable_name: Optional[str] = None
     pii_types_suspected: list[PiiType] = Field(default_factory=list)
-
 
 class DataSink(BaseModel):
     id: str
@@ -104,8 +92,7 @@ class DataSink(BaseModel):
     file: str
     line: int
     function_name: Optional[str] = None
-    call_expression: str = ""             # redacted snippet of the sink call
-
+    call_expression: str = ""
 
 class DataGuard(BaseModel):
     id: str
@@ -113,8 +100,7 @@ class DataGuard(BaseModel):
     file: str
     line: int
     function_name: Optional[str] = None
-    guard_function_name: str = ""         # name of the masking/encrypt/auth function
-
+    guard_function_name: str = ""
 
 class FlowEdge(BaseModel):
     """
@@ -124,16 +110,15 @@ class FlowEdge(BaseModel):
     id: str
     source_id: str
     sink_id: str
-    guard_id: Optional[str] = None       # None means unguarded
+    guard_id: Optional[str] = None
     guard_type: Optional[GuardType] = None
     tainted_variables: list[str] = Field(default_factory=list)
     file: str
     function_name: Optional[str] = None
-    is_unguarded: bool = True             # True → potential DPDP violation
+    is_unguarded: bool = True
 
     def model_post_init(self, __context: object) -> None:
         self.is_unguarded = self.guard_id is None
-
 
 class FlowGraph(BaseModel):
     """

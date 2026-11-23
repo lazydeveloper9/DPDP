@@ -20,9 +20,6 @@ from dockerfile_parse import DockerfileParser
 
 from cs01.models import IacTree
 
-# ruamel.yaml loader is instantiated per call for thread safety
-
-
 def parse_terraform_file(abs_path: Path, rel_path: str) -> list[IacTree]:
     """Parse Terraform configuration files (.tf) with line number mapping."""
     trees: list[IacTree] = []
@@ -36,7 +33,6 @@ def parse_terraform_file(abs_path: Path, rel_path: str) -> list[IacTree]:
             parse_error=str(exc),
         )]
 
-    # Build line number index for resource definitions
     raw_lines = abs_path.read_text(encoding="utf-8", errors="replace").splitlines()
     resource_line_pattern = re.compile(r'^\s*resource\s+"([^"]+)"\s+"([^"]+)"')
     attribute_line_pattern = re.compile(r'^\s*([a-zA-Z0-9_-]+)\s*=')
@@ -47,7 +43,6 @@ def parse_terraform_file(abs_path: Path, rel_path: str) -> list[IacTree]:
         if m:
             resource_lines[(m.group(1), m.group(2))] = idx
 
-    # hcl2 returns dict with keys: 'resource', 'variable', 'provider', etc.
     resources_list = data.get("resource", [])
     for res_dict in resources_list:
         if not isinstance(res_dict, dict):
@@ -60,10 +55,8 @@ def parse_terraform_file(abs_path: Path, rel_path: str) -> list[IacTree]:
                 res_name = res_name_raw.strip('"')
                 start_line = resource_lines.get((res_type, res_name), 1)
                 
-                # Attribute line mapping within the resource block
                 line_map: dict[str, int] = {"__self__": start_line}
                 if isinstance(attrs, dict):
-                    # Simple heuristic line mapper for attributes
                     current_line = start_line
                     for i in range(start_line - 1, min(len(raw_lines), start_line + 60)):
                         am = attribute_line_pattern.match(raw_lines[i])
@@ -82,7 +75,6 @@ def parse_terraform_file(abs_path: Path, rel_path: str) -> list[IacTree]:
                 )
 
     return trees
-
 
 def parse_kubernetes_yaml(abs_path: Path, rel_path: str) -> list[IacTree]:
     """Parse Kubernetes YAML manifests, preserving line numbers."""
@@ -111,7 +103,6 @@ def parse_kubernetes_yaml(abs_path: Path, rel_path: str) -> list[IacTree]:
         name = metadata.get("name", "unnamed") if isinstance(metadata, dict) else "unnamed"
 
         line_map: dict[str, int] = {}
-        # Try to extract line numbers from ruamel.yaml comment tokens if available
         if hasattr(doc, "lc"):
             line_map["__self__"] = getattr(doc.lc, "line", 0) + 1
 
@@ -127,7 +118,6 @@ def parse_kubernetes_yaml(abs_path: Path, rel_path: str) -> list[IacTree]:
         )
 
     return trees
-
 
 def parse_dockerfile(abs_path: Path, rel_path: str) -> list[IacTree]:
     """Parse Dockerfile instructions into an IacTree."""
@@ -182,7 +172,6 @@ def parse_dockerfile(abs_path: Path, rel_path: str) -> list[IacTree]:
             line_map=line_map,
         )
     ]
-
 
 def parse_iac_file(abs_path: Path, rel_path: str) -> list[IacTree]:
     """Dispatch file to corresponding IaC / container parser."""

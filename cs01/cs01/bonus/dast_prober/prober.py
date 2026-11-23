@@ -13,14 +13,12 @@ import urllib.error
 from typing import Any, Optional
 from pydantic import BaseModel, Field
 
-
 class DastFinding(BaseModel):
     check_id: str
     severity: str
     dpdp_section: str
     message: str
     remediation: str
-
 
 class DastProbeResult(BaseModel):
     target_url: str
@@ -35,7 +33,6 @@ class DastProbeResult(BaseModel):
     privacy_notice_found: bool = False
     findings: list[DastFinding] = Field(default_factory=list)
 
-
 SECURITY_HEADERS_REQUIRED = [
     ("Strict-Transport-Security", "CRITICAL", "§8(5)", "Missing HSTS header allows downgrade attacks."),
     ("Content-Security-Policy", "HIGH", "§8(5)", "Missing Content-Security-Policy increases XSS and PII exfiltration risk."),
@@ -49,7 +46,6 @@ PRIVACY_NOTICE_PATHS = [
     "/privacy_policy",
     "/legal/privacy",
 ]
-
 
 def run_dast_probe(
     url: str,
@@ -75,7 +71,6 @@ def run_dast_probe(
     port = parsed.port or (443 if parsed.scheme == "https" else 80)
     result = DastProbeResult(target_url=url, probed_host=host, probed_port=port)
 
-    # 1. Probe TLS / SSL Configuration
     if parsed.scheme == "https":
         try:
             ctx = ssl.create_default_context()
@@ -104,7 +99,6 @@ def run_dast_probe(
                 remediation="Ensure host is reachable and accepting HTTPS connections.",
             ))
 
-    # 2. Probe HTTP Headers
     try:
         req = urllib.request.Request(
             url,
@@ -134,7 +128,6 @@ def run_dast_probe(
     except Exception:
         pass
 
-    # 3. Probe Privacy Notice Accessibility (§5 Notice Requirement)
     base_origin = f"{parsed.scheme}://{host}" + (f":{port}" if parsed.port else "")
     for path in PRIVACY_NOTICE_PATHS:
         notice_url = urllib.parse.urljoin(base_origin, path)

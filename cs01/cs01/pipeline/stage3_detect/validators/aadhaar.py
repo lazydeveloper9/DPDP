@@ -9,7 +9,6 @@ First digit is never 0 or 1.
 from __future__ import annotations
 import re
 
-# Verhoeff algorithm multiplication table d
 _D_TABLE = [
     [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
     [1, 2, 3, 4, 0, 6, 7, 8, 9, 5],
@@ -23,7 +22,6 @@ _D_TABLE = [
     [9, 8, 7, 6, 5, 4, 3, 2, 1, 0],
 ]
 
-# Permutation table p
 _P_TABLE = [
     [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
     [1, 5, 7, 6, 2, 8, 3, 0, 9, 4],
@@ -35,9 +33,7 @@ _P_TABLE = [
     [7, 0, 4, 6, 9, 1, 3, 2, 5, 8],
 ]
 
-# Inverse table inv
 _INV_TABLE = [0, 4, 3, 2, 1, 5, 6, 7, 8, 9]
-
 
 def verhoeff_check(number_str: str) -> bool:
     """Validate a numeric string against the Verhoeff algorithm."""
@@ -47,7 +43,6 @@ def verhoeff_check(number_str: str) -> bool:
         c = _D_TABLE[c][_P_TABLE[i % 8][digit]]
     return c == 0
 
-
 def generate_verhoeff_check_digit(number_str: str) -> int:
     """Generate the Verhoeff check digit for an 11-digit prefix."""
     c = 0
@@ -56,13 +51,11 @@ def generate_verhoeff_check_digit(number_str: str) -> int:
         c = _D_TABLE[c][_P_TABLE[(i + 1) % 8][digit]]
     return _INV_TABLE[c]
 
-
 def validate_aadhaar(candidate: str) -> tuple[bool, str]:
     """
     Validate a potential Aadhaar number candidate string.
     Returns (is_valid, reason).
     """
-    # Clean whitespace and hyphens
     cleaned = re.sub(r"[\s\-]", "", candidate)
 
     if not cleaned.isdigit():
@@ -71,15 +64,12 @@ def validate_aadhaar(candidate: str) -> tuple[bool, str]:
     if len(cleaned) != 12:
         return False, "invalid_length"
 
-    # Aadhaar numbers cannot start with 0 or 1
     if cleaned[0] in ("0", "1"):
         return False, "invalid_starting_digit"
 
-    # Reject trivial repetitive patterns (e.g. 222222222222)
     if len(set(cleaned)) == 1:
         return False, "repetitive_digits"
 
-    # Verhoeff Checksum
     if not verhoeff_check(cleaned):
         return False, "verhoeff_checksum_failed"
 

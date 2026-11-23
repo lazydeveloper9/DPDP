@@ -21,7 +21,6 @@ from cs01.models import SchemaRecord
 ENCRYPTION_KEYWORDS = re.compile(r"(encrypt|cipher|kms|pgp|vault|aes|masked)", re.IGNORECASE)
 RETENTION_KEYWORDS = re.compile(r"(retention|retain|purge|ttl|expire|expiry|delete_after)", re.IGNORECASE)
 
-
 def parse_sql_ddl(abs_path: Path, rel_path: str) -> list[SchemaRecord]:
     """Parse SQL DDL files using sqlglot across common dialects."""
     records: list[SchemaRecord] = []
@@ -30,11 +29,9 @@ def parse_sql_ddl(abs_path: Path, rel_path: str) -> list[SchemaRecord]:
     except OSError:
         return records
 
-    # Parse with sqlglot (transpile / parse queries)
     try:
         expressions = sqlglot.parse(content)
     except Exception:
-        # Fallback to postgres/mysql dialect if default dialect fails
         try:
             expressions = sqlglot.parse(content, read="postgres")
         except Exception:
@@ -44,7 +41,6 @@ def parse_sql_ddl(abs_path: Path, rel_path: str) -> list[SchemaRecord]:
         if not expression:
             continue
 
-        # Look for CREATE TABLE statements
         if isinstance(expression, exp.Create):
             table_name = ""
             if isinstance(expression.this, exp.Schema):
@@ -52,7 +48,6 @@ def parse_sql_ddl(abs_path: Path, rel_path: str) -> list[SchemaRecord]:
             elif expression.this:
                 table_name = getattr(expression.this, "name", "unknown")
 
-            # Scan columns
             schema = expression.find(exp.Schema)
             if not schema:
                 continue
@@ -61,7 +56,6 @@ def parse_sql_ddl(abs_path: Path, rel_path: str) -> list[SchemaRecord]:
                 col_name = col_def.this.name if col_def.this else "unknown"
                 col_type = col_def.kind.sql() if col_def.kind else "UNKNOWN"
                 
-                # Check constraints
                 constraints: list[str] = []
                 is_nullable = True
                 has_encryption = False
@@ -73,7 +67,6 @@ def parse_sql_ddl(abs_path: Path, rel_path: str) -> list[SchemaRecord]:
                     if "NOT NULL" in c_sql:
                         is_nullable = False
 
-                # Check entire column SQL definition for encryption or retention markers
                 full_col_sql = col_def.sql()
                 if ENCRYPTION_KEYWORDS.search(full_col_sql):
                     has_encryption = True
@@ -95,7 +88,6 @@ def parse_sql_ddl(abs_path: Path, rel_path: str) -> list[SchemaRecord]:
                 )
 
     return records
-
 
 def parse_prisma_schema(abs_path: Path, rel_path: str) -> list[SchemaRecord]:
     """Parse Prisma schema models."""
@@ -144,7 +136,6 @@ def parse_prisma_schema(abs_path: Path, rel_path: str) -> list[SchemaRecord]:
 
     return records
 
-
 def parse_sqlalchemy_models(abs_path: Path, rel_path: str) -> list[SchemaRecord]:
     """Parse SQLAlchemy models in Python source files."""
     records: list[SchemaRecord] = []
@@ -153,9 +144,7 @@ def parse_sqlalchemy_models(abs_path: Path, rel_path: str) -> list[SchemaRecord]
     except OSError:
         return records
 
-    # Match class definitions
     class_pattern = re.compile(r"^class\s+(\w+)\s*\([^)]*\):")
-    # Match Column assignments: col = Column(Type, ...) or col: Mapped[Type]
     col_pattern = re.compile(
         r"^\s*(\w+)\s*=\s*(?:db\.)?Column\s*\((.*)\)\s*$"
     )
@@ -174,7 +163,6 @@ def parse_sqlalchemy_models(abs_path: Path, rel_path: str) -> list[SchemaRecord]
         if m1:
             col_name = m1.group(1)
             args = m1.group(2)
-            # extract first arg as type
             dtype = args.split(",")[0].strip()
             is_nullable = "nullable=False" not in args
             has_enc = bool(ENCRYPTION_KEYWORDS.search(args))
@@ -219,7 +207,6 @@ def parse_sqlalchemy_models(abs_path: Path, rel_path: str) -> list[SchemaRecord]
             )
 
     return records
-
 
 def parse_mongoose_schema(abs_path: Path, rel_path: str) -> list[SchemaRecord]:
     """Parse Mongoose schemas in JS/TS files."""
@@ -268,7 +255,6 @@ def parse_mongoose_schema(abs_path: Path, rel_path: str) -> list[SchemaRecord]:
                 )
 
     return records
-
 
 def parse_db_schema(abs_path: Path, rel_path: str) -> list[SchemaRecord]:
     """Dispatch file to the appropriate schema/ORM parser."""

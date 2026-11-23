@@ -37,7 +37,6 @@ ENTITY_TYPES: dict[str, str] = {
     "F": "Firm / LLP",
 }
 
-
 def validate_pan(candidate: str) -> tuple[bool, str]:
     """
     Validate a potential PAN number string.
@@ -53,7 +52,6 @@ def validate_pan(candidate: str) -> tuple[bool, str]:
         return False, "invalid_pan_format"
 
     entity_code = match.group(1)
-    # Check that sequential digits are not 0000
     if cleaned[5:9] == "0000":
         return False, "invalid_numeric_series"
 

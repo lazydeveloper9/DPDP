@@ -14,7 +14,6 @@ from ruamel.yaml import YAML
 yaml = YAML()
 RULES_DIR = Path(__file__).resolve().parent.parent.parent.parent / "rules"
 
-
 def load_all_rules(custom_rules_dir: Path | str | None = None) -> list[dict[str, Any]]:
     """Load all Pass A and Pass B rules from disk."""
     base_dir = Path(custom_rules_dir) if custom_rules_dir else RULES_DIR
@@ -42,7 +41,6 @@ def load_all_rules(custom_rules_dir: Path | str | None = None) -> list[dict[str,
 
     return rules
 
-
 def _validate_rule(rule: dict[str, Any], rule_file: Path) -> None:
     """Validate rule dictionary invariants."""
     required = ["rule_id", "pass", "severity", "dpdp_section", "dpdp_rule", "penalty_band"]
@@ -50,11 +48,9 @@ def _validate_rule(rule: dict[str, Any], rule_file: Path) -> None:
         if field not in rule:
             raise ValueError(f"Rule in {rule_file} missing mandatory field: {field}")
 
-    # SARIF invariant: max 8 tags per rule
     tags = rule.get("tags", [])
     if len(tags) > 8:
         rule["tags"] = tags[:8]
-
 
 def get_rule_by_id(rule_id: str, custom_rules_dir: Path | str | None = None) -> dict[str, Any] | None:
     """Find a specific rule by its ID."""

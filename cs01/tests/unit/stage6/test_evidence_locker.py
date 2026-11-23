@@ -5,7 +5,6 @@ from cs01.pipeline.stage6_report.evidence_locker import (
     create_evidence_bundle, verify_evidence_bundle,
 )
 
-
 def test_evidence_bundle_creation_and_verification(tmp_path: Path):
     f1 = tmp_path / "report.json"
     f1.write_text('{"compliance": "ok"}', encoding="utf-8")
@@ -29,12 +28,10 @@ def test_evidence_bundle_creation_and_verification(tmp_path: Path):
 
     assert created_path.exists()
 
-    # 1. Verify clean bundle
     is_valid, logs = verify_evidence_bundle(bundle_zip)
     assert is_valid is True
     assert any("VERIFIED" in l for l in logs)
 
-    # 2. Tampering Test: modify a file inside the zip to prove tamper-evidence
     tampered_zip = tmp_path / "tampered-bundle.zip"
     with zipfile.ZipFile(bundle_zip, "r") as src_z:
         with zipfile.ZipFile(tampered_zip, "w") as dst_z:
@@ -44,7 +41,6 @@ def test_evidence_bundle_creation_and_verification(tmp_path: Path):
                     content = content + b"TAMPERED_BYTE"
                 dst_z.writestr(item, content)
 
-    # Verification must fail and report an integrity violation
     is_tampered_valid, tamper_logs = verify_evidence_bundle(tampered_zip)
     assert is_tampered_valid is False
     assert any("INTEGRITY VIOLATION" in l for l in tamper_logs)

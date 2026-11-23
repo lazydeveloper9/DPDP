@@ -18,7 +18,6 @@ CEILING_MAP = {
     "50_crore": "DPDP Act Residual (§33 Schedule) — Up to ₹50 Crore (Discretionary Maximum)",
 }
 
-
 def package_evidence(
     raw: RawFinding,
     priority_score: float,
@@ -34,11 +33,9 @@ def package_evidence(
         f"DPDP Act — Statutory Ceiling: {raw.penalty_band} (Discretionary Maximum)",
     )
 
-    # Compute a unique fingerprint for baseline diffing
     key_str = f"{raw.rule_id}:{raw.file or 'global'}:{raw.line_start or 0}:{raw.snippet[:60]}"
     fingerprint = hashlib.sha256(key_str.encode("utf-8")).hexdigest()
 
-    # Redact any remaining raw PII literals
     redacted = redact_pii_in_snippet(raw.snippet, [])
 
     return ScoredFinding(

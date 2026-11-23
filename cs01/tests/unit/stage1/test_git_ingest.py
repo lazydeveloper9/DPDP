@@ -19,10 +19,8 @@ from cs01.utils.git_ingest import (
 )
 from cs01.utils.archive import extracted_workspace
 
-
 def test_is_git_url():
     """Verify detection of various Git and GitHub URL formats."""
-    # Positive matches
     assert is_git_url("https://github.com/owner/repo")
     assert is_git_url("http://github.com/owner/repo")
     assert is_git_url("https://github.com/owner/repo.git")
@@ -33,7 +31,6 @@ def test_is_git_url():
     assert is_git_url("https://bitbucket.org/team/repo")
     assert is_git_url("git://github.com/owner/repo.git")
 
-    # Negative matches
     assert not is_git_url("")
     assert not is_git_url("   ")
     assert not is_git_url("./local/path")
@@ -41,29 +38,23 @@ def test_is_git_url():
     assert not is_git_url("archive.zip")
     assert not is_git_url("https://google.com")
 
-
 def test_parse_git_url():
     """Verify extracting clean clone URL and branch ref from GitHub URLs."""
-    # Standard repository URL
     clean_url, ref = parse_git_url("https://github.com/fastapi/fastapi")
     assert clean_url == "https://github.com/fastapi/fastapi.git"
     assert ref is None
 
-    # Tree branch URL
     clean_url, ref = parse_git_url("https://github.com/fastapi/fastapi/tree/0.110.0")
     assert clean_url == "https://github.com/fastapi/fastapi.git"
     assert ref == "0.110.0"
 
-    # Multi-segment branch URL
     clean_url, ref = parse_git_url("https://github.com/org/repo/tree/feature/dpdp-audit")
     assert clean_url == "https://github.com/org/repo.git"
     assert ref == "feature/dpdp-audit"
 
-    # SSH URL
     clean_url, ref = parse_git_url("git@github.com:org/repo.git")
     assert clean_url == "git@github.com:org/repo.git"
     assert ref is None
-
 
 def test_clone_git_repo_success(tmp_path):
     """Verify clone executes shallow clone command with ref."""
@@ -86,7 +77,6 @@ def test_clone_git_repo_success(tmp_path):
         assert "v1.0" in args
         assert "https://github.com/example/sample-repo.git" in args
 
-
 def test_clone_git_repo_failure(tmp_path):
     """Verify clone raises RuntimeError when git fails."""
     target_url = "https://github.com/example/nonexistent-repo"
@@ -98,7 +88,6 @@ def test_clone_git_repo_failure(tmp_path):
         with pytest.raises(RuntimeError, match="Git clone failed"):
             clone_git_repo(target_url, tmp_path)
 
-
 def test_clone_git_repo_timeout(tmp_path):
     """Verify clone raises TimeoutError when subprocess exceeds timeout."""
     target_url = "https://github.com/example/repo"
@@ -107,7 +96,6 @@ def test_clone_git_repo_timeout(tmp_path):
          patch("subprocess.run", side_effect=subprocess.TimeoutExpired(cmd="git", timeout=5.0)):
         with pytest.raises(TimeoutError, match="timed out"):
             clone_git_repo(target_url, tmp_path, timeout_seconds=5.0)
-
 
 def test_extracted_workspace_with_git_url():
     """Verify extracted_workspace seamlessly handles GitHub URLs."""
@@ -123,5 +111,4 @@ def test_extracted_workspace_with_git_url():
             called_ref = mock_clone.call_args[1].get("ref")
             assert called_ref == "main"
 
-        # Workspace directory should be cleaned up after context exit
         assert not ws_path.exists()

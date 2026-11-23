@@ -15,7 +15,6 @@ from cs01.models import (
 )
 from .rule_loader import get_rule_by_id
 
-
 def evaluate_pass_a(
     flow_graph: FlowGraph,
     pii_hits: PiiHitList,
@@ -25,7 +24,6 @@ def evaluate_pass_a(
     """Evaluate all Pass A rules and return raw findings."""
     findings: list[RawFinding] = []
 
-    # Helper to construct RawFinding from rule definition
     def _create_finding(
         rule_id: str,
         file: str | None,
@@ -58,10 +56,8 @@ def evaluate_pass_a(
             )
         )
 
-    # ── 1. Evaluate FlowGraph Taint Edges ──────────────────────────────────
     for edge in flow_graph.edges:
         if edge.is_unguarded:
-            # Find associated sink
             sink = next((s for s in flow_graph.sinks if s.id == edge.sink_id), None)
             if not sink:
                 continue
@@ -83,9 +79,7 @@ def evaluate_pass_a(
                     matched_entity=f"outbound_call:{sink.call_expression[:40]}",
                 )
 
-    # ── 2. Evaluate Concrete PII Hits (Hardcoded in Source) ─────────────────
     for hit in pii_hits.hits:
-        # Flag concrete PII string literals in production code
         if hit.file_role == FileRole.PRODUCTION and hit.confidence >= 0.80 and hit.validator_result.startswith("valid"):
             _create_finding(
                 rule_id="CODE-DPDP-003",
@@ -95,8 +89,6 @@ def evaluate_pass_a(
                 matched_entity=hit.pii_type.value,
             )
 
-    # ── 3. Evaluate Database Schema Records ─────────────────────────────────
-    # PII columns defined in schema must have encryption and retention markers
     from cs01.pipeline.stage3_detect.pii_detector import PII_FIELD_NAME_PATTERNS
 
     for schema in model.schema_records:
@@ -104,7 +96,6 @@ def evaluate_pass_a(
         if not is_pii_col:
             continue
 
-        # Rule SQL-DPDP-001: Unencrypted PII column
         if not schema.has_encryption_marker:
             _create_finding(
                 rule_id="SQL-DPDP-001",
@@ -114,7 +105,6 @@ def evaluate_pass_a(
                 matched_entity=f"{schema.table_or_model}.{schema.column_or_field}",
             )
 
-        # Rule SQL-DPDP-002: Missing retention comment on PII table/column
         if not schema.has_retention_comment:
             _create_finding(
                 rule_id="SQL-DPDP-002",
@@ -124,10 +114,8 @@ def evaluate_pass_a(
                 matched_entity=f"{schema.table_or_model}.{schema.column_or_field}",
             )
 
-    # ── 4. Evaluate Infrastructure as Code ──────────────────────────────────
     for iac in model.iac_trees:
         attrs = iac.attributes
-        # Rule IAC-DPDP-001: RDS storage_encrypted = false
         if iac.resource_type == "aws_db_instance":
             if attrs.get("storage_encrypted") is False:
                 line = iac.line_map.get("storage_encrypted", iac.line_map.get("__self__", 1))
@@ -139,7 +127,6 @@ def evaluate_pass_a(
                     matched_entity=iac.resource_name,
                 )
 
-        # Rule IAC-DPDP-002: CloudWatch log retention < 365 days
         if iac.resource_type == "aws_cloudwatch_log_group":
             retention = attrs.get("retention_in_days")
             if retention is not None and int(retention) < 365:
@@ -152,9 +139,7 @@ def evaluate_pass_a(
                     matched_entity=iac.resource_name,
                 )
 
-    # ── 5. Evaluate Environment Variables ───────────────────────────────────
     for ev in model.env_vars:
-        # Rule ENV-DPDP-001: Insecure SSL configuration
         key_lower = ev.key.lower()
         if "ssl" in key_lower and any(sub in key_lower for sub in ("disable", "false", "none", "no")):
             _create_finding(

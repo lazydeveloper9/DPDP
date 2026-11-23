@@ -1,13 +1,9 @@
-# ==============================================================================
 # CS-01 DPDP Compliance Auditor — Opengrep & Semgrep Rulepack
 # License: Apache-2.0
 # DPDP Act, 2023 & DPDP Rules, 2025 Statutory Safeguards
-# ==============================================================================
 
 rules:
-  # ----------------------------------------------------------------------------
   # Rule 1: Personal Data Written to Application Logs (Rule 6(1)(a) / Sec 8(5))
-  # ----------------------------------------------------------------------------
   - id: DPDP-SEC-LOG-001
     languages:
       - python
@@ -34,9 +30,7 @@ rules:
       - pattern: logging.error(..., $DATA, ...)
       - pattern: logging.warning(..., $DATA, ...)
 
-  # ----------------------------------------------------------------------------
   # Rule 2: Insecure Database SSL/TLS Connection Mode (Rule 6(1)(a) / Sec 8(5))
-  # ----------------------------------------------------------------------------
   - id: DPDP-SEC-ENV-001
     languages:
       - python
@@ -59,9 +53,7 @@ rules:
       - pattern-regex: "['\"]ssl['\"]\\s*:\\s*false"
       - pattern-regex: "rejectUnauthorized\\s*:\\s*false"
 
-  # ----------------------------------------------------------------------------
   # Rule 3: Hardcoded Indian Identity Number Literals (Rule 6(1)(a) / Sec 8(5))
-  # ----------------------------------------------------------------------------
   - id: DPDP-SEC-HARDCODED-001
     languages:
       - python
@@ -82,9 +74,7 @@ rules:
       - pattern-regex: '\b[2-9]\d{3}\s?\d{4}\s?\d{4}\b'
       - pattern-regex: '\b[A-Z]{5}[0-9]{4}[A-Z]{1}\b'
 
-  # ----------------------------------------------------------------------------
   # Rule 4: Personal Data Forwarded to Third-Party / Shadow AI (Sec 8(2) / Sec 7)
-  # ----------------------------------------------------------------------------
   - id: DPDP-EGRESS-AI-001
     languages:
       - python
@@ -105,9 +95,7 @@ rules:
       - pattern: fetch("https://api.openai.com/...", ...)
       - pattern: axios.post("https://api.openai.com/...", ...)
 
-  # ----------------------------------------------------------------------------
   # Rule 5: Insecure Cloud Database Storage Encryption in IaC (Rule 6(1)(a))
-  # ----------------------------------------------------------------------------
   - id: DPDP-IAC-ENC-001
     languages:
       - terraform

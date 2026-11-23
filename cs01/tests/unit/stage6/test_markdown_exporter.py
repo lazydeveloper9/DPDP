@@ -10,7 +10,6 @@ from cs01.models import (
 )
 from cs01.pipeline.stage6_report.markdown_exporter import export_markdown_report
 
-
 def test_export_markdown_report_structure():
     with tempfile.TemporaryDirectory() as tmp:
         out_file = Path(tmp) / "cs01-report.md"
@@ -66,7 +65,6 @@ def test_export_markdown_report_structure():
         assert result_path.exists()
         content = result_path.read_text(encoding="utf-8")
 
-        # Verify all 8 core sections exist
         assert "# Full-Stack Data Protection (DPDP) Compliance Assessment Report" in content
         assert "## 1. Document Control & Scan Provenance" in content
         assert "## 2. Executive & DPO Compliance Summary" in content
@@ -77,13 +75,11 @@ def test_export_markdown_report_structure():
         assert "## 7. Prioritized Remediation Roadmap" in content
         assert "## 8. Audit Methodology, Suppressions & Appendix" in content
 
-        # Verify key template elements
         assert "[FND-0001]" in content
         assert "Sec 8(5) & Rule 6" in content
         assert "Up to ₹250 Crore" in content
         assert "FinTech Corp" in content
 
-        # Verify elaborated subsections
         assert "#### 1. Detailed Technical Failure Analysis (Code Walkthrough)" in content
         assert "#### 2. Statutory & Regulatory Breach Analysis (DPDP Act, 2023 & DPDP Rules, 2025)" in content
         assert "#### 3. Real-World Threat Scenario & Data Principal Blast Radius" in content

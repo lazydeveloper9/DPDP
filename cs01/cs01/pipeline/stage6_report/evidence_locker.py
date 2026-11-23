@@ -14,7 +14,6 @@ from typing import Any
 
 from cs01.utils import sha256_of
 
-
 def create_evidence_bundle(
     report_files: dict[str, Path],
     scan_id: str,
@@ -48,14 +47,12 @@ def create_evidence_bundle(
                 }
                 zf.writestr(name, content)
 
-        # Write the manifest itself inside the bundle
         manifest_bytes = json.dumps(manifest, indent=2).encode("utf-8")
         manifest_hash = hashlib.sha256(manifest_bytes).hexdigest()
         zf.writestr("manifest.json", manifest_bytes)
         zf.writestr("manifest.json.sha256", f"{manifest_hash}  manifest.json\n")
 
     return out_zip
-
 
 def verify_evidence_bundle(bundle_path: Path | str) -> tuple[bool, list[str]]:
     """

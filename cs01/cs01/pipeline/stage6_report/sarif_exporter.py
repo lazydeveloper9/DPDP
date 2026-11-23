@@ -31,7 +31,6 @@ SEVERITY_TO_SARIF_LEVEL = {
     Severity.INFO: "note",
 }
 
-
 def export_sarif(bundle: ScoredFindingBundle, output_path: Path | str) -> dict[str, Any]:
     """Serialize ScoredFindingBundle into SARIF 2.1.0 JSON format."""
     all_rules = load_all_rules()
@@ -42,7 +41,6 @@ def export_sarif(bundle: ScoredFindingBundle, output_path: Path | str) -> dict[s
         rid = r["rule_id"]
         rule_index_map[rid] = idx
         
-        # Invariant 2: <= 8 tags per rule
         tags = r.get("tags", [])[:8]
 
         sarif_rules.append({
@@ -65,7 +63,6 @@ def export_sarif(bundle: ScoredFindingBundle, output_path: Path | str) -> dict[s
             }
         })
 
-    # Sort findings by priority score descending and clip to 4,500
     sorted_findings = bundle.sorted_by_priority()
     clipped_findings = sorted_findings[:MAX_SARIF_FINDINGS]
 

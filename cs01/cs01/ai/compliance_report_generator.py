@@ -55,11 +55,9 @@ Your analysis must adhere strictly to these principles:
    - Include clear "Before (Vulnerable)" vs "After (Remediated)" code blocks.
 """
 
-
 def _sanitize_finding_for_ai(finding: ScoredFinding) -> dict:
     """Prepare a finding record for AI prompt synthesis with strict privacy sanitization."""
     snippet = finding.redacted_snippet or finding.snippet or ""
-    # Strip any potential residual secrets
     clean_snippet = re.sub(r'(?i)(password|secret|key|token)\s*[:=]\s*["\'][^"\']+["\']', r'\1: "[SECRET_REDACTED]"', snippet)
 
     return {
@@ -74,7 +72,6 @@ def _sanitize_finding_for_ai(finding: ScoredFinding) -> dict:
         "code_snippet": clean_snippet[:500],
         "remediation_hint": finding.remediation,
     }
-
 
 def generate_full_compliance_report(
     bundle: ScoredFindingBundle,
@@ -92,7 +89,6 @@ def generate_full_compliance_report(
 
     client.resolve_model()
 
-    # 1. Group and analyze findings by rule category
     rule_counts: dict[str, int] = {}
     rule_samples: dict[str, ScoredFinding] = {}
     for f in bundle.findings:
@@ -100,14 +96,12 @@ def generate_full_compliance_report(
         if f.rule_id not in rule_samples:
             rule_samples[f.rule_id] = f
 
-    # Select representative samples for each distinct violation class (up to 6)
     representative_samples = []
     for rid, f in list(rule_samples.items())[:6]:
         sanitized = _sanitize_finding_for_ai(f)
         sanitized["total_occurrences_in_codebase"] = rule_counts[rid]
         representative_samples.append(sanitized)
 
-    # 2. Extract metrics
     pillar_data = [
         {"pillar": p.label, "score": f"{p.score:.1f}/100", "status": "PASS" if p.score >= 80 else ("PARTIAL" if p.score >= 40 else "FAIL")}
         for p in bundle.readiness.pillars

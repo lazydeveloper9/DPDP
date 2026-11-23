@@ -4,7 +4,6 @@ from cs01.models import (
 )
 from cs01.pipeline.stage5_classify.readiness_scorer import calculate_readiness_score
 
-
 def test_clean_readiness_score():
     score = calculate_readiness_score([])
     assert score.overall == 100.0
@@ -12,9 +11,7 @@ def test_clean_readiness_score():
     assert score.open_critical_count == 0
     assert score.open_high_count == 0
 
-
 def test_critical_cap_enforcement():
-    # Construct a CRITICAL §8(5) finding in 250_crore band
     critical_finding = ScoredFinding(
         id="f1",
         rule_id="CODE-DPDP-001",
@@ -34,7 +31,6 @@ def test_critical_cap_enforcement():
 
     readiness = calculate_readiness_score([critical_finding])
 
-    # Uncapped score would be around 95, but CRITICAL cap must limit to max 60.0
     assert readiness.overall <= 60.0
     assert readiness.is_capped is True
     assert "250 Crore" in (readiness.cap_reason or "")

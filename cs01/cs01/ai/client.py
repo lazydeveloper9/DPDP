@@ -10,7 +10,6 @@ import urllib.parse
 import urllib.request
 from typing import Callable, Optional
 
-
 class LocalLLMClient:
     """Client for local LLMs (Qwen 2.5 Coder via Ollama, vLLM, or llama.cpp)."""
 
@@ -26,7 +25,6 @@ class LocalLLMClient:
         self.temperature = temperature
         self.timeout = timeout
 
-        # Guard against accidental cloud endpoint leakage
         parsed = urllib.parse.urlparse(self.endpoint)
         hostname = (parsed.hostname or "").lower()
         if (
@@ -66,7 +64,6 @@ class LocalLLMClient:
         if not installed or self.model in installed:
             return self.model
 
-        # If user asked for qwen2.5-coder without tag or tag mismatch
         base_name = self.model.split(":")[0].lower()
         candidates = [m for m in installed if base_name in m.lower()]
         if candidates:
@@ -118,7 +115,6 @@ class LocalLLMClient:
             return self._call_ollama_stream(prompt, system_prompt, on_token)
         except urllib.error.HTTPError as e:
             if e.code == 404:
-                # Try OpenAI-compatible API (for vLLM or LM Studio)
                 try:
                     return self._call_openai_compat(prompt, system_prompt)
                 except urllib.error.HTTPError as err:

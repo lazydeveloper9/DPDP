@@ -7,7 +7,6 @@ from cs01.models import (
 from cs01.pipeline.stage6_report.html_exporter import export_html_report
 from cs01.pipeline.stage6_report.gitlab_exporter import export_gitlab_sast
 
-
 def test_html_and_gitlab_export(tmp_path: Path):
     bundle = ScoredFindingBundle(
         scan_id="test_scan",
@@ -34,7 +33,6 @@ def test_html_and_gitlab_export(tmp_path: Path):
         readiness=DpdpReadinessScore(overall=60.0, max_statutory_ceiling_engaged="₹250 Crore"),
     )
 
-    # HTML Test
     html_file = tmp_path / "report.html"
     export_html_report(bundle, html_file)
     assert html_file.exists()
@@ -44,7 +42,6 @@ def test_html_and_gitlab_export(tmp_path: Path):
     assert "SQL-DPDP-001" in html_text
     assert "Statutory Disclaimer:" in html_text
 
-    # GitLab SAST Test
     gl_file = tmp_path / "gl-sast-report.json"
     gl_report = export_gitlab_sast(bundle, gl_file)
     assert gl_file.exists()

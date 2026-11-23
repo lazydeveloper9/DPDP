@@ -2,7 +2,6 @@ import pytest
 from cs01.models import RawFinding, PassType, Severity
 from cs01.pipeline.stage5_classify.deduplicator import deduplicate_findings
 
-
 def test_deduplicate_identical_findings():
     f1 = RawFinding(
         id="f1",
@@ -20,7 +19,6 @@ def test_deduplicate_identical_findings():
         remediation="Mask data",
         contributing_pii_hit_ids=["hit1"],
     )
-    # Duplicate with higher severity (CRITICAL) and additional contributing hit
     f2 = f1.model_copy(
         update={
             "id": "f2",

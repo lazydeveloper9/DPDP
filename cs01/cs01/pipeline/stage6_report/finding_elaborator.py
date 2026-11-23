@@ -9,14 +9,12 @@ from __future__ import annotations
 from pathlib import Path
 from cs01.models import ScoredFinding, ScanConfig
 
-
 def elaborate_finding(f: ScoredFinding, cfg: ScanConfig) -> dict[str, str]:
     """Produce an exhaustive technical, statutory, threat, and remediation elaboration for a finding."""
     rid = f.rule_id
     file_name = Path(f.file).name if f.file else "source"
     entity = f.matched_entity or "personal data identifier"
 
-    # Default containers
     tech = ""
     statutory = ""
     threat = ""
@@ -24,9 +22,6 @@ def elaborate_finding(f: ScoredFinding, cfg: ScanConfig) -> dict[str, str]:
     after_code = ""
     verification = f"Run `cs01 audit {f.file or '.'}` to confirm finding `{f.rule_id}` is resolved."
 
-    # ──────────────────────────────────────────────────────────────────────────
-    # 1. CODE-DPDP-001: Logger PII Sinks
-    # ──────────────────────────────────────────────────────────────────────────
     if rid == "CODE-DPDP-001":
         tech = (
             f"The application flow directly introduces unmasked **{entity}** into an application logger sink at `{f.file}:{f.line_start}`. "
@@ -70,9 +65,6 @@ def elaborate_finding(f: ScoredFinding, cfg: ScanConfig) -> dict[str, str]:
             f"3. Run `cs01 audit .` and verify that `[FND-{rid}]` is cleared."
         )
 
-    # ──────────────────────────────────────────────────────────────────────────
-    # 2. SQL-DPDP-001: Unencrypted Database Columns
-    # ──────────────────────────────────────────────────────────────────────────
     elif rid == "SQL-DPDP-001":
         tech = (
             f"The database model at `{f.file}:{f.line_start}` declares personal data column `{entity}` without a column-level encryption marker or encrypted type wrapper. "
@@ -114,9 +106,6 @@ def elaborate_finding(f: ScoredFinding, cfg: ScanConfig) -> dict[str, str]:
             f"3. Run `cs01 audit .` to confirm that `SQL-DPDP-001` is resolved."
         )
 
-    # ──────────────────────────────────────────────────────────────────────────
-    # 3. IAC-DPDP-001: Unencrypted Terraform RDS Instances
-    # ──────────────────────────────────────────────────────────────────────────
     elif rid == "IAC-DPDP-001":
         tech = (
             f"The Infrastructure-as-Code (Terraform) resource at `{f.file}:{f.line_start}` explicitly declares `storage_encrypted = false` "
@@ -155,9 +144,6 @@ def elaborate_finding(f: ScoredFinding, cfg: ScanConfig) -> dict[str, str]:
             f"3. Run `cs01 audit .` to confirm `IAC-DPDP-001` passes."
         )
 
-    # ──────────────────────────────────────────────────────────────────────────
-    # 4. ARCH-DPDP-001: Missing Consent Withdrawal / Erasure Routes
-    # ──────────────────────────────────────────────────────────────────────────
     elif rid == "ARCH-DPDP-001":
         tech = (
             f"The application repository stores and processes personal data across database models, but whole-repo architectural scanning "
@@ -204,9 +190,6 @@ def elaborate_finding(f: ScoredFinding, cfg: ScanConfig) -> dict[str, str]:
             f"3. Run `cs01 audit .` to verify that architectural rule `ARCH-DPDP-001` passes."
         )
 
-    # ──────────────────────────────────────────────────────────────────────────
-    # 5. ARCH-DPDP-003: Children's Data & Missing Guardian Age-Gate
-    # ──────────────────────────────────────────────────────────────────────────
     elif rid == "ARCH-DPDP-003":
         tech = (
             f"The database schema declares age or date-of-birth attributes (`{entity}`), but static analysis of route handlers, "
@@ -249,9 +232,6 @@ def elaborate_finding(f: ScoredFinding, cfg: ScanConfig) -> dict[str, str]:
             f"3. Run `cs01 audit .` to confirm `ARCH-DPDP-003` passes."
         )
 
-    # ──────────────────────────────────────────────────────────────────────────
-    # 6. Default / Generic Fallback for Other Rules
-    # ──────────────────────────────────────────────────────────────────────────
     else:
         tech = (
             f"Static code and AST analysis identified a statutory non-compliance pattern at `{f.file}:{f.line_start}`. "

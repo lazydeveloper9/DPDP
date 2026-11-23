@@ -27,7 +27,6 @@ EXIT_PARTIAL_SCAN = 3
 
 FAIL_ON_ORDER = ["critical", "high", "medium", "never"]
 
-
 def run_pipeline(cfg: ScanConfig) -> int:
     """
     Execute the full 6-stage pipeline.
@@ -52,7 +51,6 @@ def run_pipeline(cfg: ScanConfig) -> int:
             transient=True,
         ) as progress:
 
-            # ── Stage 1: Ingest & Classify ──────────────────────────────────────
             t = progress.add_task("[cyan]Stage 1 · Ingest & Classify...", total=None)
             from cs01.pipeline.stage1_ingest.ingestor import run_ingest
             manifest = run_ingest(cfg)
@@ -64,7 +62,6 @@ def run_pipeline(cfg: ScanConfig) -> int:
             if cfg.save_stage_output:
                 save_json(manifest, output_dir / "stage1_manifest.json")
 
-            # ── Stage 2: Parse ──────────────────────────────────────────────────
             t = progress.add_task("[cyan]Stage 2 · Parse...", total=None)
             from cs01.pipeline.stage2_parse.parser import run_parse
             repo_model = run_parse(manifest, cfg)
@@ -78,7 +75,6 @@ def run_pipeline(cfg: ScanConfig) -> int:
             if cfg.save_stage_output:
                 save_json(repo_model, output_dir / "stage2_model.json")
 
-            # ── Stage 3: Detect ─────────────────────────────────────────────────
             t = progress.add_task("[cyan]Stage 3 · Detect PII & Trace Flows...", total=None)
             from cs01.pipeline.stage3_detect.detector import run_detect
             flow_graph, pii_hits = run_detect(repo_model, cfg)
@@ -93,7 +89,6 @@ def run_pipeline(cfg: ScanConfig) -> int:
                 save_json(flow_graph, output_dir / "stage3_flow_graph.json")
                 save_json(pii_hits, output_dir / "stage3_pii_hits.json")
 
-            # ── Stage 4: Evaluate ───────────────────────────────────────────────
             t = progress.add_task("[cyan]Stage 4 · Evaluate DPDP Rules...", total=None)
             from cs01.pipeline.stage4_evaluate.evaluator import run_evaluate
             raw_findings = run_evaluate(flow_graph, pii_hits, repo_model, cfg)
@@ -107,7 +102,6 @@ def run_pipeline(cfg: ScanConfig) -> int:
                 save_json({"findings": [f.model_dump(mode="json") for f in raw_findings]},
                           output_dir / "stage4_raw_findings.json")
 
-            # ── Stage 5: Classify ───────────────────────────────────────────────
             t = progress.add_task("[cyan]Stage 5 · Classify & Score...", total=None)
             from cs01.pipeline.stage5_classify.classifier import run_classify
             bundle = run_classify(
@@ -128,14 +122,12 @@ def run_pipeline(cfg: ScanConfig) -> int:
             if cfg.save_stage_output:
                 save_json(bundle, output_dir / "stage5_bundle.json")
 
-            # ── Stage 6: Report ─────────────────────────────────────────────────
             t = progress.add_task("[cyan]Stage 6 · Generate Reports...", total=None)
             from cs01.pipeline.stage6_report.reporter import run_report
             run_report(bundle, cfg, output_dir)
             progress.remove_task(t)
             console.print(f"[green]✔ Stage 6[/green] — Reports written to [cyan]{output_dir}[/cyan]")
 
-        # ── Cryptographic Evidence Integrity Verification ───────────────────────
         evidence_zip = output_dir / "cs01-evidence-bundle.zip"
         if evidence_zip.exists():
             from cs01.pipeline.stage6_report.evidence_locker import verify_evidence_bundle
@@ -143,7 +135,6 @@ def run_pipeline(cfg: ScanConfig) -> int:
             if is_valid:
                 console.print("[green]✔ Evidence Bundle cryptographically verified (Rule 13 compliant)[/green]")
 
-        # ── Executive Compliance Dashboard ──────────────────────────────────────
         score_color = "green" if bundle.readiness.overall >= 80 else ("yellow" if bundle.readiness.overall >= 60 else "red")
         ai_brief_file = output_dir / "dpo_ai_executive_brief.md"
         ai_brief_line = f"\n  • [bold green]Qwen 2.5 Coder Brief:[/bold green] [cyan]{ai_brief_file}[/cyan]" if ai_brief_file.exists() else ""
@@ -166,7 +157,6 @@ def run_pipeline(cfg: ScanConfig) -> int:
             border_style="green" if bundle.readiness.overall >= 80 else "yellow",
         ))
 
-        # ── Determine exit code ─────────────────────────────────────────────────
         if bundle.partial_scan:
             base_exit = EXIT_PARTIAL_SCAN
         else:

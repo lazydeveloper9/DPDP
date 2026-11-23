@@ -7,7 +7,6 @@ from cs01.models import (
 )
 from cs01.pipeline.stage6_report.sarif_exporter import export_sarif, MAX_SARIF_FINDINGS
 
-
 def test_sarif_export_invariants(tmp_path: Path):
     bundle = ScoredFindingBundle(
         scan_id="test_scan",
@@ -37,17 +36,14 @@ def test_sarif_export_invariants(tmp_path: Path):
     out_file = tmp_path / "report.sarif"
     sarif = export_sarif(bundle, out_file)
 
-    # Invariant 1: Exactly one runs[0] object
     assert len(sarif["runs"]) == 1
     run = sarif["runs"][0]
     assert run["tool"]["driver"]["name"] == "CS-01"
 
-    # Invariant 2: <= 8 tags per rule
     for r in run["tool"]["driver"]["rules"]:
         tags = r.get("properties", {}).get("tags", [])
         assert len(tags) <= 8
 
-    # Results check
     assert len(run["results"]) == 1
     res = run["results"][0]
     assert res["level"] == "error"

@@ -8,49 +8,42 @@ from typing import Optional
 from pydantic import BaseModel, Field
 from pydantic_settings import BaseSettings
 
-
 class ThirdScheduleFlags(BaseModel):
     health_data: bool = False
     financial_data: bool = False
     biometric_data: bool = False
     children_data: bool = False
 
-
 class ApprovedProcessor(BaseModel):
     name: str
     services: list[str] = Field(default_factory=list)
 
-
 class EngineConfig(BaseModel):
     tree_sitter: bool = True
     opengrep: bool = False
-    opengrep_binary: Optional[str] = None      # Custom path to opengrep or semgrep binary
-    rules_dir: Optional[str] = None            # Custom directory for opengrep rules
-    timeout_seconds: float = 120.0             # Subprocess timeout in seconds
+    opengrep_binary: Optional[str] = None
+    rules_dir: Optional[str] = None
+    timeout_seconds: float = 120.0
     ai_triage: bool = False
-    ai_triage_endpoint: Optional[str] = None   # local vLLM endpoint URL
-
+    ai_triage_endpoint: Optional[str] = None
 
 class AiConfig(BaseModel):
     enabled: bool = True
     model: str = "qwen2.5-coder:3b"
-    endpoint: str = "http://localhost:11434"   # Local Ollama or vLLM endpoint
+    endpoint: str = "http://localhost:11434"
     temperature: float = 0.2
     timeout_seconds: float = 300.0
-
 
 class BonusConfig(BaseModel):
     consent_audit: bool = False
     patch_generator: bool = False
     dast_probe: bool = False
 
-
 class ScanConfig(BaseModel):
     """
     Fully validated configuration for a cs01 scan.
     Loaded from cs01.yaml and supplemented by CLI flags.
     """
-    # Organisation profile
     org_name: str = "Unknown Org"
     entity_type: str = "data_fiduciary"
     is_sdf: bool = False
@@ -58,33 +51,27 @@ class ScanConfig(BaseModel):
     approved_processors: list[ApprovedProcessor] = Field(default_factory=list)
     allowed_cross_border_regions: list[str] = Field(default_factory=list)
 
-    # Scan settings
     scan_root: str = "."
     scan_layers: list[str] = Field(default_factory=lambda: ["code", "schema", "iac", "secrets"])
-    fail_on: str = "high"                               # critical | high | medium | never
+    fail_on: str = "high"
     output_formats: list[str] = Field(default_factory=lambda: ["sarif", "json", "html"])
     output_dir: str = "./cs01-reports"
-    dpdpignore_path: Optional[str] = None               # path to .dpdpignore file
-    baseline_path: Optional[str] = None                 # path to .cs01-baseline.json
-    diff_base: Optional[str] = None                     # git ref for --diff-base
-    git_ref: Optional[str] = None                       # git branch/tag/ref for remote git scan
+    dpdpignore_path: Optional[str] = None
+    baseline_path: Optional[str] = None
+    diff_base: Optional[str] = None
+    git_ref: Optional[str] = None
 
-    # Engine
     engine: EngineConfig = Field(default_factory=EngineConfig)
 
-    # Bonus modules
     bonus: BonusConfig = Field(default_factory=BonusConfig)
 
-    # Local AI (Qwen 2.5 Coder)
     ai: AiConfig = Field(default_factory=AiConfig)
 
-    # Policy profiles directory
     policy_profiles_dir: str = "./policy_profiles"
 
-    # Debug / developer flags
-    save_stage_output: bool = False       # saves intermediate JSONs to output_dir
+    save_stage_output: bool = False
     debug: bool = False
-    strict_test_scanning: bool = False    # if True, PII in test files gets full severity
+    strict_test_scanning: bool = False
 
     @property
     def approved_processor_names(self) -> list[str]:

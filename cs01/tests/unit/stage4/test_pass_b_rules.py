@@ -4,9 +4,7 @@ from cs01.models import (
 )
 from cs01.pipeline.stage4_evaluate.pass_b_engine import evaluate_pass_b
 
-
 def test_pass_b_missing_consent_withdrawal_route():
-    # Schema has personal data, but no routes exist
     model = RepoModel(
         schema_records=[
             SchemaRecord(
@@ -28,9 +26,7 @@ def test_pass_b_missing_consent_withdrawal_route():
     findings = evaluate_pass_b(model, ScanConfig())
     assert any(f.rule_id == "ARCH-DPDP-001" for f in findings)
 
-
 def test_pass_b_suppressed_when_consent_route_exists():
-    # Schema has personal data, AND consent withdrawal route exists
     model = RepoModel(
         schema_records=[
             SchemaRecord(
@@ -56,9 +52,7 @@ def test_pass_b_suppressed_when_consent_route_exists():
     findings = evaluate_pass_b(model, ScanConfig())
     assert not any(f.rule_id == "ARCH-DPDP-001" for f in findings)
 
-
 def test_pass_b_children_age_gate_missing():
-    # Schema has date_of_birth, but no age-gate in code
     model = RepoModel(
         schema_records=[
             SchemaRecord(

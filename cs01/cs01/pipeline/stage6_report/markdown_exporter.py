@@ -17,7 +17,6 @@ from cs01.models import ScoredFindingBundle, ScanConfig, Severity
 from cs01.pipeline.stage4_evaluate.rule_loader import load_all_rules
 from .finding_elaborator import elaborate_finding
 
-
 def get_git_info(target_dir: str | Path, fallback_dir: Optional[str | Path] = None) -> tuple[str, str]:
     """Retrieve git branch and commit SHA if target or fallback is in a git repository."""
     candidates: list[Path] = []
@@ -57,7 +56,6 @@ def get_git_info(target_dir: str | Path, fallback_dir: Optional[str | Path] = No
 
     return "main", "local-unversioned-" + hashlib.sha256(str(target_dir).encode()).hexdigest()[:12]
 
-
 def export_markdown_report(
     bundle: ScoredFindingBundle,
     cfg: ScanConfig,
@@ -67,14 +65,12 @@ def export_markdown_report(
     out_file = Path(output_path)
     out_file.parent.mkdir(parents=True, exist_ok=True)
 
-    # 1. Timestamps (UTC & IST)
     now_utc = datetime.now(timezone.utc)
     ist_tz = timezone(timedelta(hours=5, minutes=30))
     now_ist = now_utc.astimezone(ist_tz)
     ts_utc = now_utc.strftime("%Y-%m-%d %H:%M:%S UTC")
     ts_ist = now_ist.strftime("%Y-%m-%d %H:%M:%S IST")
 
-    # 2. Gate & Status
     has_failed_gate = False
     fail_on_levels = ["critical", "high", "medium", "never"]
     threshold_idx = fail_on_levels.index(cfg.fail_on) if cfg.fail_on in fail_on_levels else 1
@@ -89,10 +85,8 @@ def export_markdown_report(
     status_str = f"FAIL — Policy Gate: fail-on {cfg.fail_on.capitalize()}" if has_failed_gate else f"PASS — Policy Gate: fail-on {cfg.fail_on.capitalize()}"
     exit_code = 1 if has_failed_gate else (3 if bundle.partial_scan else 0)
 
-    # 3. Git metadata
     branch, commit_sha = get_git_info(bundle.scan_root, fallback_dir=cfg.scan_root)
 
-    # 4. Severity counts
     crit_count = sum(1 for f in bundle.findings if f.severity == Severity.CRITICAL and not getattr(f, "is_baseline_suppressed", False))
     high_count = sum(1 for f in bundle.findings if f.severity == Severity.HIGH and not getattr(f, "is_baseline_suppressed", False))
     med_count = sum(1 for f in bundle.findings if f.severity == Severity.MEDIUM and not getattr(f, "is_baseline_suppressed", False))
@@ -100,7 +94,6 @@ def export_markdown_report(
     suppressed_count = sum(1 for f in bundle.findings if getattr(f, "is_baseline_suppressed", False))
     total_active = crit_count + high_count + med_count + low_count
 
-    # 5. Section 33 breakdown
     sec8_5_findings = [f for f in bundle.findings if "8(5)" in f.dpdp_section or f.penalty_band == "250_crore"]
     sec8_6_findings = [f for f in bundle.findings if "8(6)" in f.dpdp_section or f.penalty_band == "200_crore_breach"]
     sec9_findings = [f for f in bundle.findings if "9" in f.dpdp_section or f.penalty_band == "200_crore_children"]
@@ -115,12 +108,10 @@ def export_markdown_report(
                 return s.value
         return "INFO"
 
-    # Digest of canonical report
     digest_hash = hashlib.sha256(f"{bundle.scan_id}:{bundle.scan_timestamp}".encode()).hexdigest()
 
     md: list[str] = []
 
-    # Title & Header
     md.append("# Full-Stack Data Protection (DPDP) Compliance Assessment Report\n")
     target_name = f"{cfg.org_name} ({Path(bundle.scan_root).name})"
     md.append(f"**Target Application:** {target_name}  ")
@@ -131,7 +122,6 @@ def export_markdown_report(
     md.append(f"**Report Generated:** {ts_utc} / {ts_ist}  \n")
     md.append("---\n")
 
-    # 1. Document Control & Scan Provenance
     md.append("## 1. Document Control & Scan Provenance\n")
     md.append("| Attribute | Value |")
     md.append("|---|---|")
@@ -146,7 +136,6 @@ def export_markdown_report(
     md.append(f"| **Evidence Bundle Digest (SHA-256)** | `{digest_hash}` |\n")
     md.append("---\n")
 
-    # 2. Executive & DPO Compliance Summary
     md.append("## 2. Executive & DPO Compliance Summary\n")
     md.append("### 2.1 Overall Posture & Severity Breakdown\n")
     md.append(
@@ -188,7 +177,6 @@ def export_markdown_report(
         md.append("1. **None:** Zero policy-blocking findings detected.")
     md.append("\n---\n")
 
-    # 3. Compliance Coverage Matrix
     md.append("## 3. Compliance Coverage Matrix\n")
     md.append("### 3.1 By Statutory DPDP Pillar\n")
     md.append("| Statutory Pillar | Rules Evaluated | Passed | Failed | Not Applicable | Pillar Status |")
@@ -212,13 +200,11 @@ def export_markdown_report(
     md.append(f"| Layer 5: Live API & Web Surface Probe *(Opt-in)* | `0 endpoints` | `0` | `0` | `0` | `0` |\n")
     md.append("---\n")
 
-    # 4. Auto-Generated RoPA & Personal Data-Flow Inventory
     md.append("## 4. Auto-Generated RoPA & Personal Data-Flow Inventory\n")
     md.append("*Derived automatically from AST sources, SQL schemas, Terraform regions, and outbound SDK/HTTP sinks to support Record of Processing Activities (RoPA) documentation.*\n")
     md.append("| Personal Data Category | Collection Point (Route / UI) | Storage (Table / Column / Protection) | Outbound Sinks (Logs / 3rd-Party / AI) | Cloud Region | Consent & Processor Status |")
     md.append("|---|---|---|---|---|---|")
 
-    # Build RoPA rows from findings
     ropa_rows = []
     seen_categories = set()
     for f in bundle.findings:
@@ -241,7 +227,6 @@ def export_markdown_report(
         md.append(r)
     md.append("\n---\n")
 
-    # 5. Detailed Technical Findings
     md.append("## 5. Detailed Technical Findings\n")
     md.append("*Ordered strictly by Priority Score (descending). All real PII values and secrets inside code snippets are masked prior to output.*\n")
 
@@ -271,7 +256,6 @@ def export_markdown_report(
         md.append(snippet_content)
         md.append("```\n")
 
-        # Comprehensive Elaboration
         elaboration = elaborate_finding(f, cfg)
 
         md.append("#### 1. Detailed Technical Failure Analysis (Code Walkthrough)")
@@ -292,7 +276,6 @@ def export_markdown_report(
 
         md.append("\n---\n")
 
-    # 6. Dynamic & Bonus Assessments
     md.append("## 6. Dynamic & Bonus Assessments *(Included When Modules Enabled)*\n")
     md.append("### 6.1 End-to-End Consent Flow Assessment (`Sec 5–6, Rule 3`)\n")
     has_consent_withdrawal_fail = any("ARCH-DPDP-001" in f.rule_id for f in bundle.findings)
@@ -321,7 +304,6 @@ def export_markdown_report(
         md.append("| `None` | `N/A` | `N/A` | Clean |")
     md.append("\n---\n")
 
-    # 7. Prioritized Remediation Roadmap
     md.append("## 7. Prioritized Remediation Roadmap\n")
     md.append("| Priority Window | Target SLA | Findings Included | Primary Owner | Expected Readiness Score Lift |")
     md.append("|---|---|---|---|---|")
@@ -334,7 +316,6 @@ def export_markdown_report(
     md.append(f"| **P2 — Pre-Enforcement Completeness** | `30–60 Days` | `[{', '.join(med_ids[:4]) or 'None'}]` *(Rule 3 notice, 365d log TTL, DSRs)* | Frontend + Legal/DPO | `+10 pts` |\n")
     md.append("---\n")
 
-    # 8. Audit Methodology, Suppressions & Appendix
     md.append("## 8. Audit Methodology, Suppressions & Appendix\n")
     md.append("### 8.1 Active Analyzers & Execution Warnings\n")
     md.append("| Analyzer Module | Version / Engine | Files Evaluated | Unparseable / Skipped Files | Execution Time |")
