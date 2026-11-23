@@ -57,7 +57,7 @@ def parse_source_ast(abs_path: Path, rel_path: str, language: str) -> AstFileRec
 
     record = AstFileRecord(path=rel_path, language=language)
 
-    def _walk(node, current_func: Optional[dict] = None) -> None:
+    def _walk(node, current_func: Optional[dict] = None, current_decorators: Optional[list[str]] = None) -> None:
         ntype = node.type
 
         if ntype in (
@@ -77,7 +77,7 @@ def parse_source_ast(abs_path: Path, rel_path: str, language: str) -> AstFileRec
             for ch in node.children:
                 if "parameter" in ch.type or ch.type == "formal_parameters":
                     for p in ch.children:
-                        if p.type in ("identifier", "typed_parameter", "parameter_declaration"):
+                        if p.type in ("identifier", "typed_parameter", "default_parameter", "typed_default_parameter", "parameter_declaration"):
                             params.append(_node_text(p, source_bytes).strip())
 
             func_dict = {
@@ -86,6 +86,8 @@ def parse_source_ast(abs_path: Path, rel_path: str, language: str) -> AstFileRec
                 "end_line": node.end_point[0] + 1,
                 "params": params,
                 "calls": [],
+                "decorators": current_decorators or [],
+                "body_snippet": _node_text(node, source_bytes)[:3000],
             }
             record.functions.append(func_dict)
 
@@ -95,16 +97,49 @@ def parse_source_ast(abs_path: Path, rel_path: str, language: str) -> AstFileRec
 
         if ntype in ("class_definition", "class_declaration"):
             class_name = "UnknownClass"
+            bases: list[str] = []
+            fields: list[dict] = []
             for ch in node.children:
                 if ch.type in ("identifier", "type_identifier", "name"):
                     class_name = _node_text(ch, source_bytes)
-                    break
+                elif ch.type in ("argument_list", "class_heritage"):
+                    for b in ch.children:
+                        if b.type in ("identifier", "type_identifier", "attribute"):
+                            bases.append(_node_text(b, source_bytes).strip())
+                elif ch.type in ("block", "class_body"):
+                    for stmt in ch.children:
+                        if stmt.type in ("assignment", "annotated_assignment", "field_definition", "property_definition"):
+                            fname = ""
+                            ftype = ""
+                            for sch in stmt.children:
+                                if sch.type in ("identifier", "name", "property_identifier"):
+                                    fname = _node_text(sch, source_bytes)
+                                    break
+                            for sch in stmt.children:
+                                if sch.type in ("type", "type_annotation"):
+                                    ftype = _node_text(sch, source_bytes)
+                                    break
+                            if fname:
+                                fields.append({
+                                    "name": fname,
+                                    "type": ftype,
+                                    "line": stmt.start_point[0] + 1,
+                                    "snippet": _node_text(stmt, source_bytes)[:160],
+                                })
 
             record.classes.append({
                 "name": class_name,
                 "start_line": node.start_point[0] + 1,
                 "end_line": node.end_point[0] + 1,
+                "bases": bases,
+                "fields": fields,
+                "decorators": current_decorators or [],
+                "body_snippet": _node_text(node, source_bytes)[:4000],
             })
+
+            for ch in node.children:
+                _walk(ch, current_func)
+            return
 
         if ntype in ("call", "call_expression"):
             call_text = _node_text(node, source_bytes)
@@ -116,7 +151,7 @@ def parse_source_ast(abs_path: Path, rel_path: str, language: str) -> AstFileRec
 
             call_entry = {
                 "callee": callee or call_text.split("(")[0].strip(),
-                "snippet": call_text[:120],
+                "snippet": call_text[:160],
                 "line": node.start_point[0] + 1,
             }
             record.calls.append(call_entry)
@@ -154,12 +189,19 @@ def parse_source_ast(abs_path: Path, rel_path: str, language: str) -> AstFileRec
         if ntype in ("decorator", "annotation", "decorated_definition"):
             dec_text = _node_text(node, source_bytes).strip()
             if ntype == "decorated_definition":
+                decs = []
                 for ch in node.children:
                     if ch.type == "decorator":
+                        d_name = _node_text(ch, source_bytes).strip()
+                        decs.append(d_name)
                         record.decorators.append({
-                            "name": _node_text(ch, source_bytes).strip(),
+                            "name": d_name,
                             "line": ch.start_point[0] + 1,
                         })
+                        _walk(ch, current_func, None)
+                    else:
+                        _walk(ch, current_func, current_decorators=decs)
+                return
             else:
                 record.decorators.append({
                     "name": dec_text,
@@ -167,7 +209,7 @@ def parse_source_ast(abs_path: Path, rel_path: str, language: str) -> AstFileRec
                 })
 
         for child in node.children:
-            _walk(child, current_func)
+            _walk(child, current_func, current_decorators)
 
     _walk(tree.root_node)
     return record

@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-11-23T05:11:03.530226+00:00",
+  "timestamp": "2026-11-23T06:04:24.649152+00:00",
   "fixtures_dir": "C:\\DPDP\\cs01\\tests\\accuracy_bench\\fixtures",
   "rules": {
     "ARCH-DPDP-001": {
@@ -115,6 +115,34 @@
         }
       ]
     },
+    "ARCH-DPDP-005": {
+      "tp": 1,
+      "fp": 0,
+      "tn": 1,
+      "fn": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "fpr": 0.0,
+      "fixtures": [
+        {
+          "scenario": "tn_valid_audit_telemetry",
+          "expected_fired": false,
+          "actual_fired": false,
+          "outcome": "TN",
+          "detected_rules": []
+        },
+        {
+          "scenario": "tp_null_audit_target_resource",
+          "expected_fired": true,
+          "actual_fired": true,
+          "outcome": "TP",
+          "detected_rules": [
+            "ARCH-DPDP-005"
+          ]
+        }
+      ]
+    },
     "CODE-DPDP-001": {
       "tp": 1,
       "fp": 0,
@@ -202,6 +230,146 @@
           "outcome": "TP",
           "detected_rules": [
             "CODE-DPDP-003"
+          ]
+        }
+      ]
+    },
+    "CODE-DPDP-004": {
+      "tp": 1,
+      "fp": 0,
+      "tn": 1,
+      "fn": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "fpr": 0.0,
+      "fixtures": [
+        {
+          "scenario": "tn_dto_exclude_field",
+          "expected_fired": false,
+          "actual_fired": false,
+          "outcome": "TN",
+          "detected_rules": []
+        },
+        {
+          "scenario": "tp_dto_password_hash",
+          "expected_fired": true,
+          "actual_fired": true,
+          "outcome": "TP",
+          "detected_rules": [
+            "CODE-DPDP-004"
+          ]
+        }
+      ]
+    },
+    "CODE-DPDP-005": {
+      "tp": 1,
+      "fp": 0,
+      "tn": 1,
+      "fn": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "fpr": 0.0,
+      "fixtures": [
+        {
+          "scenario": "tn_public_assets_mount",
+          "expected_fired": false,
+          "actual_fired": false,
+          "outcome": "TN",
+          "detected_rules": []
+        },
+        {
+          "scenario": "tp_public_uploads_mount",
+          "expected_fired": true,
+          "actual_fired": true,
+          "outcome": "TP",
+          "detected_rules": [
+            "CODE-DPDP-005"
+          ]
+        }
+      ]
+    },
+    "CODE-DPDP-006": {
+      "tp": 1,
+      "fp": 0,
+      "tn": 1,
+      "fn": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "fpr": 0.0,
+      "fixtures": [
+        {
+          "scenario": "tn_validated_file_upload",
+          "expected_fired": false,
+          "actual_fired": false,
+          "outcome": "TN",
+          "detected_rules": []
+        },
+        {
+          "scenario": "tp_unvalidated_file_upload",
+          "expected_fired": true,
+          "actual_fired": true,
+          "outcome": "TP",
+          "detected_rules": [
+            "CODE-DPDP-006"
+          ]
+        }
+      ]
+    },
+    "CODE-DPDP-007": {
+      "tp": 1,
+      "fp": 0,
+      "tn": 1,
+      "fn": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "fpr": 0.0,
+      "fixtures": [
+        {
+          "scenario": "tn_idor_ownership_checked",
+          "expected_fired": false,
+          "actual_fired": false,
+          "outcome": "TN",
+          "detected_rules": []
+        },
+        {
+          "scenario": "tp_idor_patient_id",
+          "expected_fired": true,
+          "actual_fired": true,
+          "outcome": "TP",
+          "detected_rules": [
+            "CODE-DPDP-007"
+          ]
+        }
+      ]
+    },
+    "CODE-DPDP-008": {
+      "tp": 1,
+      "fp": 0,
+      "tn": 1,
+      "fn": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "fpr": 0.0,
+      "fixtures": [
+        {
+          "scenario": "tn_strict_clinical_role",
+          "expected_fired": false,
+          "actual_fired": false,
+          "outcome": "TN",
+          "detected_rules": []
+        },
+        {
+          "scenario": "tp_excessive_staff_role",
+          "expected_fired": true,
+          "actual_fired": true,
+          "outcome": "TP",
+          "detected_rules": [
+            "CODE-DPDP-008"
           ]
         }
       ]
@@ -343,7 +511,9 @@
           "expected_fired": false,
           "actual_fired": false,
           "outcome": "TN",
-          "detected_rules": []
+          "detected_rules": [
+            "ARCH-DPDP-005"
+          ]
         },
         {
           "scenario": "tp_no_retention",
@@ -353,6 +523,7 @@
           "detected_rules": [
             "ARCH-DPDP-001",
             "ARCH-DPDP-002",
+            "ARCH-DPDP-005",
             "SQL-DPDP-001",
             "SQL-DPDP-002",
             "SQL-DPDP-005"
@@ -362,10 +533,10 @@
     }
   },
   "aggregate": {
-    "total_fixtures": 23,
-    "tp": 11,
+    "total_fixtures": 35,
+    "tp": 17,
     "fp": 0,
-    "tn": 12,
+    "tn": 18,
     "fn": 0,
     "precision": 1.0,
     "recall": 1.0,

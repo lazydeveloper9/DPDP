@@ -157,3 +157,54 @@
   severity: "MEDIUM"
   remediation: "Configure NTP synchronization to National Physical Laboratory (NPL) or NIC servers per CERT-In 2022 Directions."
   tags: ["ntp-sync", "cert-in", "dpdp-r8-3", "medium"]
+
+- rule_id: "CODE-DPDP-004"
+  pass: "A"
+  description: "Excessive personal data or credential field exposed in API response model or DTO"
+  dpdp_section: "§8(5)"
+  dpdp_rule: "Rule 6(1)(a)"
+  penalty_band: "250_crore"
+  severity: "CRITICAL"
+  remediation: "Exclude credential and sensitive identifier fields from API response models using exclude=True, DTO mapping, or @field_serializer masking."
+  tags: ["api-exposure", "data-minimization", "dpdp-s8-5", "dto", "critical"]
+
+- rule_id: "CODE-DPDP-005"
+  pass: "A"
+  description: "Publicly mounted static framework directory exposes sensitive storage or backup directories"
+  dpdp_section: "§8(5)"
+  dpdp_rule: "Rule 6(1)(b)"
+  penalty_band: "250_crore"
+  severity: "CRITICAL"
+  remediation: "Remove public static directory mounts on storage or backup folders. Restrict file access to authenticated endpoints with role checks."
+  tags: ["static-mount", "unauthenticated-access", "dpdp-s8-5", "critical"]
+
+- rule_id: "CODE-DPDP-006"
+  pass: "A"
+  description: "Unvalidated file upload written to storage without extension or MIME allowlist verification"
+  dpdp_section: "§8(5)"
+  dpdp_rule: "Rule 6(1)(a)"
+  penalty_band: "250_crore"
+  severity: "HIGH"
+  remediation: "Enforce a strict file extension allowlist, MIME type verification, and generate randomized storage paths (e.g. UUIDs)."
+  tags: ["file-upload", "stored-xss", "input-validation", "dpdp-s8-5", "high"]
+
+- rule_id: "CODE-DPDP-007"
+  pass: "A"
+  description: "Missing object-level authorization check (IDOR/BOLA) on resource identifier in route handler"
+  dpdp_section: "§8(5)"
+  dpdp_rule: "Rule 6(1)(b)"
+  penalty_band: "250_crore"
+  severity: "CRITICAL"
+  remediation: "Verify that the authenticated principal (current_user) owns the requested entity before querying or returning it from the database."
+  tags: ["idor", "bola", "authorization", "dpdp-s8-5", "critical"]
+
+- rule_id: "CODE-DPDP-008"
+  pass: "A"
+  description: "Broken function-level authorization: excessive role privileges permitted on sensitive domain endpoint"
+  dpdp_section: "§8(5)"
+  dpdp_rule: "Rule 6(1)(b)"
+  penalty_band: "250_crore"
+  severity: "HIGH"
+  remediation: "Enforce least-privilege role boundaries on clinical/sensitive routes by requiring specialized roles rather than generic operational staff access."
+  tags: ["rbac", "least-privilege", "authorization", "dpdp-s8-5", "high"]
+

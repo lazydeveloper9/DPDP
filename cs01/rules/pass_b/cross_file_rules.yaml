@@ -37,3 +37,14 @@
   severity: "HIGH"
   remediation: "Register all external data processors in cs01.yaml approved_processors under valid Data Processing Agreements (DPAs)."
   tags: ["data-processor", "third-party", "dpdp-s8-2", "high"]
+
+- rule_id: "ARCH-DPDP-005"
+  pass: "B"
+  description: "Security and audit telemetry model lacks mandatory non-null target resource identifier for breach blast-radius scoping"
+  dpdp_section: "§8(6)"
+  dpdp_rule: "Rule 7(1)"
+  penalty_band: "200_crore_breach"
+  severity: "HIGH"
+  remediation: "Ensure security audit logging tables require a non-null target_resource_id to enable accurate Data Principal breach notification under DPDP Rule 7."
+  tags: ["audit-telemetry", "breach-notification", "dpdp-s8-6", "high"]
+

@@ -137,4 +137,43 @@ def evaluate_pass_b(
             matched_entity="age_verification",
         )
 
+    # -------------------------------------------------------------------------
+    # Rule ARCH-DPDP-005: Incomplete Breach-Response & Audit Telemetry
+    # -------------------------------------------------------------------------
+    AUDIT_TABLE_PATTERN = re.compile(r"(audit_?log|security_?log|access_?log|incident_?log)", re.I)
+    TARGET_RESOURCE_PATTERN = re.compile(r"(target_resource_id|resource_id|subject_id|target_id)", re.I)
+
+    has_audit_table = False
+    audit_has_target_resource = False
+    target_resource_is_nullable = False
+
+    for schema in model.schema_records:
+        tname = schema.table_or_model
+        col = schema.column_or_field
+        if AUDIT_TABLE_PATTERN.search(tname):
+            has_audit_table = True
+            if TARGET_RESOURCE_PATTERN.search(col):
+                audit_has_target_resource = True
+                if schema.is_nullable or "null" in " ".join(schema.constraints).lower():
+                    target_resource_is_nullable = True
+
+    null_target_found = False
+    null_target_file = None
+
+    for ast_file in model.ast_index:
+        for call in ast_file.calls:
+            csnip = call.get("snippet", "")
+            if "AuditLog(" in csnip or "log_audit(" in csnip or "create_audit" in csnip:
+                if re.search(r"target_resource_id\s*=\s*(None|null|\"\")", csnip, re.I):
+                    null_target_found = True
+                    null_target_file = ast_file.path
+                    break
+
+    if (has_audit_table and (not audit_has_target_resource or target_resource_is_nullable)) or null_target_found:
+        _create_assertion_finding(
+            rule_id="ARCH-DPDP-005",
+            snippet=f"Audit telemetry in {null_target_file or 'audit schema'} omits non-null target_resource_id, preventing breach blast-radius notification",
+            matched_entity="audit_telemetry:target_resource_id",
+        )
+
     return findings

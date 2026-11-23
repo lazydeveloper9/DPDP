@@ -57,6 +57,36 @@ def correlate_findings(
                 iac_finding.related_finding_ids.append(sql_f.id)
             iac_finding.correlation_chain = chain
 
+    uploads = findings_by_rule.get("CODE-DPDP-006", [])
+    mounts = findings_by_rule.get("CODE-DPDP-005", [])
+    if uploads and mounts:
+        mount_f = mounts[0]
+        for u in uploads:
+            chain = [
+                f"Layer 1: Unvalidated file upload endpoint '{u.matched_entity}' accepts arbitrary file types",
+                f"Layer 1: Static framework directory '{mount_f.matched_entity}' publicly exposes uploaded storage without authentication",
+                "Risk: Stored Cross-Site Scripting (XSS) and remote unauthenticated document exfiltration",
+            ]
+            u.severity = Severity.CRITICAL
+            u.correlation_chain = chain
+            if mount_f.id not in u.related_finding_ids:
+                u.related_finding_ids.append(mount_f.id)
+            if u.id not in mount_f.related_finding_ids:
+                mount_f.related_finding_ids.append(u.id)
+            mount_f.correlation_chain = chain
+
+    dtos = findings_by_rule.get("CODE-DPDP-004", [])
+    if sql_unencrypted and dtos:
+        for d in dtos:
+            for s in sql_unencrypted:
+                col_name = (s.matched_entity or "").split(".")[-1].lower()
+                dto_field = (d.matched_entity or "").split(".")[-1].lower()
+                if col_name and dto_field and (col_name in dto_field or dto_field in col_name):
+                    if s.id not in d.related_finding_ids:
+                        d.related_finding_ids.append(s.id)
+                    if d.id not in s.related_finding_ids:
+                        s.related_finding_ids.append(d.id)
+
     for f in findings:
         if f.rule_id == "CODE-DPDP-001":
             file_guards = [g for g in flow_graph.guards if g.file == f.file]
