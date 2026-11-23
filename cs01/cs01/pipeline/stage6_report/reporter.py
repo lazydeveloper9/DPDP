@@ -33,6 +33,7 @@ def run_report(
     bundle: ScoredFindingBundle,
     cfg: ScanConfig,
     output_dir: Path | str,
+    stage_durations: Optional[dict[str, float]] = None,
 ) -> dict[str, Path]:
     """Execute all report renderers and package the evidence bundle."""
     out_dir = Path(output_dir)
@@ -59,7 +60,7 @@ def run_report(
         generated_files["cs01-dpo-report.html"] = html_path
 
     md_path = out_dir / "cs01-report.md"
-    export_markdown_report(bundle, cfg, md_path)
+    export_markdown_report(bundle, cfg, md_path, stage_durations=stage_durations)
     generated_files["cs01-report.md"] = md_path
 
     ropa_path = out_dir / "ropa_map.json"

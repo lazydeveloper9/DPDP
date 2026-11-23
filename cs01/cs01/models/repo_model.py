@@ -22,6 +22,7 @@ class AstFileRecord(BaseModel):
     assignments: list[dict] = Field(default_factory=list)
     string_literals: list[dict] = Field(default_factory=list)
     decorators: list[dict] = Field(default_factory=list)
+    calls: list[dict] = Field(default_factory=list)
 class SchemaRecord(BaseModel):
     """
     Normalised record for a database column/field from any ORM or DDL format.

@@ -155,6 +155,18 @@ def evaluate_pass_a(
                         )
                         break
 
+        is_pii_table = any(any(pat.search(c.column_or_field) for pat, _ in PII_FIELD_NAME_PATTERNS) for c in cols)
+        has_consent_link = any(c.has_consent_linkage for c in cols)
+        if is_pii_table and not has_consent_link:
+            first_c = cols[0]
+            _create_finding(
+                rule_id="SQL-DPDP-005",
+                file=first_c.source_file,
+                line=first_c.line or 1,
+                snippet=f"Table '{tname}' stores personal data but lacks verifiable consent ledger linkage reference",
+                matched_entity=f"{tname}.consent_linkage",
+            )
+
     for schema in model.schema_records:
         is_pii_col = any(pat.search(schema.column_or_field) for pat, _ in PII_FIELD_NAME_PATTERNS)
         if not is_pii_col:
@@ -269,5 +281,27 @@ def evaluate_pass_a(
                 snippet=f"{ev.key}={ev.non_secret_value or '...'}",
                 matched_entity=ev.key,
             )
+
+    SECRET_KEY_PATTERN = re.compile(
+        r"(api_secret|demo_secret|api_key|auth_token|secret_key|jwt_secret|private_key|client_secret)",
+        re.I,
+    )
+    for ast_file in model.ast_index:
+        for assign in ast_file.assignments:
+            aname = assign.get("name", "")
+            asnippet = assign.get("value_snippet", "")
+            if SECRET_KEY_PATTERN.search(aname):
+                m = re.search(r"['\"]([^'\"]{8,})['\"]", asnippet)
+                if m:
+                    secret_val = m.group(1)
+                    if not any(dummy in secret_val.lower() for dummy in ("your-key", "change_me", "placeholder")):
+                        masked_snippet = asnippet.replace(secret_val, "[REDACTED_SECRET]")
+                        _create_finding(
+                            rule_id="CODE-DPDP-003",
+                            file=ast_file.path,
+                            line=assign.get("line", 1),
+                            snippet=masked_snippet,
+                            matched_entity=aname,
+                        )
 
     return findings

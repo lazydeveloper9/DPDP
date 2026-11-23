@@ -119,6 +119,7 @@ def parse_source_ast(abs_path: Path, rel_path: str, language: str) -> AstFileRec
                 "snippet": call_text[:120],
                 "line": node.start_point[0] + 1,
             }
+            record.calls.append(call_entry)
             if current_func is not None:
                 current_func["calls"].append(call_entry)
 

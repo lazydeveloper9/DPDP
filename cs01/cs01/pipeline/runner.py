@@ -5,6 +5,7 @@ Called by `cs01 scan`; each stage reads the previous stage's output model.
 
 from __future__ import annotations
 import sys
+import time
 from pathlib import Path
 
 from rich.console import Console
@@ -44,6 +45,8 @@ def run_pipeline(cfg: ScanConfig) -> int:
             console.print(f"[cyan]📦 Archive detected ({orig_scan_root}). Safely unpacked to temporary workspace.[/cyan]")
         cfg.scan_root = str(resolved_root)
 
+        stage_durations: dict[str, float] = {}
+
         with Progress(
             SpinnerColumn(),
             TextColumn("[progress.description]{task.description}"),
@@ -51,10 +54,12 @@ def run_pipeline(cfg: ScanConfig) -> int:
             transient=True,
         ) as progress:
 
+            t_start = time.perf_counter()
             t = progress.add_task("[cyan]Stage 1 · Ingest & Classify...", total=None)
             from cs01.pipeline.stage1_ingest.ingestor import run_ingest
             manifest = run_ingest(cfg)
             progress.remove_task(t)
+            stage_durations["stage1"] = time.perf_counter() - t_start
             console.print(
                 f"[green]✔ Stage 1[/green] — {manifest.total_scanned} files scanned, "
                 f"{manifest.skipped_count} skipped"
@@ -62,10 +67,12 @@ def run_pipeline(cfg: ScanConfig) -> int:
             if cfg.save_stage_output:
                 save_json(manifest, output_dir / "stage1_manifest.json")
 
+            t_start = time.perf_counter()
             t = progress.add_task("[cyan]Stage 2 · Parse...", total=None)
             from cs01.pipeline.stage2_parse.parser import run_parse
             repo_model = run_parse(manifest, cfg)
             progress.remove_task(t)
+            stage_durations["stage2"] = time.perf_counter() - t_start
             console.print(
                 f"[green]✔ Stage 2[/green] — "
                 f"{len(repo_model.ast_index)} ASTs, "
@@ -75,10 +82,12 @@ def run_pipeline(cfg: ScanConfig) -> int:
             if cfg.save_stage_output:
                 save_json(repo_model, output_dir / "stage2_model.json")
 
+            t_start = time.perf_counter()
             t = progress.add_task("[cyan]Stage 3 · Detect PII & Trace Flows...", total=None)
             from cs01.pipeline.stage3_detect.detector import run_detect
             flow_graph, pii_hits = run_detect(repo_model, cfg)
             progress.remove_task(t)
+            stage_durations["stage3"] = time.perf_counter() - t_start
             console.print(
                 f"[green]✔ Stage 3[/green] — "
                 f"{len(pii_hits.hits)} PII hits, "
@@ -89,10 +98,12 @@ def run_pipeline(cfg: ScanConfig) -> int:
                 save_json(flow_graph, output_dir / "stage3_flow_graph.json")
                 save_json(pii_hits, output_dir / "stage3_pii_hits.json")
 
+            t_start = time.perf_counter()
             t = progress.add_task("[cyan]Stage 4 · Evaluate DPDP Rules...", total=None)
             from cs01.pipeline.stage4_evaluate.evaluator import run_evaluate
             raw_findings = run_evaluate(flow_graph, pii_hits, repo_model, cfg)
             progress.remove_task(t)
+            stage_durations["stage4"] = time.perf_counter() - t_start
             console.print(
                 f"[green]✔ Stage 4[/green] — "
                 f"{len(raw_findings)} raw findings "
@@ -102,6 +113,7 @@ def run_pipeline(cfg: ScanConfig) -> int:
                 save_json({"findings": [f.model_dump(mode="json") for f in raw_findings]},
                           output_dir / "stage4_raw_findings.json")
 
+            t_start = time.perf_counter()
             t = progress.add_task("[cyan]Stage 5 · Classify & Score...", total=None)
             from cs01.pipeline.stage5_classify.classifier import run_classify
             bundle = run_classify(
@@ -114,6 +126,7 @@ def run_pipeline(cfg: ScanConfig) -> int:
                 partial_details=[e.get("error", "") for e in repo_model.parse_errors],
             )
             progress.remove_task(t)
+            stage_durations["stage5"] = time.perf_counter() - t_start
             console.print(
                 f"[green]✔ Stage 5[/green] — "
                 f"{len(bundle.findings)} unique findings · "
@@ -124,7 +137,7 @@ def run_pipeline(cfg: ScanConfig) -> int:
 
             t = progress.add_task("[cyan]Stage 6 · Generate Reports...", total=None)
             from cs01.pipeline.stage6_report.reporter import run_report
-            run_report(bundle, cfg, output_dir)
+            run_report(bundle, cfg, output_dir, stage_durations=stage_durations)
             progress.remove_task(t)
             console.print(f"[green]✔ Stage 6[/green] — Reports written to [cyan]{output_dir}[/cyan]")
 

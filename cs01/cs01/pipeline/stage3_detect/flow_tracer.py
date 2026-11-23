@@ -22,7 +22,7 @@ LOGGER_PATTERNS = re.compile(
 )
 
 OUTBOUND_CALL_PATTERNS = re.compile(
-    r"(requests\.(get|post|put|delete)|axios\.(get|post|put)|fetch\(|http\.(get|post)|HttpClient)",
+    r"(requests\.(get|post|put|delete)|axios\.(get|post|put)|fetch|http\.(get|post)|HttpClient)",
     re.I,
 )
 
@@ -121,6 +121,25 @@ def trace_flows(
                     sources.append(src)
                     sources_by_func.setdefault(func_key, []).append(src)
 
+            # Recognize local PII payloads or harvested data collections in function
+            for assign in ast_file.assignments:
+                aline = assign.get("line", 0)
+                if start_l <= aline <= func.get("end_line", start_l):
+                    aname = assign.get("name", "").lower()
+                    asnippet = assign.get("value_snippet", "").lower()
+                    if any(k in aname or k in asnippet for k in ("contacts", "harvested", "telemetry", "pii", "borrower", "customer", "phone_number")):
+                        src_id = f"SRC:{ast_file.path}:{func_name}:{assign.get('name')}"
+                        src = DataSource(
+                            id=src_id,
+                            source_type=SourceType.REQUEST_BODY,
+                            file=ast_file.path,
+                            line=aline,
+                            function_name=func_name,
+                            variable_name=assign.get("name"),
+                        )
+                        sources.append(src)
+                        sources_by_func.setdefault(func_key, []).append(src)
+
             for call in calls:
                 snippet = call.get("snippet", "")
                 callee = call.get("callee", "")
@@ -155,7 +174,7 @@ def trace_flows(
                 s_type: Optional[SinkType] = None
                 if LOGGER_PATTERNS.search(callee) or LOGGER_PATTERNS.search(snippet):
                     s_type = SinkType.LOGGER
-                elif OUTBOUND_CALL_PATTERNS.search(callee):
+                elif OUTBOUND_CALL_PATTERNS.search(callee) or OUTBOUND_CALL_PATTERNS.search(snippet):
                     s_type = SinkType.THIRD_PARTY_SDK
                 elif DB_WRITE_PATTERNS.search(snippet):
                     s_type = SinkType.DB_WRITE
