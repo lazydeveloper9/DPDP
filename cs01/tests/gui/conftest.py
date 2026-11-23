@@ -357,6 +357,10 @@ def sample_report_files(tmp_path: Path) -> dict[str, Path]:
     md_path = report_dir / "cs01-report.md"
     md_path.write_text("# CS-01 DPDP Compliance Executive Brief\n\nOverall Score: 60.0", encoding="utf-8")
 
+    # 3b. Executive PDF report
+    pdf_path = report_dir / "cs01-report.pdf"
+    pdf_path.write_bytes(b"%PDF-1.4\n%dummy pdf content\n%%EOF")
+
     # 4. SARIF 2.1.0
     sarif_path = report_dir / "cs01-findings.sarif"
     sarif_data = {
@@ -406,6 +410,7 @@ def sample_report_files(tmp_path: Path) -> dict[str, Path]:
 
     report_map: dict[str, Path] = {
         "cs01-dpo-report.html": html_path,
+        "cs01-report.pdf": pdf_path,
         "cs01-dataflow.html": dataflow_path,
         "cs01-report.md": md_path,
         "cs01-findings.sarif": sarif_path,

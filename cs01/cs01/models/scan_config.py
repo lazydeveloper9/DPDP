@@ -54,7 +54,7 @@ class ScanConfig(BaseModel):
     scan_root: str = "."
     scan_layers: list[str] = Field(default_factory=lambda: ["code", "schema", "iac", "secrets"])
     fail_on: str = "high"
-    output_formats: list[str] = Field(default_factory=lambda: ["sarif", "json", "html"])
+    output_formats: list[str] = Field(default_factory=lambda: ["sarif", "json", "html", "pdf", "markdown"])
     output_dir: str = "./cs01-reports"
     dpdpignore_path: Optional[str] = None
     baseline_path: Optional[str] = None

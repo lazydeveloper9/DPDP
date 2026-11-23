@@ -345,7 +345,8 @@ def export_markdown_report(
             if cat_name in seen_categories:
                 continue
             seen_categories.add(cat_name)
-            collection = f"`{item.location_file}:{item.location_line}`"
+            line_suffix = f":{item.location_line}" if item.location_line is not None else ""
+            collection = f"`{item.location_file}{line_suffix}`"
             storage = f"`{item.field_or_param}` {'(Encrypted)' if item.is_encrypted else '(Plaintext)'}" if item.is_stored else "Transient Flow"
             sinks = "Application Logger Sink" if item.is_logged else ("External Egress Sink" if item.is_transmitted_externally else "Internal Service Logic")
             region = cfg.allowed_cross_border_regions[0] if cfg.allowed_cross_border_regions else "Domestic (India / Local)"

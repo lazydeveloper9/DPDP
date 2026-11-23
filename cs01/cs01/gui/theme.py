@@ -15,28 +15,29 @@ from typing import Final
 # ============================================================================
 
 # Canvas & Background Depths
-COLOR_BG_BASE: Final[str] = "#090d16"          # Deepest window background
-COLOR_BG_SURFACE: Final[str] = "#0f172a"       # Sidebar, Top HUD, Headers
-COLOR_BG_CARD: Final[str] = "#1e293b"          # Metric cards, tiles, dialog wells
-COLOR_BG_CARD_HOVER: Final[str] = "#273549"    # Interactive card hover state
+COLOR_BG_BASE: Final[str] = "#090d16"          # Deep window canvas (#090d16 satisfies WCAG AAA >18:1)
+COLOR_BG_SURFACE: Final[str] = "#101a2b"       # Sidebar & Top HUD
+COLOR_BG_CARD: Final[str] = "#141f32"          # Main surface / cards / panels
+COLOR_BG_CARD_HOVER: Final[str] = "#1b2940"    # Elevated surface / card hover
 COLOR_BG_INPUT: Final[str] = "#070a10"         # Text fields, combo boxes, code wells
 
 # Borders & Separators
-COLOR_BORDER_SUBTLE: Final[str] = "#334155"     # Standard container borders & grid lines
-COLOR_BORDER_STRONG: Final[str] = "#475569"     # Focus outlines, dividers, active tabs
-COLOR_BORDER_FOCUS: Final[str] = "#38bdf8"      # Keyboard focus ring (trust cyan)
+COLOR_BORDER_SUBTLE: Final[str] = "#2b3b52"     # Subtle borders & container grid lines
+COLOR_BORDER_STRONG: Final[str] = "#3b4d68"     # Focus outlines, dividers, active tabs
+COLOR_BORDER_FOCUS: Final[str] = "#38bdf8"      # Primary focus ring (sky cyan)
 COLOR_BORDER_ERROR: Final[str] = "#ef4444"      # Input validation error border
 
 # Typography / Foregrounds (WCAG AAA Compliant)
 COLOR_TEXT_PRIMARY: Final[str] = "#f8fafc"     # High-contrast headings, values (>17:1)
-COLOR_TEXT_SECONDARY: Final[str] = "#94a3b8"   # Field labels, descriptions, captions (>6.9:1)
-COLOR_TEXT_MUTED: Final[str] = "#64748b"       # Placeholders, inactive hints, disabled text
+COLOR_TEXT_SECONDARY: Final[str] = "#a6b4c8"   # Field labels, descriptions, captions (>6.9:1)
+COLOR_TEXT_MUTED: Final[str] = "#71829b"       # Placeholders, inactive hints, disabled text
 COLOR_TEXT_INVERSE: Final[str] = "#090d16"     # Text on bright accent badges
 COLOR_TEXT_WHITE: Final[str] = "#ffffff"       # Text on primary & danger buttons
 
 # Brand & Primary Interactive Accents
-COLOR_ACCENT_BLUE: Final[str] = "#38bdf8"       # Sky cyan: brand shield, focus rings, highlights
-COLOR_ACCENT_ROYAL: Final[str] = "#2563eb"      # Royal blue: primary call-to-action buttons
+COLOR_ACCENT_BLUE: Final[str] = "#38bdf8"       # Sky cyan: brand, focus rings, highlights
+COLOR_ACCENT_INDIGO: Final[str] = "#818cf8"     # Secondary accent indigo
+COLOR_ACCENT_ROYAL: Final[str] = "#2563eb"      # Primary call-to-action buttons
 COLOR_ACCENT_ROYAL_HOVER: Final[str] = "#1d4ed8"# Hover state for primary buttons
 COLOR_ACCENT_ROYAL_PRESSED: Final[str] = "#1e40af" # Pressed state for primary buttons
 
@@ -52,16 +53,16 @@ COLOR_RISK_HIGH: Final[str] = "#f97316"
 COLOR_RISK_HIGH_BG: Final[str] = "rgba(249, 115, 22, 0.15)"
 
 # Band 4: Section 10 - Significant Data Fiduciary Duties (Max ₹150 Crore)
-COLOR_RISK_MEDIUM: Final[str] = "#eab308"
-COLOR_RISK_MEDIUM_BG: Final[str] = "rgba(234, 179, 8, 0.15)"
+COLOR_RISK_MEDIUM: Final[str] = "#f59e0b"
+COLOR_RISK_MEDIUM_BG: Final[str] = "rgba(245, 158, 11, 0.15)"
 
 # Band 5: Section 33(1) - Residual Statutory Breaches (Max ₹50 Crore)
-COLOR_RISK_LOW: Final[str] = "#3b82f6"
-COLOR_RISK_LOW_BG: Final[str] = "rgba(59, 130, 246, 0.15)"
+COLOR_RISK_LOW: Final[str] = "#60a5fa"
+COLOR_RISK_LOW_BG: Final[str] = "rgba(96, 165, 250, 0.15)"
 
 # Zero-Egress Status & Clean Compliance Posture
-COLOR_STATUS_SUCCESS: Final[str] = "#10b981"
-COLOR_STATUS_SUCCESS_BG: Final[str] = "rgba(16, 185, 129, 0.15)"
+COLOR_STATUS_SUCCESS: Final[str] = "#22c55e"
+COLOR_STATUS_SUCCESS_BG: Final[str] = "rgba(34, 197, 94, 0.15)"
 COLOR_STATUS_INFO: Final[str] = "#38bdf8"
 COLOR_STATUS_INFO_BG: Final[str] = "rgba(56, 189, 248, 0.15)"
 
@@ -71,11 +72,11 @@ COLOR_STATUS_INFO_BG: Final[str] = "rgba(56, 189, 248, 0.15)"
 # ============================================================================
 
 FONT_FAMILY_SANS: Final[str] = (
-    '"Segoe UI", "Segoe UI Variable Text", -apple-system, '
+    '"Arial", "Segoe UI", "Segoe UI Variable Text", -apple-system, '
     'BlinkMacSystemFont, "Inter", "Helvetica Neue", Arial, sans-serif'
 )
 FONT_FAMILY_MONO: Final[str] = (
-    '"Cascadia Code", "Consolas", "JetBrains Mono", "Courier New", monospace'
+    '"Arial", "Consolas", "JetBrains Mono", "Courier New", monospace'
 )
 
 # Font Size Scale (in points)

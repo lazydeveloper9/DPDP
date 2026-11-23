@@ -1,11 +1,20 @@
 @echo off
 title CS-01 DPDP Compliance Auditor
 cd /d "%~dp0"
-if exist "dist\CS-01\cs01-gui.exe" (
-    start "" "dist\CS-01\cs01-gui.exe" %*
-) else if exist ".venv\Scripts\python.exe" (
-    ".venv\Scripts\python.exe" -m cs01.gui %*
-) else (
-    python -m cs01.gui %*
+
+if "%1"=="--dist" (
+    if exist "dist\CS-01\cs01-gui.exe" (
+        start "" "dist\CS-01\cs01-gui.exe"
+        exit /b 0
+    )
 )
-if errorlevel 1 pause
+
+if exist ".venv\Scripts\pythonw.exe" (
+    start "" ".venv\Scripts\pythonw.exe" -m cs01.gui %*
+) else if exist ".venv\Scripts\python.exe" (
+    start "" ".venv\Scripts\python.exe" -m cs01.gui %*
+) else if exist "dist\CS-01\cs01-gui.exe" (
+    start "" "dist\CS-01\cs01-gui.exe" %*
+) else (
+    start "" python -m cs01.gui %*
+)

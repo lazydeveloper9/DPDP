@@ -85,6 +85,35 @@ class FindingsTableModel(QAbstractTableModel):
             elif col == 6:
                 return f"{finding.priority_score:.1f}"
 
+        if role == Qt.ItemDataRole.ForegroundRole:
+            from PySide6.QtGui import QColor
+            sev = (finding.severity.value if hasattr(finding.severity, "value") else str(finding.severity)).upper()
+            if col == 0:
+                if sev == "CRITICAL":
+                    return QColor("#ef4444")
+                elif sev == "HIGH":
+                    return QColor("#f97316")
+                elif sev == "MEDIUM":
+                    return QColor("#f59e0b")
+                elif sev == "LOW":
+                    return QColor("#38bdf8")
+            elif col == 1:
+                return QColor("#38bdf8")
+            elif col == 5:
+                pb = str(finding.penalty_band or "")
+                if "250" in pb:
+                    return QColor("#ef4444")
+                elif "200" in pb:
+                    return QColor("#f97316")
+                elif "150" in pb:
+                    return QColor("#f59e0b")
+                return QColor("#60a5fa")
+
+        if role == Qt.ItemDataRole.ToolTipRole:
+            if col == 3:
+                return finding.file or "N/A"
+            return finding.message
+
         return None
 
     # -------------------------------------------------------------------------

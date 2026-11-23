@@ -49,8 +49,8 @@ def create_app(
     app.setApplicationVersion("0.1.0-alpha")
 
     # Set Default Application Font
-    font = QFont("Segoe UI", 10)
-    font.setStyleHint(QFont.SansSerif)
+    font = QFont("Arial", 10)
+    font.setStyleHint(QFont.Monospace)
     app.setFont(font)
 
     # Apply Authoritative QSS Theme

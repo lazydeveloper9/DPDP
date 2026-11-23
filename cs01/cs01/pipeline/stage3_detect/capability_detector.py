@@ -167,7 +167,7 @@ def detect_product_capabilities(
                 category=category,
                 field_or_param=val_name,
                 location_file=hit.file,
-                location_line=hit.line,
+                location_line=hit.line if getattr(hit, "line", None) is not None else 1,
                 pii_type=hit.pii_type.value,
                 is_stored=False,
                 is_transmitted_externally=False,
@@ -197,7 +197,7 @@ def detect_product_capabilities(
                         category=category,
                         field_or_param=f"{schema.table_or_model}.{col}",
                         location_file=schema.source_file,
-                        location_line=schema.line,
+                        location_line=schema.line if getattr(schema, "line", None) is not None else 1,
                         pii_type=matched_pii_type.value if matched_pii_type else "USER_PROFILE",
                         is_stored=True,
                         is_transmitted_externally=False,
@@ -228,7 +228,7 @@ def detect_product_capabilities(
                     ImplementedControl(
                         control_type="AGE_GATE",
                         file=ast_file.path,
-                        line=func.get("start_line", 1),
+                        line=func.get("start_line") or 1,
                         evidence=f"Age verification guard function '{fname}'",
                     )
                 )
@@ -247,7 +247,7 @@ def detect_product_capabilities(
                     ImplementedControl(
                         control_type="RETENTION_PURGE",
                         file=ast_file.path,
-                        line=func.get("start_line", 1),
+                        line=func.get("start_line") or 1,
                         evidence=f"Scheduled data purging routine '{fname}'",
                     )
                 )
@@ -277,7 +277,7 @@ def detect_product_capabilities(
                     ImplementedControl(
                         control_type="AUTH_AND_RBAC",
                         file=ast_file.path,
-                        line=dec.get("line", 1),
+                        line=dec.get("line") or 1,
                         evidence=f"Authentication or RBAC guard decorator: {d_name}",
                     )
                 )
@@ -293,7 +293,7 @@ def detect_product_capabilities(
                     ImplementedControl(
                         control_type="DPO_CONTACT",
                         file=ast_file.path,
-                        line=call.get("line", 1),
+                        line=call.get("line") or 1,
                         evidence=f"Published DPO / Grievance contact: {snip[:60]}",
                     )
                 )

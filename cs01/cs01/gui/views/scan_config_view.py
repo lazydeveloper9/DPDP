@@ -146,7 +146,7 @@ class ScanConfigView(QWidget):
         card_layout.setSpacing(12)
 
         # Mode Selection
-        mode_header = QLabel("TARGET SOURCE SELECTION & INGESTION", self.target_source_card)
+        mode_header = QLabel("STEP 1: TARGET SOURCE SELECTION & CODEBASE INGESTION", self.target_source_card)
         mode_header.setProperty("class", "h3")
         card_layout.addWidget(mode_header)
 
@@ -183,8 +183,8 @@ class ScanConfigView(QWidget):
         )
         input_row.addWidget(self.target_input, 1)
 
-        self.browse_folder_btn = QPushButton("📁 Browse Folder", self.target_source_card)
-        self.browse_archive_btn = QPushButton("🗜️ Select Archive", self.target_source_card)
+        self.browse_folder_btn = QPushButton("Browse Folder", self.target_source_card)
+        self.browse_archive_btn = QPushButton("Select Archive", self.target_source_card)
         self.validate_btn = QPushButton("Validate", self.target_source_card)
 
         input_row.addWidget(self.browse_folder_btn)
@@ -242,7 +242,7 @@ class ScanConfigView(QWidget):
         p_layout.setContentsMargins(18, 16, 18, 16)
         p_layout.setSpacing(12)
 
-        pipeline_header = QLabel("AUDIT PIPELINE & STATUTORY RULE PARAMETERS", self.pipeline_card)
+        pipeline_header = QLabel("STEP 2: AUDIT PIPELINE & STATUTORY RULE PARAMETERS", self.pipeline_card)
         pipeline_header.setProperty("class", "h3")
         p_layout.addWidget(pipeline_header)
 
@@ -330,7 +330,7 @@ class ScanConfigView(QWidget):
         d_layout.setContentsMargins(18, 16, 18, 16)
         d_layout.setSpacing(12)
 
-        d_header = QLabel("STATUTORY COMPLIANCE DELIVERABLES CHECKLIST", self.deliverables_card)
+        d_header = QLabel("STEP 3: STATUTORY COMPLIANCE DELIVERABLES CHECKLIST", self.deliverables_card)
         d_header.setProperty("class", "h3")
         d_layout.addWidget(d_header)
 
@@ -398,7 +398,7 @@ class ScanConfigView(QWidget):
         header_row = QHBoxLayout()
         adv_header = QLabel("ADVANCED & REGULATORY OPTIONS", self.advanced_card)
         adv_header.setProperty("class", "h3")
-        self.toggle_advanced_btn = QPushButton("▾ Collapse", self.advanced_card)
+        self.toggle_advanced_btn = QPushButton("Collapse", self.advanced_card)
         self.toggle_advanced_btn.setFixedWidth(100)
         header_row.addWidget(adv_header)
         header_row.addStretch()
@@ -435,7 +435,7 @@ class ScanConfigView(QWidget):
         ai_endpoint_lbl.setProperty("class", "text-secondary")
         self.ai_endpoint_input = QLineEdit("http://localhost:11434", self.advanced_body)
         self.ai_endpoint_input.setFixedWidth(200)
-        self.test_ai_btn = QPushButton("🔌 Test Connection", self.advanced_body)
+        self.test_ai_btn = QPushButton("Test Connection", self.advanced_body)
 
         row2.addWidget(self.ai_triage_checkbox)
         row2.addWidget(ai_endpoint_lbl)
@@ -472,10 +472,10 @@ class ScanConfigView(QWidget):
         footer_layout.setSpacing(14)
         footer_layout.addStretch()
 
-        self.reset_btn = QPushButton("🔄 Reset Defaults", self.content_widget)
+        self.reset_btn = QPushButton("Reset Defaults", self.content_widget)
         self.reset_btn.setFixedHeight(38)
 
-        self.start_scan_btn = QPushButton("🚀 Start Compliance Audit", self.content_widget)
+        self.start_scan_btn = QPushButton("Start Compliance Audit", self.content_widget)
         self.start_scan_btn.setProperty("class", "primary")
         self.start_scan_btn.setFixedHeight(38)
         self.start_scan_btn.setMinimumWidth(240)
@@ -929,7 +929,7 @@ class ScanConfigView(QWidget):
         """Toggles collapse/expand of the advanced options body frame."""
         is_visible = self.advanced_body.isVisible()
         self.advanced_body.setVisible(not is_visible)
-        self.toggle_advanced_btn.setText("▸ Expand" if is_visible else "▾ Collapse")
+        self.toggle_advanced_btn.setText("Expand" if is_visible else "Collapse")
 
     def _on_browse_folder(self) -> None:
         """Opens native directory picker dialog for local target folder."""

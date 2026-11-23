@@ -24,19 +24,45 @@ from cs01.pipeline.stage6_report.evidence_locker import (
 # ============================================================================
 
 def test_artifact_tiles_presence(qtbot, sample_report_files: dict[str, Path]) -> None:
-    """Verify all 7 standard compliance deliverable tiles are present and active (F17-F24)."""
+    """Verify all standard compliance deliverable tiles (including PDF and Markdown) are present and active (F17-F24)."""
     view = ReportView()
     qtbot.addWidget(view)
     view.show()
 
     view.bind_reports(sample_report_files)
 
-    expected_keys = ["html", "dataflow", "ropa", "patch", "sarif", "markdown", "evidence"]
+    expected_keys = ["pdf", "markdown", "html", "dataflow", "ropa", "patch", "sarif", "evidence"]
     for key in expected_keys:
         assert key in view.tiles
         frame = view.tiles[key]
         assert "✓ Available" in frame.status_lbl.text()
         assert frame.btn.isEnabled() is True
+
+
+def test_pdf_report_tile_state(qtbot, sample_report_files: dict[str, Path]) -> None:
+    """Verify PDF report tile and Save As button are enabled when cs01-report.pdf exists."""
+    view = ReportView()
+    qtbot.addWidget(view)
+    view.show()
+
+    view.bind_reports(sample_report_files)
+    pdf_tile = view.tiles["pdf"]
+    assert pdf_tile.btn.isEnabled() is True
+    assert "Open PDF" in pdf_tile.btn.text()
+    assert pdf_tile.save_btn.isEnabled() is True
+
+
+def test_markdown_report_tile_state(qtbot, sample_report_files: dict[str, Path]) -> None:
+    """Verify Markdown report tile and Save As button are enabled when cs01-report.md exists."""
+    view = ReportView()
+    qtbot.addWidget(view)
+    view.show()
+
+    view.bind_reports(sample_report_files)
+    md_tile = view.tiles["markdown"]
+    assert md_tile.btn.isEnabled() is True
+    assert "View Markdown" in md_tile.btn.text()
+    assert md_tile.save_btn.isEnabled() is True
 
 
 def test_html_report_tile_state(qtbot, sample_report_files: dict[str, Path]) -> None:

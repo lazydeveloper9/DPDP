@@ -83,6 +83,22 @@ class PiiTableModel(QAbstractTableModel):
             elif col == 6:
                 return hit.value_sha256
 
+        if role == Qt.ItemDataRole.ForegroundRole:
+            from PySide6.QtGui import QColor
+            if col == 0:
+                return QColor("#38bdf8")
+            elif col == 4:
+                return QColor("#22c55e") if "valid" in str(hit.validator_result).lower() else QColor("#f59e0b")
+            elif col == 6:
+                return QColor("#71829b")
+
+        if role == Qt.ItemDataRole.ToolTipRole:
+            if col == 1:
+                return hit.file
+            elif col == 6:
+                return f"Irreversible SHA-256: {hit.value_sha256}"
+            return str(hit.line_snippet or "")
+
         return None
 
     # -------------------------------------------------------------------------

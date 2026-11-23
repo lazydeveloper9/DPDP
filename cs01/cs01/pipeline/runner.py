@@ -343,6 +343,7 @@ def run_pipeline(cfg: ScanConfig) -> int:
         f"[bold]Violations Summary:[/bold] [red bold]{bundle.readiness.open_critical_count} Critical[/], [yellow]{bundle.readiness.open_high_count} High[/], {len(bundle.findings)} Total Unique\n\n"
         f"[bold]Generated Deliverables in [cyan]{output_dir}[/cyan]:[/bold]\n"
         f"  • Executive HTML Dashboard: [cyan]{output_dir / 'cs01-dpo-report.html'}[/cyan]\n"
+        f"  • Executive PDF Report:    [cyan]{output_dir / 'cs01-report.pdf'}[/cyan]\n"
         f"  • Assessment Markdown Report: [cyan]{output_dir / 'cs01-report.md'}[/cyan]\n"
         f"  • Developer SARIF 2.1.0:   [cyan]{output_dir / 'cs01-findings.sarif'}[/cyan]\n"
         f"  • Technical RoPA Draft:    [cyan]{output_dir / 'ropa_map.json'}[/cyan]\n"

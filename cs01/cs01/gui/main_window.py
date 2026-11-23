@@ -36,6 +36,7 @@ from cs01.gui.theme import (
     WINDOW_MIN_WIDTH,
 )
 from cs01.gui.views.dashboard_view import DashboardView
+from cs01.gui.views.pii_inventory_view import PiiInventoryView
 from cs01.gui.views.report_view import ReportView
 from cs01.gui.views.results_view import ResultsView
 from cs01.gui.views.scan_config_view import ScanConfigView
@@ -108,8 +109,8 @@ class MainWindow(QMainWindow):
         hud_layout.setContentsMargins(16, 8, 16, 8)
         hud_layout.setSpacing(12)
 
-        self.brand_icon = QLabel("🛡", self)
-        self.brand_icon.setStyleSheet("font-size: 20pt; color: #38bdf8;")
+        self.brand_icon = QLabel("", self)
+        self.brand_icon.setVisible(False)
 
         self.brand_title = QLabel(self.APP_TITLE, self)
         self.brand_title.setProperty("class", "hud-title")
@@ -117,19 +118,23 @@ class MainWindow(QMainWindow):
         self.version_badge = QLabel(self.VERSION_TAG, self)
         self.version_badge.setProperty("class", "badge-version")
 
-        hud_layout.addWidget(self.brand_icon)
+        self.hud_target_label = QLabel("", self)
+        self.hud_target_label.setProperty("class", "text-secondary")
+        self.hud_target_label.setStyleSheet("font-size: 9.5pt; color: #a6b4c8; padding-left: 8px;")
+
         hud_layout.addWidget(self.brand_title)
         hud_layout.addWidget(self.version_badge)
+        hud_layout.addWidget(self.hud_target_label)
         hud_layout.addStretch()
 
         # Load Reports action button in HUD
-        self.load_report_btn = QPushButton("📂 Load Reports", self)
+        self.load_report_btn = QPushButton("Load Reports", self)
         self.load_report_btn.setProperty("class", "secondary")
         self.load_report_btn.setToolTip("Load previously generated scan results (cs01-compliance.json or folder)")
         self.load_report_btn.clicked.connect(self._on_user_load_reports)
         hud_layout.addWidget(self.load_report_btn)
 
-        self.privacy_badge = QLabel("● OFFLINE · ZERO-EGRESS", self)
+        self.privacy_badge = QLabel("OFFLINE · ZERO-EGRESS", self)
         self.privacy_badge.setProperty("class", "badge-privacy")
         self.privacy_badge.setToolTip(
             "All AST parsing, PII redaction, and reporting run 100% locally with zero external network egress."
@@ -159,20 +164,26 @@ class MainWindow(QMainWindow):
         main_vbox.addWidget(content_widget)
 
     def _init_view_slots(self) -> None:
-        """Mounts all 5 real view instances into QStackedWidget."""
+        """Mounts all 6 real view instances into QStackedWidget."""
         # Instantiate all views
         self.dashboard_view = DashboardView(self)
         self.scan_config_view = ScanConfigView(self)
         self.scan_execution_view = ScanExecutionView(self)
         self.results_view = ResultsView(self)
+        self.pii_inventory_view = PiiInventoryView(self)
         self.report_view = ReportView(self)
 
-        # Add in order matching sidebar indices: 0=Dashboard, 1=Scan Setup, 2=Execution, 3=Results, 4=Reports
+        # Add in order matching sidebar indices:
+        # 0=Dashboard, 1=Scan Setup, 2=Execution, 3=Findings, 4=PII Inventory, 5=Reports
         self.stacked_widget.addWidget(self.dashboard_view)       # 0
         self.stacked_widget.addWidget(self.scan_config_view)     # 1
         self.stacked_widget.addWidget(self.scan_execution_view)  # 2
         self.stacked_widget.addWidget(self.results_view)         # 3
-        self.stacked_widget.addWidget(self.report_view)          # 4
+        self.stacked_widget.addWidget(self.pii_inventory_view)   # 4
+        self.stacked_widget.addWidget(self.report_view)          # 5
+
+        # Connect Dashboard "Start New Scan" shortcut
+        self.dashboard_view.start_scan_requested.connect(lambda: self.navigate_to(1))
 
         # Connect ScanConfigView scan launch → pipeline worker
         self.scan_config_view.start_scan_requested.connect(self._on_start_scan_requested)
@@ -193,7 +204,7 @@ class MainWindow(QMainWindow):
         if hasattr(self, "hud_target_label"):
             self.hud_target_label.setText(f"Target: {target}")
         # Update privacy badge to scanning state
-        self.privacy_badge.setText("⚡ SCANNING IN PROGRESS")
+        self.privacy_badge.setText("SCANNING IN PROGRESS")
         self.privacy_badge.setStyleSheet("color: #f59e0b; font-weight: bold;")
 
         # Transition to execution view
@@ -246,10 +257,11 @@ class MainWindow(QMainWindow):
         # Bind results to all views
         self.dashboard_view.bind_bundle(bundle)   # type: ignore[arg-type]
         self.results_view.bind_bundle(bundle, pii_hits=pii_hits)  # type: ignore[arg-type]
+        self.pii_inventory_view.bind_pii_hits(pii_hits or [])
         self.report_view.bind_reports(report_files)
 
         # Restore HUD badge
-        self.privacy_badge.setText("● OFFLINE · ZERO-EGRESS")
+        self.privacy_badge.setText("OFFLINE · ZERO-EGRESS")
         self.privacy_badge.setStyleSheet("")
 
         # Navigate to Results view so user sees findings immediately
@@ -259,13 +271,13 @@ class MainWindow(QMainWindow):
         self.scan_execution_view.on_scan_failed(error)
         self.scan_execution_view.log_console.append_log("ERROR", f"Scan failed: {error}")
         # Restore HUD badge
-        self.privacy_badge.setText("❌ SCAN FAILED · OFFLINE")
+        self.privacy_badge.setText("SCAN FAILED · OFFLINE")
         self.privacy_badge.setStyleSheet("color: #ef4444; font-weight: bold;")
 
     def _on_scan_cancelled(self) -> None:
         self.scan_execution_view.on_scan_cancelled()
         # Restore HUD badge
-        self.privacy_badge.setText("⚠ CANCELLED · OFFLINE · ZERO-EGRESS")
+        self.privacy_badge.setText("CANCELLED · OFFLINE · ZERO-EGRESS")
         self.privacy_badge.setStyleSheet("color: #94a3b8; font-weight: bold;")
 
     def _auto_load_existing_reports(self) -> None:
@@ -316,9 +328,10 @@ class MainWindow(QMainWindow):
                         # Bind to all views
                         self.dashboard_view.bind_bundle(bundle)
                         self.results_view.bind_bundle(bundle, pii_hits=pii_hits)
+                        self.pii_inventory_view.bind_pii_hits(pii_hits or [])
                         self.report_view.bind_reports(report_files)
 
-                        self.privacy_badge.setText(f"● LOADED ({len(bundle.findings)} findings) · ZERO-EGRESS")
+                        self.privacy_badge.setText(f"LOADED ({len(bundle.findings)} findings) · ZERO-EGRESS")
                         self.privacy_badge.setStyleSheet("color: #10b981; font-weight: bold;")
                         return
                     except Exception:
@@ -366,9 +379,10 @@ class MainWindow(QMainWindow):
 
             self.dashboard_view.bind_bundle(bundle)
             self.results_view.bind_bundle(bundle, pii_hits=pii_hits)
+            self.pii_inventory_view.bind_pii_hits(pii_hits or [])
             self.report_view.bind_reports(report_files)
 
-            self.privacy_badge.setText(f"● LOADED ({len(bundle.findings)} findings) · ZERO-EGRESS")
+            self.privacy_badge.setText(f"LOADED ({len(bundle.findings)} findings) · ZERO-EGRESS")
             self.privacy_badge.setStyleSheet("color: #10b981; font-weight: bold;")
             self.navigate_to(0)  # Go to Dashboard
         except Exception as e:
@@ -385,7 +399,7 @@ class MainWindow(QMainWindow):
         )
         self.status_engine_label.setProperty("class", "text-secondary")
 
-        self.status_egress_label = QLabel("🔒 Zero Cloud Egress Confirmed", self)
+        self.status_egress_label = QLabel("Zero Cloud Egress Confirmed", self)
         self.status_egress_label.setProperty("class", "text-secondary")
 
         mem_mb = _get_process_memory_mb()

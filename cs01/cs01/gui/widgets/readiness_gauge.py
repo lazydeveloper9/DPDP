@@ -84,13 +84,13 @@ class ReadinessGaugeWidget(QWidget):
 
         # Central numeric score
         painter.setPen(QColor(COLOR_TEXT_PRIMARY))
-        font = QFont("Segoe UI", 24, QFont.Weight.Bold)
+        font = QFont("Arial", 24, QFont.Weight.Bold)
         painter.setFont(font)
         painter.drawText(gauge_rect, Qt.AlignmentFlag.AlignCenter, f"{int(self.score)}")
 
         # "DPDP READINESS" subtitle
         from PySide6.QtCore import QRectF as _QRectF
-        sub_font = QFont("Segoe UI", 9)
+        sub_font = QFont("Arial", 9)
         painter.setFont(sub_font)
         painter.setPen(QColor(COLOR_TEXT_SECONDARY))
         sub_rect = _QRectF(gauge_rect.x(), gauge_rect.y() + 40, gauge_rect.width(), gauge_rect.height())
@@ -98,8 +98,8 @@ class ReadinessGaugeWidget(QWidget):
 
         # Optional CAPPED badge
         if self.is_capped:
-            capped_font = QFont("Segoe UI", 8, QFont.Weight.Bold)
+            capped_font = QFont("Cascadia Code", 8, QFont.Weight.Bold)
             painter.setFont(capped_font)
             painter.setPen(QColor(COLOR_RISK_CRITICAL))
             cap_rect = _QRectF(gauge_rect.x(), gauge_rect.y() + 60, gauge_rect.width(), gauge_rect.height())
-            painter.drawText(cap_rect, Qt.AlignmentFlag.AlignCenter, "⚠ CAPPED")
+            painter.drawText(cap_rect, Qt.AlignmentFlag.AlignCenter, "CAPPED")

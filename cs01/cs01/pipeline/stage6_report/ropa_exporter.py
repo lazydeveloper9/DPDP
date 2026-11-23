@@ -35,7 +35,7 @@ def export_ropa_draft(
                 "personal_data_category": item.category,
                 "field_or_entity": item.field_or_param,
                 "pii_type": item.pii_type,
-                "locations_identified": [f"{item.location_file}:{item.location_line}"],
+                "locations_identified": [f"{item.location_file}:{item.location_line}" if item.location_line is not None else item.location_file],
                 "is_stored": item.is_stored,
                 "is_encrypted": item.is_encrypted,
                 "processing_risks_detected": rules_triggered,

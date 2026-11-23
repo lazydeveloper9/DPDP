@@ -176,3 +176,31 @@ def test_capability_detector_compliant_controls():
     assert "RETENTION_PURGE" not in missing_types
     assert "ERASURE_ROUTE" not in missing_types
     assert "DPO_CONTACT" not in missing_types
+
+
+def test_capability_detector_schema_with_none_line():
+    """Schema records without explicit line numbers (line=None) must not cause Pydantic validation error."""
+    model = RepoModel(
+        schema_records=[
+            SchemaRecord(
+                source_orm="sql_ddl",
+                source_file="schema.sql",
+                table_or_model="accounts",
+                column_or_field="aadhaar_number",
+                data_type="VARCHAR(12)",
+                is_nullable=False,
+                line=None,
+            )
+        ]
+    )
+    flow_graph = FlowGraph()
+    pii_hits = PiiHitList(hits=[])
+    cfg = ScanConfig(scan_root="tests/dummy_sql")
+
+    report = detect_product_capabilities(model, flow_graph, pii_hits, cfg)
+    assert report.has_personal_data is True
+    assert len(report.pii_inventory) == 1
+    item = report.pii_inventory[0]
+    assert item.field_or_param == "accounts.aadhaar_number"
+    assert item.location_file == "schema.sql"
+    assert item.location_line is not None

@@ -27,6 +27,7 @@ from .sarif_exporter import export_sarif
 from .gitlab_exporter import export_gitlab_sast
 from .html_exporter import export_html_report
 from .markdown_exporter import export_markdown_report
+from .pdf_exporter import export_pdf_report
 from .ropa_exporter import export_ropa_draft
 from .evidence_locker import create_evidence_bundle
 from .graph_builder import build_dataflow_graph
@@ -90,6 +91,20 @@ def run_report(
     md_path = out_dir / "cs01-report.md"
     export_markdown_report(bundle, cfg, md_path, stage_durations=stage_durations, capability_report=capability_report)
     generated_files["cs01-report.md"] = md_path
+
+    if "pdf" in cfg.output_formats or "all" in cfg.output_formats or True:
+        try:
+            pdf_path = out_dir / "cs01-report.pdf"
+            export_pdf_report(
+                bundle,
+                cfg,
+                pdf_path,
+                capability_report=capability_report,
+                stage_durations=stage_durations,
+            )
+            generated_files["cs01-report.pdf"] = pdf_path
+        except Exception:
+            pass
 
     ropa_path = out_dir / "ropa_map.json"
     export_ropa_draft(bundle, ropa_path, capability_report=capability_report)

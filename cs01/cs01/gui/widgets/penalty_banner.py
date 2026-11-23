@@ -46,9 +46,8 @@ class PenaltyCeilingBanner(QFrame):
 
         layout = QHBoxLayout(self)
 
-        self.icon_label = QLabel("⚖️")
-        self.icon_label.setStyleSheet("font-size: 20px;")
-        layout.addWidget(self.icon_label)
+        self.icon_label = QLabel("")
+        self.icon_label.setVisible(False)
 
         v_layout = QVBoxLayout()
         self.title_label = QLabel("Section 33 Maximum Statutory Penalty Exposure:")
@@ -64,7 +63,7 @@ class PenaltyCeilingBanner(QFrame):
 
         layout.addStretch()
 
-        self.disclaimer_icon = QLabel("ℹ️ Legal Disclaimer")
+        self.disclaimer_icon = QLabel("Legal Disclaimer")
         self.disclaimer_icon.setToolTip(
             "Penalty is a statutory maximum ceiling. Actual penalty is discretionary "
             "and determined by the DPBI after formal inquiry under §33(2). "

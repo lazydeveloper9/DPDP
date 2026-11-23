@@ -28,7 +28,7 @@ class PersonalDataInventoryItem(BaseModel):
     category: str  # National Identity, Financial, Health, Contact, Children, Demographic, Credentials
     field_or_param: str
     location_file: str
-    location_line: int
+    location_line: Optional[int] = None
     pii_type: str
     is_stored: bool = False
     is_transmitted_externally: bool = False
@@ -40,7 +40,7 @@ class ImplementedControl(BaseModel):
     """A detected compliance or security control in the codebase."""
     control_type: str  # e.g. AUTH_MIDDLEWARE, ENCRYPTION_REST, AGE_GATE, CONSENT_LEDGER, ERASURE_ROUTE, RETENTION_PURGE, BREACH_TELEMETRY, DPO_CONTACT
     file: str
-    line: int
+    line: Optional[int] = None
     evidence: str
 
 

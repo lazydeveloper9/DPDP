@@ -40,13 +40,14 @@ class NavigationSidebar(QFrame):
     navigation_changed = Signal(int)
     tab_selected = Signal(int)
 
-    # Statutory Navigation Items: (Index, Display Title, Icon Glyph)
+    # Statutory Navigation Items: (Index, Display Title, Short Code)
     NAV_ITEMS: Final[list[tuple[int, str, str]]] = [
-        (0, "Dashboard", "📊"),
-        (1, "Scan Setup", "⚙"),
-        (2, "Execution", "⚡"),
-        (3, "Results", "🔍"),
-        (4, "Reports", "📁"),
+        (0, "Dashboard", "DSH"),
+        (1, "Scan Setup", "SET"),
+        (2, "Execution", "RUN"),
+        (3, "Findings", "FND"),
+        (4, "PII Inventory", "PII"),
+        (5, "Reports", "REP"),
     ]
 
     def __init__(self, parent: QWidget | None = None) -> None:
@@ -74,7 +75,7 @@ class NavigationSidebar(QFrame):
         header_layout.setContentsMargins(4, 0, 4, 8)
         header_layout.setSpacing(8)
 
-        self.toggle_btn = QPushButton("☰")
+        self.toggle_btn = QPushButton("<")
         self.toggle_btn.setProperty("class", "icon-only")
         self.toggle_btn.setToolTip("Toggle sidebar expansion (Ctrl+B)")
         self.toggle_btn.setCursor(Qt.PointingHandCursor)
@@ -98,7 +99,7 @@ class NavigationSidebar(QFrame):
 
         # 2. Navigation Item Buttons
         for idx, title, icon in self.NAV_ITEMS:
-            btn = QPushButton(f" {icon}   {title}")
+            btn = QPushButton(title)
             btn.setProperty("class", "nav-btn")
             btn.setCheckable(True)
             btn.setFixedHeight(NAV_ITEM_HEIGHT)
@@ -144,7 +145,7 @@ class NavigationSidebar(QFrame):
         Programmatically switches the selected navigation item.
 
         Args:
-            index: Target screen index (0 to 3).
+            index: Target screen index (0 to 5).
             emit_signal: Whether to emit navigation_changed signal.
         """
         if not (0 <= index < len(self.NAV_ITEMS)):
@@ -157,6 +158,10 @@ class NavigationSidebar(QFrame):
         self._current_index = index
         if emit_signal and changed:
             self.navigation_changed.emit(index)
+
+    def set_current_index(self, index: int, emit_signal: bool = True) -> None:
+        """Alias for set_active_index."""
+        self.set_active_index(index, emit_signal=emit_signal)
 
     def get_active_index(self) -> int:
         """Returns the currently active screen index."""
@@ -182,7 +187,7 @@ class NavigationSidebar(QFrame):
             self.setFixedWidth(SIDEBAR_WIDTH_COLLAPSED)
             self.nav_title_label.hide()
             self.footer_label.hide()
-            self.toggle_btn.setText("»")
+            self.toggle_btn.setText(">")
             for btn in self._buttons:
                 icon = btn.property("item_icon")
                 title = btn.property("item_title")
@@ -192,11 +197,10 @@ class NavigationSidebar(QFrame):
             self.setFixedWidth(SIDEBAR_WIDTH_EXPANDED)
             self.nav_title_label.show()
             self.footer_label.show()
-            self.toggle_btn.setText("☰")
+            self.toggle_btn.setText("<")
             for btn in self._buttons:
-                icon = btn.property("item_icon")
                 title = btn.property("item_title")
-                btn.setText(f" {icon}   {title}")
+                btn.setText(title)
                 btn.setToolTip("")
 
     def toggle_collapsed(self) -> None:
