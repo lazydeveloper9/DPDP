@@ -33,7 +33,7 @@ class EngineConfig(BaseModel):
 
 class AiConfig(BaseModel):
     enabled: bool = True
-    model: str = "qwen2.5-coder:7b"
+    model: str = "qwen2.5-coder:3b"
     endpoint: str = "http://localhost:11434"   # Local Ollama or vLLM endpoint
     temperature: float = 0.2
     timeout_seconds: float = 300.0
@@ -67,6 +67,7 @@ class ScanConfig(BaseModel):
     dpdpignore_path: Optional[str] = None               # path to .dpdpignore file
     baseline_path: Optional[str] = None                 # path to .cs01-baseline.json
     diff_base: Optional[str] = None                     # git ref for --diff-base
+    git_ref: Optional[str] = None                       # git branch/tag/ref for remote git scan
 
     # Engine
     engine: EngineConfig = Field(default_factory=EngineConfig)

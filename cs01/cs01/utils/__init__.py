@@ -79,3 +79,4 @@ def redact_pii_in_snippet(snippet: str, pii_values: list[str]) -> str:
 
 
 from .archive import is_archive, safe_extract_zip, safe_extract_tar, extracted_workspace
+from .git_ingest import is_git_url, parse_git_url, clone_git_repo, cloned_workspace

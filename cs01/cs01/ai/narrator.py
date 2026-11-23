@@ -31,10 +31,19 @@ def generate_executive_dpo_brief(
     on_token: Optional[Callable[[str], None]] = None,
 ) -> str:
     """Generate a structured, authoritative Executive DPO Compliance Brief for a scan bundle."""
+    # Group and count occurrences per rule to represent all findings
+    rule_counts: dict[str, int] = {}
+    rule_samples: dict[str, ScoredFinding] = {}
+    for f in bundle.findings:
+        rule_counts[f.rule_id] = rule_counts.get(f.rule_id, 0) + 1
+        if f.rule_id not in rule_samples:
+            rule_samples[f.rule_id] = f
+
     top_findings = []
-    for f in bundle.findings[:4]:
+    for rid, f in list(rule_samples.items())[:6]:
         top_findings.append({
             "rule_id": f.rule_id,
+            "total_occurrences_in_codebase": rule_counts[rid],
             "severity": f.severity.value,
             "dpdp_section": f.dpdp_section,
             "penalty_band": f.penalty_band,
@@ -57,24 +66,25 @@ Audit Metrics:
 - DPDP Readiness Score: {bundle.readiness.overall:.1f}/100 (Score Capped: {bundle.readiness.is_capped} - Reason: {bundle.readiness.cap_reason or 'None'})
 - Maximum Statutory Penalty Ceiling Engaged: {bundle.readiness.max_statutory_ceiling_engaged or 'None'}
 - Open Critical Findings: {bundle.readiness.open_critical_count} | Open High: {bundle.readiness.open_high_count} | Total Unique: {len(bundle.findings)}
+- Breakdown by Rule Category: {json.dumps(rule_counts, indent=2)}
 
 Pillar Score Breakdown:
 {json.dumps(pillar_summary, indent=2)}
 
-Priority Violations to Analyze:
+Priority Violation Classes to Analyze (grouped across all {len(bundle.findings)} occurrences):
 {json.dumps(top_findings, indent=2)}
 
 Format with:
 # Executive Summary & Risk Posture
-Briefly evaluate the overall readiness score, compliance posture, and whether dynamic capping was triggered.
+Briefly evaluate the overall readiness score, compliance posture, and whether dynamic capping was triggered. Mention the total violation count ({len(bundle.findings)}) and that an exhaustive itemized breakdown is in cs01-report.md and cs01-dpo-report.html.
 
 ## Statutory Penalty Ceiling Exposure
 Detail the maximum exposure ceilings engaged (e.g. §8(5) ₹250 Cr, §9 ₹200 Cr) and note that actual penalties under §33(2) are discretionary.
 
 ## High-Priority Vulnerability Deep-Dive
-For each priority violation:
-- **Finding**: Rule ID & Severity
-- **Location & Code**: Quote the file, line, and code snippet.
+For each priority violation class:
+- **Finding**: Rule ID & Severity (mention total occurrences in codebase, e.g. "X occurrences")
+- **Location & Code**: Quote representative file, line, and code snippet.
 - **Why It Fails**: Plain-English explanation of how the code operates and why it mishandles personal data.
 - **Production-Ready Fix**: The exact refactored code snippet.
 

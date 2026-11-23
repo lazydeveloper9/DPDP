@@ -18,24 +18,44 @@ from cs01.pipeline.stage4_evaluate.rule_loader import load_all_rules
 from .finding_elaborator import elaborate_finding
 
 
-def get_git_info(target_dir: str | Path) -> tuple[str, str]:
-    """Retrieve git branch and commit SHA if target is in a git repository."""
+def get_git_info(target_dir: str | Path, fallback_dir: Optional[str | Path] = None) -> tuple[str, str]:
+    """Retrieve git branch and commit SHA if target or fallback is in a git repository."""
+    candidates: list[Path] = []
     try:
-        branch = subprocess.check_output(
-            ["git", "rev-parse", "--abbrev-ref", "HEAD"],
-            cwd=target_dir,
-            stderr=subprocess.DEVNULL,
-            text=True,
-        ).strip()
-        sha = subprocess.check_output(
-            ["git", "rev-parse", "HEAD"],
-            cwd=target_dir,
-            stderr=subprocess.DEVNULL,
-            text=True,
-        ).strip()
-        return branch or "main", sha or "local-uncommitted"
+        p1 = Path(str(target_dir))
+        if p1.is_dir():
+            candidates.append(p1)
     except Exception:
-        return "main", "local-unversioned-" + hashlib.sha256(str(target_dir).encode()).hexdigest()[:12]
+        pass
+
+    try:
+        if fallback_dir:
+            p2 = Path(str(fallback_dir))
+            if p2.is_dir():
+                candidates.append(p2)
+    except Exception:
+        pass
+
+    for d in candidates:
+        try:
+            branch = subprocess.check_output(
+                ["git", "rev-parse", "--abbrev-ref", "HEAD"],
+                cwd=d,
+                stderr=subprocess.DEVNULL,
+                text=True,
+            ).strip()
+            sha = subprocess.check_output(
+                ["git", "rev-parse", "HEAD"],
+                cwd=d,
+                stderr=subprocess.DEVNULL,
+                text=True,
+            ).strip()
+            if branch or sha:
+                return branch or "main", sha or "local-uncommitted"
+        except Exception:
+            continue
+
+    return "main", "local-unversioned-" + hashlib.sha256(str(target_dir).encode()).hexdigest()[:12]
 
 
 def export_markdown_report(
@@ -70,7 +90,7 @@ def export_markdown_report(
     exit_code = 1 if has_failed_gate else (3 if bundle.partial_scan else 0)
 
     # 3. Git metadata
-    branch, commit_sha = get_git_info(bundle.scan_root)
+    branch, commit_sha = get_git_info(bundle.scan_root, fallback_dir=cfg.scan_root)
 
     # 4. Severity counts
     crit_count = sum(1 for f in bundle.findings if f.severity == Severity.CRITICAL and not getattr(f, "is_baseline_suppressed", False))
@@ -162,6 +182,8 @@ def export_markdown_report(
         for idx, f in enumerate(top_3, 1):
             p_score_100 = int(f.priority_score * 100)
             md.append(f"{idx}. **`[{f.id.upper()}]` ([{f.severity.value}] · Priority `[{p_score_100}/100]`):** {f.message} (`Sec {f.dpdp_section} / {f.dpdp_rule}`).")
+        if len(bundle.findings) > 3:
+            md.append(f"\n> *Executive Note: Showing top 3 high-priority blockers out of **{len(bundle.findings)} total active violations**. For the exhaustive technical analysis, vulnerable snippets, and before/after remediations for all {len(bundle.findings)} findings, see **Section 5: Detailed Technical Findings**.*")
     else:
         md.append("1. **None:** Zero policy-blocking findings detected.")
     md.append("\n---\n")

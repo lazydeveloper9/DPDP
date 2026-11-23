@@ -86,6 +86,7 @@ def load_config(
             dpdpignore_path=raw.get("dpdpignore_path"),
             baseline_path=raw.get("baseline_path"),
             diff_base=raw.get("diff_base"),
+            git_ref=raw.get("git_ref"),
             engine=EngineConfig(**raw.get("engine", {})),
             bonus=BonusConfig(**raw.get("bonus", {})),
             ai=AiConfig(**raw.get("ai", {})),

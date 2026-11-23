@@ -16,7 +16,7 @@ class LocalLLMClient:
 
     def __init__(
         self,
-        model: str = "qwen2.5-coder:7b",
+        model: str = "qwen2.5-coder:3b",
         endpoint: str = "http://localhost:11434",
         temperature: float = 0.2,
         timeout: float = 300.0,
@@ -70,7 +70,12 @@ class LocalLLMClient:
         base_name = self.model.split(":")[0].lower()
         candidates = [m for m in installed if base_name in m.lower()]
         if candidates:
-            preferred = [c for c in candidates if "7b" in c or "14b" in c]
+            requested_tag = self.model.split(":")[1].lower() if ":" in self.model else "3b"
+            exact_tag_matches = [c for c in candidates if requested_tag in c.lower()]
+            if exact_tag_matches:
+                self.model = exact_tag_matches[0]
+                return self.model
+            preferred = [c for c in candidates if "3b" in c] or [c for c in candidates if "7b" in c]
             chosen = preferred[0] if preferred else candidates[0]
             self.model = chosen
             return self.model

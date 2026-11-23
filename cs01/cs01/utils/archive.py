@@ -57,13 +57,25 @@ def safe_extract_tar(tar_path: Path, dest_dir: Path) -> Path:
 
 
 @contextmanager
-def extracted_workspace(target_path: str | Path) -> Generator[Path, None, None]:
+def extracted_workspace(
+    target_path: str | Path,
+    ref: Optional[str] = None,
+) -> Generator[Path, None, None]:
     """
     Context manager that provides a directory path to scan.
-    If target_path is an archive (.zip, .tar.gz, etc.), it is extracted safely
-    to a temporary directory that is automatically cleaned up on exit.
-    If target_path is already a directory, it yields the resolved directory path.
+    - If target_path is a remote Git or GitHub URL, it is shallow-cloned to a temporary workspace.
+    - If target_path is an archive (.zip, .tar.gz, etc.), it is extracted safely.
+    - If target_path is a local directory, it yields the resolved directory path.
+    Temporary workspaces are automatically cleaned up upon exit.
     """
+    from .git_ingest import is_git_url, cloned_workspace
+
+    target_str = str(target_path).strip()
+    if is_git_url(target_str):
+        with cloned_workspace(target_str, ref=ref) as ws:
+            yield ws
+        return
+
     p = Path(target_path).resolve()
     if not p.exists():
         raise FileNotFoundError(f"Scan target does not exist: {target_path}")

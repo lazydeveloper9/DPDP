@@ -81,9 +81,9 @@ def run_report(
     # 7. Bonus: Patch Generator
     generate_patches(bundle, out_dir)
 
-    # 7b. Local AI Executive Brief (Qwen 2.5 Coder)
+    # 7b. Local AI Compliance Report (Qwen 2.5 Coder 3B)
     if cfg.ai.enabled or cfg.engine.ai_triage:
-        from cs01.ai import LocalLLMClient, generate_executive_dpo_brief
+        from cs01.ai import LocalLLMClient, generate_full_compliance_report
         client = LocalLLMClient(
             model=cfg.ai.model,
             endpoint=cfg.ai.endpoint,
@@ -92,11 +92,15 @@ def run_report(
         )
         if client.is_available():
             try:
-                ai_brief_md = generate_executive_dpo_brief(bundle, client)
+                ai_report_md = generate_full_compliance_report(bundle, client, cfg)
                 ai_brief_path = out_dir / "dpo_ai_executive_brief.md"
+                ai_full_path = out_dir / "ai_compliance_report.md"
                 with open(ai_brief_path, "w", encoding="utf-8") as f:
-                    f.write(ai_brief_md)
+                    f.write(ai_report_md)
+                with open(ai_full_path, "w", encoding="utf-8") as f:
+                    f.write(ai_report_md)
                 generated_files["dpo_ai_executive_brief.md"] = ai_brief_path
+                generated_files["ai_compliance_report.md"] = ai_full_path
             except Exception as e:
                 if cfg.debug:
                     print(f"[dim]Local LLM generation note: {e}[/dim]")

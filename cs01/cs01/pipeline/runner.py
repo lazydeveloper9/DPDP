@@ -13,7 +13,10 @@ from rich.panel import Panel
 from rich.table import Table
 
 from cs01.models.scan_config import ScanConfig
-from cs01.utils import save_json, new_scan_id, utc_now_iso, is_archive, extracted_workspace
+from cs01.utils import (
+    save_json, new_scan_id, utc_now_iso, is_archive, is_git_url,
+    extracted_workspace,
+)
 
 console = Console(stderr=True)
 
@@ -34,9 +37,11 @@ def run_pipeline(cfg: ScanConfig) -> int:
     output_dir = Path(cfg.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    with extracted_workspace(cfg.scan_root) as resolved_root:
+    with extracted_workspace(cfg.scan_root, ref=cfg.git_ref) as resolved_root:
         orig_scan_root = cfg.scan_root
-        if is_archive(orig_scan_root):
+        if is_git_url(orig_scan_root):
+            console.print(f"[cyan]📦 Remote Git repository detected: [bold]{orig_scan_root}[/bold][/cyan]")
+        elif is_archive(orig_scan_root):
             console.print(f"[cyan]📦 Archive detected ({orig_scan_root}). Safely unpacked to temporary workspace.[/cyan]")
         cfg.scan_root = str(resolved_root)
 
@@ -109,7 +114,7 @@ def run_pipeline(cfg: ScanConfig) -> int:
                 raw_findings, cfg,
                 scan_id=scan_id,
                 scan_timestamp=utc_now_iso(),
-                scan_root=cfg.scan_root,
+                scan_root=orig_scan_root,
                 total_files=manifest.total_scanned,
                 partial_scan=len(repo_model.parse_errors) > 0,
                 partial_details=[e.get("error", "") for e in repo_model.parse_errors],

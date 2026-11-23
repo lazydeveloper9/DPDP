@@ -40,7 +40,7 @@ console = Console(stderr=True)
 # --- cs01 scan ---
 @app.command()
 def scan(
-    path: str = typer.Argument(..., help="Path to the repository root to scan"),
+    path: str = typer.Argument(..., help="Path to local repository, zip/tar archive, or remote GitHub URL (e.g. https://github.com/org/repo)"),
     config: Optional[str] = typer.Option(None, "--config", "-c", help="Path to cs01.yaml"),
     fail_on: Optional[str] = typer.Option(None, "--fail-on", help="critical|high|medium|never"),
     format: Optional[str] = typer.Option(None, "--format", "-f", help="sarif|json|html|all"),
@@ -48,6 +48,7 @@ def scan(
     save_stages: bool = typer.Option(False, "--save-stage-output", help="Save intermediate JSONs"),
     debug: bool = typer.Option(False, "--debug", help="Verbose debug output"),
     diff_base: Optional[str] = typer.Option(None, "--diff-base", help="Git ref for diff-only scan"),
+    branch: Optional[str] = typer.Option(None, "--branch", "-b", help="Git branch, tag, or ref for remote repositories"),
     baseline: Optional[str] = typer.Option(None, "--baseline", help="Path to .cs01-baseline.json"),
     ai: bool = typer.Option(True, "--ai/--no-ai", help="Auto-generate AI DPO brief via local Qwen 2.5 Coder if running"),
     ai_model: Optional[str] = typer.Option(None, "--ai-model", help="Local LLM model name (default: auto-detected)"),
@@ -62,10 +63,11 @@ def scan(
         "save_stage_output": save_stages or None,
         "debug": debug or None,
         "diff_base": diff_base,
+        "git_ref": branch,
         "baseline_path": baseline,
         "ai": {
             "enabled": ai,
-            "model": ai_model or "qwen2.5-coder:7b",
+            "model": ai_model or "qwen2.5-coder:3b",
             "endpoint": ai_endpoint or "http://localhost:11434",
         },
     }
@@ -111,14 +113,15 @@ app.command("audit", help="All-in-one compliance audit command (alias for scan).
 # --- Individual stage debug commands ---
 @app.command()
 def ingest(
-    path: str = typer.Argument(..., help="Path to scan or archive file"),
+    path: str = typer.Argument(..., help="Path to local repository, archive file, or remote GitHub URL"),
     config: Optional[str] = typer.Option(None, "--config", "-c"),
+    branch: Optional[str] = typer.Option(None, "--branch", "-b", help="Git branch, tag, or ref for remote repository"),
     debug: bool = typer.Option(False, "--debug"),
     output: Optional[str] = typer.Option(None, "--output", "-o", help="Save RepoManifest JSON"),
 ) -> None:
     """[Stage 1] Ingest & classify repository only. Useful for debugging file bucketing."""
     from cs01.utils import extracted_workspace, save_json
-    with extracted_workspace(path) as resolved_path:
+    with extracted_workspace(path, ref=branch) as resolved_path:
         cfg = load_config(config_path=config, overrides={"scan_root": str(resolved_path), "debug": debug or None})
         from cs01.pipeline.stage1_ingest.ingestor import run_ingest
         manifest = run_ingest(cfg)
@@ -505,17 +508,18 @@ def baseline_diff(
     console.print(table)
 
 
-# --- Local AI (Qwen 2.5 Coder) Commands ---
-@app.command()
+# --- Local AI (Qwen 2.5 Coder 3B) Commands ---
+@app.command("report-ai", help="Generate an audit-grade DPDP Compliance Report using local Qwen 2.5 Coder 3B.")
+@app.command("summarize", help="Generate an Executive DPO Compliance Brief using local Qwen 2.5 Coder 3B.")
 def summarize(
     target: str = typer.Argument(..., help="Path to repository, archive, or stage5_bundle.json"),
-    model: str = typer.Option("qwen2.5-coder:14b", "--model", "-m", help="Local LLM model name"),
+    model: str = typer.Option("qwen2.5-coder:3b", "--model", "-m", help="Local LLM model name (default: qwen2.5-coder:3b)"),
     endpoint: str = typer.Option("http://localhost:11434", "--endpoint", "-e", help="Local LLM endpoint"),
-    output: Optional[str] = typer.Option(None, "--output", "-o", help="Save AI summary Markdown to file"),
+    output: Optional[str] = typer.Option(None, "--output", "-o", help="Save AI compliance report Markdown to file"),
     config: Optional[str] = typer.Option(None, "--config", "-c"),
 ) -> None:
-    """[AI] Generate an Executive DPO Compliance Brief using local Qwen 2.5 Coder."""
-    from cs01.ai import LocalLLMClient, generate_executive_dpo_brief
+    """[AI] Generate a Comprehensive DPDP Compliance Report using local Qwen 2.5 Coder 3B."""
+    from cs01.ai import LocalLLMClient, generate_full_compliance_report
     from cs01.models import ScoredFindingBundle
     from cs01.utils import load_json, extracted_workspace
 
@@ -531,6 +535,7 @@ def summarize(
     if target_path.is_file() and target_path.suffix == ".json":
         data = load_json(target_path)
         bundle = ScoredFindingBundle.model_validate(data)
+        cfg = load_config(config_path=config)
     else:
         with extracted_workspace(target) as resolved:
             cfg = load_config(config_path=config, overrides={"scan_root": str(resolved)})
@@ -545,24 +550,25 @@ def summarize(
             raw = run_evaluate(flow, hits, repo_model, cfg)
             bundle = run_classify(raw, cfg, total_files=manifest.total_scanned)
 
-    console.print(f"[cyan]🤖 Asking local Qwen 2.5 Coder ({model}) to generate Executive DPO Brief...[/cyan]")
-    brief_md = generate_executive_dpo_brief(bundle, client)
+    resolved_model = client.resolve_model()
+    console.print(f"[cyan]🤖 Synthesizing Full DPDP Compliance Report via local {resolved_model}...[/cyan]")
+    report_md = generate_full_compliance_report(bundle, client, cfg)
 
     if output:
         out_p = Path(output)
         out_p.parent.mkdir(parents=True, exist_ok=True)
-        out_p.write_text(brief_md, encoding="utf-8")
-        console.print(f"[bold green]✔ AI Executive DPO Brief saved to [cyan]{output}[/cyan][/bold green]")
+        out_p.write_text(report_md, encoding="utf-8")
+        console.print(f"[bold green]✔ Compliance Report saved to [cyan]{output}[/cyan][/bold green]")
     else:
         from rich.markdown import Markdown
-        console.print(Markdown(brief_md))
+        console.print(Markdown(report_md))
 
 
 @app.command()
 def explain(
     target: str = typer.Argument(..., help="Path to repository, archive, or stage5_bundle.json"),
     rule_or_id: Optional[str] = typer.Argument(None, help="Specific Rule ID (e.g. CODE-DPDP-001) or finding ID to explain"),
-    model: str = typer.Option("qwen2.5-coder:14b", "--model", "-m", help="Local LLM model name"),
+    model: str = typer.Option("qwen2.5-coder:3b", "--model", "-m", help="Local LLM model name (default: qwen2.5-coder:3b)"),
     endpoint: str = typer.Option("http://localhost:11434", "--endpoint", "-e", help="Local LLM endpoint"),
     config: Optional[str] = typer.Option(None, "--config", "-c"),
 ) -> None:
