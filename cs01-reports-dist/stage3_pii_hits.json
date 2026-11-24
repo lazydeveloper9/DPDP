@@ -1,0 +1,38 @@
+{
+  "hits": [
+    {
+      "id": "EMAIL:db/schema.sql:1:1",
+      "pii_type": "EMAIL",
+      "file": "db/schema.sql",
+      "line": 1,
+      "col": 1,
+      "confidence": 0.9,
+      "file_role": "production",
+      "value_sha256": "54974aa3a2d2678b879dafb30a19727ca9dc68d7f5d59233f9176bc3b1fa6fc0",
+      "context_tokens": [
+        "customers",
+        "email",
+        "VARCHAR(255)"
+      ],
+      "validator_result": "schema_column_match",
+      "line_snippet": "CREATE TABLE customers ("
+    },
+    {
+      "id": "MOBILE:db/schema.sql:1:1",
+      "pii_type": "MOBILE",
+      "file": "db/schema.sql",
+      "line": 1,
+      "col": 1,
+      "confidence": 0.9,
+      "file_role": "production",
+      "value_sha256": "b2eb9ff3d6e8cfbfa7ca340db5beac9199935b57f28e2348aaf1a7683f30783c",
+      "context_tokens": [
+        "customers",
+        "phone_number",
+        "VARCHAR(30)"
+      ],
+      "validator_result": "schema_column_match",
+      "line_snippet": "CREATE TABLE customers ("
+    }
+  ]
+}

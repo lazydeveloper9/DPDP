@@ -120,7 +120,7 @@ class MainWindow(QMainWindow):
 
         self.hud_target_label = QLabel("", self)
         self.hud_target_label.setProperty("class", "text-secondary")
-        self.hud_target_label.setStyleSheet("font-size: 9.5pt; color: #a6b4c8; padding-left: 8px;")
+        self.hud_target_label.setStyleSheet("font-size: 9pt; font-weight: 700; color: #595959; padding-left: 8px;")
 
         hud_layout.addWidget(self.brand_title)
         hud_layout.addWidget(self.version_badge)
@@ -205,7 +205,10 @@ class MainWindow(QMainWindow):
             self.hud_target_label.setText(f"Target: {target}")
         # Update privacy badge to scanning state
         self.privacy_badge.setText("SCANNING IN PROGRESS")
-        self.privacy_badge.setStyleSheet("color: #f59e0b; font-weight: bold;")
+        self.privacy_badge.setStyleSheet(
+            "background-color: #FFD400; color: #111111; font-weight: 800; "
+            "border: 2px solid #111111; padding: 4px 10px;"
+        )
 
         # Transition to execution view
         self.navigate_to(2)
@@ -262,7 +265,10 @@ class MainWindow(QMainWindow):
 
         # Restore HUD badge
         self.privacy_badge.setText("OFFLINE · ZERO-EGRESS")
-        self.privacy_badge.setStyleSheet("")
+        self.privacy_badge.setStyleSheet(
+            "background-color: #B8F044; color: #111111; font-weight: 800; "
+            "border: 2px solid #111111; padding: 4px 10px;"
+        )
 
         # Navigate to Results view so user sees findings immediately
         self.navigate_to(3)
@@ -272,13 +278,19 @@ class MainWindow(QMainWindow):
         self.scan_execution_view.log_console.append_log("ERROR", f"Scan failed: {error}")
         # Restore HUD badge
         self.privacy_badge.setText("SCAN FAILED · OFFLINE")
-        self.privacy_badge.setStyleSheet("color: #ef4444; font-weight: bold;")
+        self.privacy_badge.setStyleSheet(
+            "background-color: #FF4444; color: #FFFFFF; font-weight: 800; "
+            "border: 2px solid #111111; padding: 4px 10px;"
+        )
 
     def _on_scan_cancelled(self) -> None:
         self.scan_execution_view.on_scan_cancelled()
         # Restore HUD badge
         self.privacy_badge.setText("CANCELLED · OFFLINE · ZERO-EGRESS")
-        self.privacy_badge.setStyleSheet("color: #94a3b8; font-weight: bold;")
+        self.privacy_badge.setStyleSheet(
+            "background-color: #EAE6DA; color: #595959; font-weight: 800; "
+            "border: 2px solid #111111; padding: 4px 10px;"
+        )
 
     def _auto_load_existing_reports(self) -> None:
         """Auto-discovers and loads existing scan results from cs01-reports if present."""
@@ -383,7 +395,10 @@ class MainWindow(QMainWindow):
             self.report_view.bind_reports(report_files)
 
             self.privacy_badge.setText(f"LOADED ({len(bundle.findings)} findings) · ZERO-EGRESS")
-            self.privacy_badge.setStyleSheet("color: #10b981; font-weight: bold;")
+            self.privacy_badge.setStyleSheet(
+                "background-color: #B8F044; color: #111111; font-weight: 800; "
+                "border: 2px solid #111111; padding: 4px 10px;"
+            )
             self.navigate_to(0)  # Go to Dashboard
         except Exception as e:
             from PySide6.QtWidgets import QMessageBox
@@ -397,14 +412,14 @@ class MainWindow(QMainWindow):
         self.status_engine_label = QLabel(
             "AST Engine: Tree-sitter Polyglot | Rules: 23 Active", self
         )
-        self.status_engine_label.setProperty("class", "text-secondary")
+        self.status_engine_label.setStyleSheet("font-weight: 700; color: #111111;")
 
         self.status_egress_label = QLabel("Zero Cloud Egress Confirmed", self)
-        self.status_egress_label.setProperty("class", "text-secondary")
+        self.status_egress_label.setStyleSheet("font-weight: 700; color: #111111;")
 
         mem_mb = _get_process_memory_mb()
         self.status_memory_label = QLabel(f"Memory: {mem_mb} MB", self)
-        self.status_memory_label.setProperty("class", "text-secondary")
+        self.status_memory_label.setStyleSheet("font-weight: 700; color: #111111;")
 
         status_bar.addWidget(self.status_engine_label, 1)
         status_bar.addPermanentWidget(self.status_egress_label)

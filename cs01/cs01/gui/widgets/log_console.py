@@ -11,12 +11,12 @@ from PySide6.QtWidgets import QPlainTextEdit, QWidget
 from cs01.gui.theme import COLOR_BORDER_SUBTLE, COLOR_TEXT_PRIMARY, FONT_FAMILY_MONO
 
 _LEVEL_COLORS: dict[str, str] = {
-    "INFO": "#94a3b8",
-    "WARNING": "#f59e0b",
-    "ERROR": "#ef4444",
-    "CRITICAL": "#ef4444",
-    "SUCCESS": "#10b981",
-    "DEBUG": "#64748b",
+    "INFO": "#111111",
+    "WARNING": "#D97706",
+    "ERROR": "#DC2626",
+    "CRITICAL": "#DC2626",
+    "SUCCESS": "#16A34A",
+    "DEBUG": "#737373",
 }
 
 
@@ -32,11 +32,14 @@ class LogConsoleWidget(QPlainTextEdit):
         super().__init__(parent)
         self.setReadOnly(True)
         self.setStyleSheet(
-            f"background-color: #050811; "
-            f"color: {COLOR_TEXT_PRIMARY}; "
-            f"font-family: {FONT_FAMILY_MONO}; "
-            f"font-size: 11px; "
-            f"border: 1px solid {COLOR_BORDER_SUBTLE};"
+            "background-color: #FFFFFF; "
+            "color: #111111; "
+            "font-family: 'Cascadia Code', 'Consolas', monospace; "
+            "font-size: 10pt; "
+            "border: 2px solid #111111; "
+            "padding: 8px; "
+            "selection-background-color: #FFE500; "
+            "selection-color: #111111;"
         )
 
     def toHtml(self) -> str:  # noqa: N802

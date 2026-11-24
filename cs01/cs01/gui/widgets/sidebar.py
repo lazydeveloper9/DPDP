@@ -86,11 +86,9 @@ class NavigationSidebar(QFrame):
         self._toggle_shortcut.activated.connect(self.toggle_collapsed)
 
         self.nav_title_label = QLabel("NAVIGATION")
-        self.nav_title_label.setProperty("class", "text-muted")
-        font = self.nav_title_label.font()
-        font.setPointSize(8)
-        font.setBold(True)
-        self.nav_title_label.setFont(font)
+        self.nav_title_label.setStyleSheet(
+            "font-size: 8pt; font-weight: 800; color: #111111; letter-spacing: 1.5px; background: transparent;"
+        )
 
         header_layout.addWidget(self.toggle_btn)
         header_layout.addWidget(self.nav_title_label)
@@ -120,9 +118,12 @@ class NavigationSidebar(QFrame):
 
         layout.addStretch()
 
-        # 3. Footer Regulatory Stamp
-        self.footer_label = QLabel("DPDP Act 2023\nZero-Egress Mode")
-        self.footer_label.setProperty("class", "text-muted")
+        # 3. Footer Regulatory Stamp (Neo-Brutalist Badge)
+        self.footer_label = QLabel("DPDP Act 2023\nZERO-EGRESS MODE")
+        self.footer_label.setStyleSheet(
+            "background-color: #FFF4C2; color: #111111; border: 1.5px solid #111111; "
+            "padding: 6px; font-weight: 800; font-size: 7.5pt; text-align: center;"
+        )
         self.footer_label.setAlignment(Qt.AlignCenter)
         layout.addWidget(self.footer_label)
 

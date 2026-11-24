@@ -1,36 +1,32 @@
 """
 CS-01 DPDP Compliance Desktop GUI - DPDP Readiness Gauge Widget.
 
-Custom-painted arc gauge rendering a 0–100 score with dynamic colour
-coding (green ≥80, amber ≥60, red <60) and an optional "CAPPED" badge
-for Section 33 critical violation dynamic capping.
+Neo-Brutalist custom-painted arc gauge rendering a 0–100 score with
+2px solid black border, 5px hard offset shadow, and dynamic capping badge.
 """
 from __future__ import annotations
 
-from PySide6.QtCore import Qt
-from PySide6.QtGui import QColor, QFont, QPainter, QPaintEvent, QPen
+from PySide6.QtCore import QPoint, QRect, QRectF, Qt
+from PySide6.QtGui import QColor, QFont, QPaintEvent, QPainter, QPen
 from PySide6.QtWidgets import QWidget
 
 from cs01.gui.theme import (
-    COLOR_BG_CARD,
-    COLOR_RISK_CRITICAL,
-    COLOR_STATUS_SUCCESS,
-    COLOR_TEXT_PRIMARY,
-    COLOR_TEXT_SECONDARY,
+    BRUTALIST_BG_SECONDARY,
+    BRUTALIST_BLACK,
+    BRUTALIST_BORDER,
+    BRUTALIST_GREEN,
+    BRUTALIST_MUTED,
+    BRUTALIST_ORANGE,
+    BRUTALIST_RED,
+    BRUTALIST_SURFACE,
+    BRUTALIST_YELLOW,
 )
-
-_AMBER = "#f59e0b"
 
 
 class ReadinessGaugeWidget(QWidget):
     """
-    Custom-painted DPDP Readiness Gauge arc (0.0 – 100.0).
-
-    Renders a 270° sweeping arc with:
-    - Green arc for scores ≥ 80 (compliant)
-    - Amber arc for scores ≥ 60 (moderate risk)
-    - Red arc for scores < 60 (non-compliant)
-    Central text shows integer score; subtitle reads "DPDP READINESS".
+    Neo-Brutalist DPDP Readiness Gauge (0.0 – 100.0).
+    Renders a 270° sweeping arc on a white card with 2px black border and 5px shadow.
     """
 
     def __init__(self, parent: QWidget | None = None) -> None:
@@ -38,7 +34,7 @@ class ReadinessGaugeWidget(QWidget):
         self.score: float = 100.0
         self.is_capped: bool = False
         self.cap_reason: str | None = None
-        self.setMinimumSize(180, 180)
+        self.setMinimumSize(200, 200)
 
     def set_score(
         self,
@@ -54,52 +50,78 @@ class ReadinessGaugeWidget(QWidget):
 
     def paintEvent(self, event: QPaintEvent) -> None:  # noqa: N802
         painter = QPainter(self)
-        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
 
-        from PySide6.QtCore import QRectF
+        w, h = self.width(), self.height()
+        sx, sy = (5, 5)
 
-        rect = self.rect()
-        side = min(rect.width(), rect.height()) - 20
-        gauge_rect = QRectF(10, 10, side, side)
+        # 1. Hard Offset Solid Shadow
+        shadow_rect = QRect(sx, sy, w - sx, h - sy)
+        painter.fillRect(shadow_rect, QColor(BRUTALIST_BLACK))
 
-        # Background track
-        bg_pen = QPen(QColor(COLOR_BG_CARD), 12)
-        bg_pen.setCapStyle(Qt.PenCapStyle.RoundCap)
-        painter.setPen(bg_pen)
-        painter.drawArc(gauge_rect, 225 * 16, -270 * 16)
+        # 2. Main Card Body (White)
+        body_rect = QRect(0, 0, w - sx, h - sy)
+        painter.fillRect(body_rect, QColor(BRUTALIST_SURFACE))
 
-        # Determine arc colour based on score
+        # 3. 2px Solid Black Border
+        pen = QPen(QColor(BRUTALIST_BORDER), 2)
+        pen.setJoinStyle(Qt.PenJoinStyle.MiterJoin)
+        painter.setPen(pen)
+        painter.drawRect(body_rect.adjusted(1, 1, -1, -1))
+
+        # 4. Gauge Arc
+        gauge_size = min(body_rect.width(), body_rect.height()) - 48
+        gx = body_rect.x() + (body_rect.width() - gauge_size) / 2
+        gy = body_rect.y() + (body_rect.height() - gauge_size) / 2
+        arc_rect = QRectF(gx, gy, gauge_size, gauge_size)
+
+        # Track arc
+        track_pen = QPen(QColor(BRUTALIST_BG_SECONDARY), 14)
+        track_pen.setCapStyle(Qt.PenCapStyle.FlatCap)
+        painter.setPen(track_pen)
+        painter.drawArc(arc_rect, 225 * 16, -270 * 16)
+
+        # Value arc
         if self.score >= 80.0:
-            arc_color = QColor(COLOR_STATUS_SUCCESS)
+            arc_color = QColor(BRUTALIST_GREEN)
         elif self.score >= 60.0:
-            arc_color = QColor(_AMBER)
+            arc_color = QColor(BRUTALIST_ORANGE)
         else:
-            arc_color = QColor(COLOR_RISK_CRITICAL)
+            arc_color = QColor(BRUTALIST_RED)
 
-        val_pen = QPen(arc_color, 12)
-        val_pen.setCapStyle(Qt.PenCapStyle.RoundCap)
+        val_pen = QPen(arc_color, 14)
+        val_pen.setCapStyle(Qt.PenCapStyle.FlatCap)
         painter.setPen(val_pen)
         span_angle = -int(270 * (self.score / 100.0) * 16)
-        painter.drawArc(gauge_rect, 225 * 16, span_angle)
+        painter.drawArc(arc_rect, 225 * 16, span_angle)
 
         # Central numeric score
-        painter.setPen(QColor(COLOR_TEXT_PRIMARY))
-        font = QFont("Arial", 24, QFont.Weight.Bold)
+        painter.setPen(QColor(BRUTALIST_BLACK))
+        font = QFont("Space Grotesk", 24, QFont.Weight.Bold)
+        font.setBold(True)
         painter.setFont(font)
-        painter.drawText(gauge_rect, Qt.AlignmentFlag.AlignCenter, f"{int(self.score)}")
+        painter.drawText(arc_rect, Qt.AlignmentFlag.AlignCenter, f"{int(self.score)}")
 
         # "DPDP READINESS" subtitle
-        from PySide6.QtCore import QRectF as _QRectF
-        sub_font = QFont("Arial", 9)
+        sub_font = QFont("Space Grotesk", 8, QFont.Weight.Bold)
+        sub_font.setBold(True)
         painter.setFont(sub_font)
-        painter.setPen(QColor(COLOR_TEXT_SECONDARY))
-        sub_rect = _QRectF(gauge_rect.x(), gauge_rect.y() + 40, gauge_rect.width(), gauge_rect.height())
+        painter.setPen(QColor(BRUTALIST_MUTED))
+        sub_rect = QRectF(arc_rect.x(), arc_rect.y() + 44, arc_rect.width(), arc_rect.height())
         painter.drawText(sub_rect, Qt.AlignmentFlag.AlignCenter, "DPDP READINESS")
 
-        # Optional CAPPED badge
+        # CAPPED Badge
         if self.is_capped:
-            capped_font = QFont("Cascadia Code", 8, QFont.Weight.Bold)
-            painter.setFont(capped_font)
-            painter.setPen(QColor(COLOR_RISK_CRITICAL))
-            cap_rect = _QRectF(gauge_rect.x(), gauge_rect.y() + 60, gauge_rect.width(), gauge_rect.height())
-            painter.drawText(cap_rect, Qt.AlignmentFlag.AlignCenter, "CAPPED")
+            badge_w, badge_h = 76, 20
+            bx = int(body_rect.x() + (body_rect.width() - badge_w) / 2)
+            by = int(body_rect.y() + body_rect.height() - badge_h - 10)
+            badge_rect = QRect(bx, by, badge_w, badge_h)
+            painter.fillRect(badge_rect, QColor(BRUTALIST_RED))
+            pen_b = QPen(QColor(BRUTALIST_BORDER), 1.5)
+            painter.setPen(pen_b)
+            painter.drawRect(badge_rect)
+            painter.setPen(QColor("#FFFFFF"))
+            b_font = QFont("Space Grotesk", 7, QFont.Weight.Bold)
+            b_font.setBold(True)
+            painter.setFont(b_font)
+            painter.drawText(badge_rect, Qt.AlignmentFlag.AlignCenter, "CAPPED")

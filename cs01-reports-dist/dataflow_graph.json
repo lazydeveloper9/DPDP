@@ -1,0 +1,204 @@
+{
+  "repo_name": "vulnerable_app",
+  "commit_sha": null,
+  "generated_at": "2026-11-24T01:19:34.455232+00:00",
+  "summary_metrics": {
+    "total_nodes": 7,
+    "total_edges": 1,
+    "leak_edges": 0,
+    "unconsented_storage_edges": 1,
+    "compliant_edges": 0,
+    "active_layers": [
+      "COLLECTION",
+      "EGRESS_SINK",
+      "INFRA_CLOUD",
+      "STORAGE"
+    ],
+    "max_penalty_engaged": "₹250 Crore (§8(5) Security Safeguards)"
+  },
+  "nodes": [
+    {
+      "id": "COLLECTION:backend/routes.js:anonymous",
+      "label": "Form: anonymous",
+      "layer": 0,
+      "node_type": "form",
+      "file_path": "backend/routes.js",
+      "start_line": 1,
+      "end_line": 4,
+      "status": "informational",
+      "pii_types": [
+        "EMAIL",
+        "PHONE"
+      ],
+      "controls": {
+        "auth_checked": null,
+        "ownership_checked": null,
+        "consent_checked": null,
+        "encrypted": null,
+        "retention_defined": null
+      },
+      "finding_ids": [],
+      "group_key": "backend"
+    },
+    {
+      "id": "COLLECTION:frontend/SignupForm.jsx:SignupForm",
+      "label": "Form: SignupForm",
+      "layer": 0,
+      "node_type": "form",
+      "file_path": "frontend/SignupForm.jsx",
+      "start_line": 1,
+      "end_line": 6,
+      "status": "informational",
+      "pii_types": [
+        "EMAIL",
+        "PHONE"
+      ],
+      "controls": {
+        "auth_checked": null,
+        "ownership_checked": null,
+        "consent_checked": null,
+        "encrypted": null,
+        "retention_defined": null
+      },
+      "finding_ids": [],
+      "group_key": "frontend"
+    },
+    {
+      "id": "TABLE:db/schema.sql:customers",
+      "label": "Table: customers",
+      "layer": 2,
+      "node_type": "table",
+      "file_path": "db/schema.sql",
+      "start_line": 1,
+      "end_line": 4,
+      "status": "unconsented_storage",
+      "pii_types": [
+        "EMAIL",
+        "PHONE"
+      ],
+      "controls": {
+        "auth_checked": null,
+        "ownership_checked": null,
+        "consent_checked": false,
+        "encrypted": false,
+        "retention_defined": false
+      },
+      "finding_ids": [
+        "SQL-DPDP-001:db/schema.sql:1",
+        "SQL-DPDP-001:db/schema.sql:1",
+        "SQL-DPDP-005:db/schema.sql:1",
+        "SQL-DPDP-002:db/schema.sql:1",
+        "SQL-DPDP-002:db/schema.sql:1"
+      ],
+      "group_key": "db"
+    },
+    {
+      "id": "INFRA:infra/storage.tf:storage",
+      "label": "Cloud: terraform (storage)",
+      "layer": 3,
+      "node_type": "cloud_resource",
+      "file_path": "infra/storage.tf",
+      "start_line": 1,
+      "end_line": null,
+      "status": "informational",
+      "pii_types": [],
+      "controls": {
+        "auth_checked": null,
+        "ownership_checked": null,
+        "consent_checked": null,
+        "encrypted": false,
+        "retention_defined": null
+      },
+      "finding_ids": [],
+      "group_key": "infra"
+    },
+    {
+      "id": "LOGGER:backend/api.py:4",
+      "label": "Logger Sink: L4",
+      "layer": 4,
+      "node_type": "logger",
+      "file_path": "backend/api.py",
+      "start_line": 4,
+      "end_line": 4,
+      "status": "informational",
+      "pii_types": [],
+      "controls": {
+        "auth_checked": null,
+        "ownership_checked": null,
+        "consent_checked": null,
+        "encrypted": null,
+        "retention_defined": null
+      },
+      "finding_ids": [],
+      "group_key": "backend"
+    },
+    {
+      "id": "LOGGER:backend/api.py:10",
+      "label": "Logger Sink: L10",
+      "layer": 4,
+      "node_type": "logger",
+      "file_path": "backend/api.py",
+      "start_line": 10,
+      "end_line": 10,
+      "status": "pii_leak",
+      "pii_types": [],
+      "controls": {
+        "auth_checked": null,
+        "ownership_checked": null,
+        "consent_checked": null,
+        "encrypted": null,
+        "retention_defined": null
+      },
+      "finding_ids": [
+        "CODE-DPDP-001:backend/api.py:10"
+      ],
+      "group_key": "backend"
+    },
+    {
+      "id": "THIRD_PARTY:backend/api.py:11",
+      "label": "Outbound API: L11",
+      "layer": 4,
+      "node_type": "third_party",
+      "file_path": "backend/api.py",
+      "start_line": 11,
+      "end_line": 11,
+      "status": "pii_leak",
+      "pii_types": [],
+      "controls": {
+        "auth_checked": null,
+        "ownership_checked": null,
+        "consent_checked": null,
+        "encrypted": null,
+        "retention_defined": null
+      },
+      "finding_ids": [
+        "CODE-DPDP-002:backend/api.py:11"
+      ],
+      "group_key": "backend"
+    }
+  ],
+  "edges": [
+    {
+      "id": "EDGE:TABLE:db/schema.sql:customers->INFRA:infra/storage.tf:storage",
+      "source": "TABLE:db/schema.sql:customers",
+      "target": "INFRA:infra/storage.tf:storage",
+      "flow_type": "unconsented_storage",
+      "pii_types": [],
+      "consent_verified": false,
+      "encrypted": null,
+      "severity": "CRITICAL",
+      "dpdp_provisions": [
+        "§8(5)",
+        "§8(7)",
+        "§6(1)"
+      ],
+      "penalty_ceiling": "250_crore",
+      "finding_ids": [
+        "SQL-DPDP-005:db/schema.sql:1",
+        "SQL-DPDP-001:db/schema.sql:1",
+        "SQL-DPDP-002:db/schema.sql:1"
+      ],
+      "evidence_summary": "Storage Table: customers hosted on Cloud: terraform (storage)"
+    }
+  ]
+}

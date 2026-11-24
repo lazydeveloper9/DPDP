@@ -37,7 +37,23 @@ from PySide6.QtWidgets import (
 )
 
 from cs01.gui.qss_builder import polish_widget
-from cs01.gui.theme import DEFAULT_THEME, Theme
+from cs01.gui.theme import (
+    BRUTALIST_BG_MAIN,
+    BRUTALIST_BG_SECONDARY,
+    BRUTALIST_BLACK,
+    BRUTALIST_BORDER,
+    BRUTALIST_COBALT,
+    BRUTALIST_GREEN,
+    BRUTALIST_MUTED,
+    BRUTALIST_ORANGE,
+    BRUTALIST_RED,
+    BRUTALIST_SURFACE,
+    BRUTALIST_SURFACE_ALT,
+    BRUTALIST_YELLOW,
+    DEFAULT_THEME,
+    Theme,
+)
+from cs01.gui.widgets.brutalist_widgets import BrutalistCard
 from cs01.models.scan_config import (
     AiConfig,
     BonusConfig,
@@ -124,14 +140,14 @@ class ScanConfigView(QWidget):
         h_layout.setSpacing(4)
 
         self.title_label = QLabel("SCAN CONFIGURATION & TARGET SETUP", header_frame)
-        self.title_label.setProperty("class", "h1")
+        self.title_label.setStyleSheet(f"font-size: 16pt; font-weight: 800; color: {BRUTALIST_BLACK}; letter-spacing: -0.5px;")
 
         self.subtitle_label = QLabel(
             "Configure target codebase, analysis parameters, statutory fail-on thresholds, "
             "and deliverable artifacts for compliance evaluation.",
             header_frame,
         )
-        self.subtitle_label.setProperty("class", "text-secondary")
+        self.subtitle_label.setStyleSheet(f"font-size: 9.5pt; color: {BRUTALIST_MUTED};")
 
         h_layout.addWidget(self.title_label)
         h_layout.addWidget(self.subtitle_label)
@@ -139,15 +155,15 @@ class ScanConfigView(QWidget):
 
     def _build_target_card(self) -> None:
         """Target source selection, ingestion input row, and dynamic validation badge."""
-        self.target_source_card = QFrame(self.content_widget)
+        self.target_source_card = BrutalistCard(bg="#FFFFFF", shadow_offset=4, parent=self.content_widget)
         self.target_source_card.setProperty("class", "card")
         card_layout = QVBoxLayout(self.target_source_card)
         card_layout.setContentsMargins(18, 16, 18, 16)
         card_layout.setSpacing(12)
 
         # Mode Selection
-        mode_header = QLabel("STEP 1: TARGET SOURCE SELECTION & CODEBASE INGESTION", self.target_source_card)
-        mode_header.setProperty("class", "h3")
+        mode_header = QLabel("01 // TARGET SOURCE SELECTION & CODEBASE INGESTION", self.target_source_card)
+        mode_header.setStyleSheet(f"font-size: 11pt; font-weight: 800; color: {BRUTALIST_BLACK}; letter-spacing: 0.5px;")
         card_layout.addWidget(mode_header)
 
         mode_row = QHBoxLayout()
@@ -171,7 +187,7 @@ class ScanConfigView(QWidget):
 
         # Target Path / URL Input Row
         input_label = QLabel("Source Target Path or Git Clone URL:", self.target_source_card)
-        input_label.setProperty("class", "text-secondary")
+        input_label.setStyleSheet(f"color: {BRUTALIST_BLACK}; font-weight: 700; font-size: 9.5pt;")
         card_layout.addWidget(input_label)
 
         input_row = QHBoxLayout()
@@ -181,11 +197,33 @@ class ScanConfigView(QWidget):
         self.target_input.setPlaceholderText(
             "Enter directory path, archive (.zip, .tar.gz), or Git URL..."
         )
+        self.target_input.setFixedHeight(36)
+        self.target_input.setStyleSheet(
+            f"background-color: #FFFFFF; color: {BRUTALIST_BLACK}; border: 2px solid {BRUTALIST_BORDER}; "
+            "padding: 4px 10px; font-weight: 500; font-size: 10pt;"
+        )
         input_row.addWidget(self.target_input, 1)
 
         self.browse_folder_btn = QPushButton("Browse Folder", self.target_source_card)
+        self.browse_folder_btn.setFixedHeight(36)
+        self.browse_folder_btn.setStyleSheet(
+            f"background-color: {BRUTALIST_BG_SECONDARY}; color: {BRUTALIST_BLACK}; border: 2px solid {BRUTALIST_BORDER}; "
+            "font-weight: 800; padding: 4px 14px; text-transform: uppercase;"
+        )
+
         self.browse_archive_btn = QPushButton("Select Archive", self.target_source_card)
+        self.browse_archive_btn.setFixedHeight(36)
+        self.browse_archive_btn.setStyleSheet(
+            f"background-color: {BRUTALIST_BG_SECONDARY}; color: {BRUTALIST_BLACK}; border: 2px solid {BRUTALIST_BORDER}; "
+            "font-weight: 800; padding: 4px 14px; text-transform: uppercase;"
+        )
+
         self.validate_btn = QPushButton("Validate", self.target_source_card)
+        self.validate_btn.setFixedHeight(36)
+        self.validate_btn.setStyleSheet(
+            f"background-color: {BRUTALIST_YELLOW}; color: {BRUTALIST_BLACK}; border: 2px solid {BRUTALIST_BORDER}; "
+            "font-weight: 800; padding: 4px 18px; text-transform: uppercase;"
+        )
 
         input_row.addWidget(self.browse_folder_btn)
         input_row.addWidget(self.browse_archive_btn)
@@ -200,26 +238,32 @@ class ScanConfigView(QWidget):
 
         # Remote Git Options Panel (Branch, Depth, Token)
         self.git_options_frame = QFrame(self.target_source_card)
+        self.git_options_frame.setStyleSheet(
+            f"background-color: {BRUTALIST_SURFACE_ALT}; border: 1.5px solid {BRUTALIST_BORDER}; padding: 10px;"
+        )
         git_layout = QGridLayout(self.git_options_frame)
-        git_layout.setContentsMargins(0, 6, 0, 0)
+        git_layout.setContentsMargins(8, 8, 8, 8)
         git_layout.setSpacing(10)
 
         branch_lbl = QLabel("Git Branch / Ref:", self.git_options_frame)
-        branch_lbl.setProperty("class", "text-secondary")
+        branch_lbl.setStyleSheet(f"color: {BRUTALIST_BLACK}; font-weight: 700;")
         self.branch_input = QLineEdit(self.git_options_frame)
         self.branch_input.setPlaceholderText("main")
+        self.branch_input.setStyleSheet(f"background-color: #FFFFFF; color: {BRUTALIST_BLACK}; border: 2px solid {BRUTALIST_BORDER}; padding: 4px;")
 
         depth_lbl = QLabel("Clone Depth:", self.git_options_frame)
-        depth_lbl.setProperty("class", "text-secondary")
+        depth_lbl.setStyleSheet(f"color: {BRUTALIST_BLACK}; font-weight: 700;")
         self.clone_depth_spin = QSpinBox(self.git_options_frame)
         self.clone_depth_spin.setRange(1, 50)
         self.clone_depth_spin.setValue(1)
+        self.clone_depth_spin.setStyleSheet(f"background-color: #FFFFFF; color: {BRUTALIST_BLACK}; border: 2px solid {BRUTALIST_BORDER}; padding: 4px;")
 
         token_lbl = QLabel("Access Token (Optional for Private Repos):", self.git_options_frame)
-        token_lbl.setProperty("class", "text-secondary")
+        token_lbl.setStyleSheet(f"color: {BRUTALIST_BLACK}; font-weight: 700;")
         self.git_token_input = QLineEdit(self.git_options_frame)
         self.git_token_input.setEchoMode(QLineEdit.EchoMode.Password)
         self.git_token_input.setPlaceholderText("Personal Access Token")
+        self.git_token_input.setStyleSheet(f"background-color: #FFFFFF; color: {BRUTALIST_BLACK}; border: 2px solid {BRUTALIST_BORDER}; padding: 4px;")
 
         git_layout.addWidget(branch_lbl, 0, 0)
         git_layout.addWidget(self.branch_input, 1, 0)
@@ -236,14 +280,14 @@ class ScanConfigView(QWidget):
 
     def _build_pipeline_card(self) -> None:
         """Audit pipeline parameters: fail-on threshold, engine selector, output dir, baseline."""
-        self.pipeline_card = QFrame(self.content_widget)
+        self.pipeline_card = BrutalistCard(bg="#FFFFFF", shadow_offset=4, parent=self.content_widget)
         self.pipeline_card.setProperty("class", "card")
         p_layout = QVBoxLayout(self.pipeline_card)
         p_layout.setContentsMargins(18, 16, 18, 16)
         p_layout.setSpacing(12)
 
-        pipeline_header = QLabel("STEP 2: AUDIT PIPELINE & STATUTORY RULE PARAMETERS", self.pipeline_card)
-        pipeline_header.setProperty("class", "h3")
+        pipeline_header = QLabel("02 // AUDIT PIPELINE & STATUTORY RULE PARAMETERS", self.pipeline_card)
+        pipeline_header.setStyleSheet(f"font-size: 11pt; font-weight: 800; color: {BRUTALIST_BLACK}; letter-spacing: 0.5px;")
         p_layout.addWidget(pipeline_header)
 
         grid = QGridLayout()
@@ -252,17 +296,21 @@ class ScanConfigView(QWidget):
 
         # 1. Statutory Fail-On Gate Threshold
         fail_on_lbl = QLabel("Statutory Fail-On Gate:", self.pipeline_card)
-        fail_on_lbl.setProperty("class", "text-secondary")
+        fail_on_lbl.setStyleSheet(f"color: {BRUTALIST_BLACK}; font-weight: 700;")
         self.fail_on_combo = QComboBox(self.pipeline_card)
         self.fail_on_combo.addItems(["high", "critical", "medium", "never"])
         self.fail_on_combo.setCurrentText("high")
+        self.fail_on_combo.setFixedHeight(34)
+        self.fail_on_combo.setStyleSheet(
+            f"background-color: #FFFFFF; color: {BRUTALIST_BLACK}; border: 2px solid {BRUTALIST_BORDER}; font-weight: 700; padding: 4px;"
+        )
 
         grid.addWidget(fail_on_lbl, 0, 0)
         grid.addWidget(self.fail_on_combo, 1, 0)
 
         # 2. SAST Analysis Engine Radio Buttons
         engine_lbl = QLabel("Static Analysis Engine:", self.pipeline_card)
-        engine_lbl.setProperty("class", "text-secondary")
+        engine_lbl.setStyleSheet(f"color: {BRUTALIST_BLACK}; font-weight: 700;")
         engine_box = QHBoxLayout()
         engine_box.setSpacing(12)
 
@@ -288,12 +336,16 @@ class ScanConfigView(QWidget):
 
         # 3. Output Reports Directory
         out_lbl = QLabel("Output Reports Directory:", self.pipeline_card)
-        out_lbl.setProperty("class", "text-secondary")
+        out_lbl.setStyleSheet(f"color: {BRUTALIST_BLACK}; font-weight: 700;")
         out_row = QHBoxLayout()
         out_row.setSpacing(6)
         self.output_dir_input = QLineEdit("./cs01-reports", self.pipeline_card)
+        self.output_dir_input.setFixedHeight(34)
+        self.output_dir_input.setStyleSheet(f"background-color: #FFFFFF; color: {BRUTALIST_BLACK}; border: 2px solid {BRUTALIST_BORDER}; padding: 4px 8px;")
         self.browse_output_btn = QPushButton("...", self.pipeline_card)
+        self.browse_output_btn.setFixedHeight(34)
         self.browse_output_btn.setFixedWidth(40)
+        self.browse_output_btn.setStyleSheet(f"background-color: {BRUTALIST_BG_SECONDARY}; color: {BRUTALIST_BLACK}; border: 2px solid {BRUTALIST_BORDER}; font-weight: 800;")
         out_row.addWidget(self.output_dir_input, 1)
         out_row.addWidget(self.browse_output_btn)
 
@@ -312,7 +364,11 @@ class ScanConfigView(QWidget):
         baseline_row.setSpacing(8)
         self.baseline_input = QLineEdit(self.pipeline_card)
         self.baseline_input.setPlaceholderText(".cs01-baseline.json (optional)")
+        self.baseline_input.setFixedHeight(34)
+        self.baseline_input.setStyleSheet(f"background-color: #FFFFFF; color: {BRUTALIST_BLACK}; border: 2px solid {BRUTALIST_BORDER}; padding: 4px 8px;")
         self.browse_baseline_btn = QPushButton("Browse Baseline...", self.pipeline_card)
+        self.browse_baseline_btn.setFixedHeight(34)
+        self.browse_baseline_btn.setStyleSheet(f"background-color: {BRUTALIST_BG_SECONDARY}; color: {BRUTALIST_BLACK}; border: 2px solid {BRUTALIST_BORDER}; font-weight: 800; padding: 4px 12px;")
         baseline_row.addWidget(self.baseline_input, 1)
         baseline_row.addWidget(self.browse_baseline_btn)
 
@@ -324,14 +380,14 @@ class ScanConfigView(QWidget):
 
     def _build_deliverables_card(self) -> None:
         """Statutory compliance deliverables checklist (all 8 checked by default)."""
-        self.deliverables_card = QFrame(self.content_widget)
+        self.deliverables_card = BrutalistCard(bg="#FFFFFF", shadow_offset=4, parent=self.content_widget)
         self.deliverables_card.setProperty("class", "card")
         d_layout = QVBoxLayout(self.deliverables_card)
         d_layout.setContentsMargins(18, 16, 18, 16)
         d_layout.setSpacing(12)
 
-        d_header = QLabel("STEP 3: STATUTORY COMPLIANCE DELIVERABLES CHECKLIST", self.deliverables_card)
-        d_header.setProperty("class", "h3")
+        d_header = QLabel("03 // STATUTORY COMPLIANCE DELIVERABLES CHECKLIST", self.deliverables_card)
+        d_header.setStyleSheet(f"font-size: 11pt; font-weight: 800; color: {BRUTALIST_BLACK}; letter-spacing: 0.5px;")
         d_layout.addWidget(d_header)
 
         grid = QGridLayout()
@@ -389,17 +445,19 @@ class ScanConfigView(QWidget):
 
     def _build_advanced_card(self) -> None:
         """Advanced options: stage models, strict test scanning, local AI triage, DAST prober."""
-        self.advanced_card = QFrame(self.content_widget)
+        self.advanced_card = BrutalistCard(bg="#FFFFFF", shadow_offset=4, parent=self.content_widget)
         self.advanced_card.setProperty("class", "card")
         adv_layout = QVBoxLayout(self.advanced_card)
         adv_layout.setContentsMargins(18, 16, 18, 16)
         adv_layout.setSpacing(12)
 
         header_row = QHBoxLayout()
-        adv_header = QLabel("ADVANCED & REGULATORY OPTIONS", self.advanced_card)
-        adv_header.setProperty("class", "h3")
+        adv_header = QLabel("04 // ADVANCED & REGULATORY OPTIONS", self.advanced_card)
+        adv_header.setStyleSheet(f"font-size: 11pt; font-weight: 800; color: {BRUTALIST_BLACK}; letter-spacing: 0.5px;")
         self.toggle_advanced_btn = QPushButton("Collapse", self.advanced_card)
         self.toggle_advanced_btn.setFixedWidth(100)
+        self.toggle_advanced_btn.setFixedHeight(30)
+        self.toggle_advanced_btn.setStyleSheet(f"background-color: {BRUTALIST_BG_SECONDARY}; color: {BRUTALIST_BLACK}; border: 2px solid {BRUTALIST_BORDER}; font-weight: 800; text-transform: uppercase;")
         header_row.addWidget(adv_header)
         header_row.addStretch()
         header_row.addWidget(self.toggle_advanced_btn)
@@ -432,10 +490,12 @@ class ScanConfigView(QWidget):
         )
         self.ai_triage_checkbox.setChecked(False)
         ai_endpoint_lbl = QLabel("Endpoint:", self.advanced_body)
-        ai_endpoint_lbl.setProperty("class", "text-secondary")
+        ai_endpoint_lbl.setStyleSheet(f"color: {BRUTALIST_BLACK}; font-weight: 700;")
         self.ai_endpoint_input = QLineEdit("http://localhost:11434", self.advanced_body)
         self.ai_endpoint_input.setFixedWidth(200)
+        self.ai_endpoint_input.setStyleSheet(f"background-color: #FFFFFF; color: {BRUTALIST_BLACK}; border: 2px solid {BRUTALIST_BORDER}; padding: 4px;")
         self.test_ai_btn = QPushButton("Test Connection", self.advanced_body)
+        self.test_ai_btn.setStyleSheet(f"background-color: {BRUTALIST_BG_SECONDARY}; color: {BRUTALIST_BLACK}; border: 2px solid {BRUTALIST_BORDER}; font-weight: 800; padding: 4px 10px;")
 
         row2.addWidget(self.ai_triage_checkbox)
         row2.addWidget(ai_endpoint_lbl)
@@ -473,13 +533,24 @@ class ScanConfigView(QWidget):
         footer_layout.addStretch()
 
         self.reset_btn = QPushButton("Reset Defaults", self.content_widget)
-        self.reset_btn.setFixedHeight(38)
+        self.reset_btn.setFixedHeight(44)
+        self.reset_btn.setStyleSheet(
+            f"QPushButton {{ background-color: {BRUTALIST_BG_SECONDARY}; color: {BRUTALIST_BLACK}; "
+            f"font-weight: 800; font-size: 10pt; border: 2px solid {BRUTALIST_BORDER}; padding: 8px 20px; text-transform: uppercase; }} "
+            f"QPushButton:hover {{ background-color: {BRUTALIST_YELLOW}; }}"
+        )
 
         self.start_scan_btn = QPushButton("Start Compliance Audit", self.content_widget)
         self.start_scan_btn.setProperty("class", "primary")
-        self.start_scan_btn.setFixedHeight(38)
-        self.start_scan_btn.setMinimumWidth(240)
+        self.start_scan_btn.setFixedHeight(44)
+        self.start_scan_btn.setMinimumWidth(260)
         self.start_scan_btn.setEnabled(False)
+        self.start_scan_btn.setStyleSheet(
+            f"QPushButton {{ background-color: {BRUTALIST_YELLOW}; color: {BRUTALIST_BLACK}; "
+            f"font-weight: 900; font-size: 11pt; border: 2px solid {BRUTALIST_BORDER}; padding: 8px 24px; text-transform: uppercase; letter-spacing: 0.5px; }} "
+            f"QPushButton:hover {{ background-color: #FFD400; }} "
+            f"QPushButton:disabled {{ background-color: {BRUTALIST_BG_SECONDARY}; color: {BRUTALIST_MUTED}; border: 2px solid {BRUTALIST_MUTED}; }}"
+        )
 
         footer_layout.addWidget(self.reset_btn)
         footer_layout.addWidget(self.start_scan_btn)
@@ -551,7 +622,7 @@ class ScanConfigView(QWidget):
         if not target:
             msg = "Target path cannot be empty"
             self.validation_label.setText(f"❌ {msg}")
-            self.validation_label.setStyleSheet("color: #ef4444; font-weight: 600;")
+            self.validation_label.setStyleSheet("color: #FFFFFF; font-weight: 800; background-color: #FF4444; border: 1.5px solid #111111; padding: 4px 8px;")
             polish_widget(self.target_input, "error")
             self.start_scan_btn.setEnabled(False)
             return False, msg
@@ -562,7 +633,7 @@ class ScanConfigView(QWidget):
             if scheme not in ("http", "https", "git", "ssh"):
                 msg = f"Unsupported protocol: {scheme}"
                 self.validation_label.setText(f"❌ {msg}")
-                self.validation_label.setStyleSheet("color: #ef4444; font-weight: 600;")
+                self.validation_label.setStyleSheet("color: #FFFFFF; font-weight: 800; background-color: #FF4444; border: 1.5px solid #111111; padding: 4px 8px;")
                 polish_widget(self.target_input, "error")
                 self.start_scan_btn.setEnabled(False)
                 return False, msg
@@ -574,7 +645,7 @@ class ScanConfigView(QWidget):
                 self.branch_input.setText(branch)
             msg = f"Valid Git repository URL ({clean_url})"
             self.validation_label.setText(f"✓ {msg}")
-            self.validation_label.setStyleSheet("color: #10b981; font-weight: 600;")
+            self.validation_label.setStyleSheet("color: #111111; font-weight: 800; background-color: #B8F044; border: 1.5px solid #111111; padding: 4px 8px;")
             polish_widget(self.target_input, "success")
             self.start_scan_btn.setEnabled(True)
             return True, msg
@@ -584,7 +655,7 @@ class ScanConfigView(QWidget):
         if not p.exists():
             msg = f"Target path does not exist: {target}"
             self.validation_label.setText(f"❌ {msg}")
-            self.validation_label.setStyleSheet("color: #ef4444; font-weight: 600;")
+            self.validation_label.setStyleSheet("color: #FFFFFF; font-weight: 800; background-color: #FF4444; border: 1.5px solid #111111; padding: 4px 8px;")
             polish_widget(self.target_input, "error")
             self.start_scan_btn.setEnabled(False)
             return False, msg
@@ -608,14 +679,14 @@ class ScanConfigView(QWidget):
                             ):
                                 msg = f"Malicious archive rejected (Zip Slip detected): {m_name}"
                                 self.validation_label.setText(f"❌ {msg}")
-                                self.validation_label.setStyleSheet("color: #ef4444; font-weight: 600;")
+                                self.validation_label.setStyleSheet("color: #FFFFFF; font-weight: 800; background-color: #FF4444; border: 1.5px solid #111111; padding: 4px 8px;")
                                 polish_widget(self.target_input, "error")
                                 self.start_scan_btn.setEnabled(False)
                                 return False, msg
                 except (zipfile.BadZipFile, EOFError, OSError, ValueError, KeyError) as exc:
                     msg = f"Corrupted archive: {exc}"
                     self.validation_label.setText(f"❌ {msg}")
-                    self.validation_label.setStyleSheet("color: #ef4444; font-weight: 600;")
+                    self.validation_label.setStyleSheet("color: #FFFFFF; font-weight: 800; background-color: #FF4444; border: 1.5px solid #111111; padding: 4px 8px;")
                     polish_widget(self.target_input, "error")
                     self.start_scan_btn.setEnabled(False)
                     return False, msg
@@ -635,21 +706,21 @@ class ScanConfigView(QWidget):
                             ):
                                 msg = f"Malicious archive rejected (Zip Slip detected): {m_name}"
                                 self.validation_label.setText(f"❌ {msg}")
-                                self.validation_label.setStyleSheet("color: #ef4444; font-weight: 600;")
+                                self.validation_label.setStyleSheet("color: #FFFFFF; font-weight: 800; background-color: #FF4444; border: 1.5px solid #111111; padding: 4px 8px;")
                                 polish_widget(self.target_input, "error")
                                 self.start_scan_btn.setEnabled(False)
                                 return False, msg
                 except (tarfile.TarError, zipfile.BadZipFile, EOFError, OSError, ValueError, KeyError) as exc:
                     msg = f"Corrupted archive: {exc}"
                     self.validation_label.setText(f"❌ {msg}")
-                    self.validation_label.setStyleSheet("color: #ef4444; font-weight: 600;")
+                    self.validation_label.setStyleSheet("color: #FFFFFF; font-weight: 800; background-color: #FF4444; border: 1.5px solid #111111; padding: 4px 8px;")
                     polish_widget(self.target_input, "error")
                     self.start_scan_btn.setEnabled(False)
                     return False, msg
 
             msg = f"Valid archive file ({p.name})"
             self.validation_label.setText(f"✓ {msg}")
-            self.validation_label.setStyleSheet("color: #10b981; font-weight: 600;")
+            self.validation_label.setStyleSheet("color: #111111; font-weight: 800; background-color: #B8F044; border: 1.5px solid #111111; padding: 4px 8px;")
             polish_widget(self.target_input, "success")
             self.start_scan_btn.setEnabled(True)
             return True, msg
@@ -662,7 +733,7 @@ class ScanConfigView(QWidget):
                 f"{sql_count} SQL schemas, {iac_count} IaC configs. Size: {size_str}."
             )
             self.validation_label.setText(f"✓ {msg}")
-            self.validation_label.setStyleSheet("color: #10b981; font-weight: 600;")
+            self.validation_label.setStyleSheet("color: #111111; font-weight: 800; background-color: #B8F044; border: 1.5px solid #111111; padding: 4px 8px;")
             polish_widget(self.target_input, "success")
             self.start_scan_btn.setEnabled(True)
             return True, msg
@@ -670,7 +741,7 @@ class ScanConfigView(QWidget):
         # Exists but neither archive nor directory
         msg = f"Target path is not a recognized directory or archive: {p.name}"
         self.validation_label.setText(f"❌ {msg}")
-        self.validation_label.setStyleSheet("color: #ef4444; font-weight: 600;")
+        self.validation_label.setStyleSheet("color: #FFFFFF; font-weight: 800; background-color: #FF4444; border: 1.5px solid #111111; padding: 4px 8px;")
         polish_widget(self.target_input, "error")
         self.start_scan_btn.setEnabled(False)
         return False, msg

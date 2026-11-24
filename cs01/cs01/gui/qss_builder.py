@@ -1,16 +1,34 @@
 """
 CS-01 DPDP Compliance Desktop GUI - Dynamic QSS Builder.
 
-Generates a comprehensive Dark Corporate Governance stylesheet adhering to
-WCAG AAA contrast standards, crisp slate borders, active focus indicators,
-and sleek modern desktop ergonomics.
+Generates the authoritative Bold Enterprise Neo-Brutalist stylesheet adhering to
+authentic geometric minimalism: 2px solid black (#111111) borders, warm off-white
+canvas (#F6F3EA), pure white (#FFFFFF) and pale yellow (#FFF4C2) cards, signature
+yellow (#FFE500) interactive buttons, high contrast, and sharp 0px radius corners.
 """
 
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from cs01.gui.theme import DEFAULT_THEME, Theme
+from cs01.gui.theme import (
+    BRUTALIST_BG_MAIN,
+    BRUTALIST_BG_SECONDARY,
+    BRUTALIST_BLACK,
+    BRUTALIST_BLACK_SEC,
+    BRUTALIST_BORDER,
+    BRUTALIST_COBALT,
+    BRUTALIST_GREEN,
+    BRUTALIST_MUTED,
+    BRUTALIST_ORANGE,
+    BRUTALIST_RED,
+    BRUTALIST_SURFACE,
+    BRUTALIST_SURFACE_ALT,
+    BRUTALIST_YELLOW,
+    BRUTALIST_YELLOW_BRIGHT,
+    DEFAULT_THEME,
+    Theme,
+)
 
 if TYPE_CHECKING:
     from PySide6.QtWidgets import QWidget
@@ -18,7 +36,7 @@ if TYPE_CHECKING:
 
 def build_qss(theme: Theme | None = None) -> str:
     """
-    Compiles and returns the authoritative Qt Stylesheet (QSS).
+    Compiles and returns the authoritative Bold Enterprise Neo-Brutalist Qt Stylesheet.
 
     Args:
         theme: Optional custom Theme instance. Defaults to DEFAULT_THEME.
@@ -30,7 +48,8 @@ def build_qss(theme: Theme | None = None) -> str:
 
     return f"""
     /* =========================================================================
-       1. GLOBAL APPLICATION & BASE CANVAS
+       1. GLOBAL APPLICATION CANVAS & BASE WIDGETS
+       /* Fallback/Legacy Dark Canvas: #090d16 */
        ========================================================================= */
     QMainWindow {{
         background-color: {t.bg_base};
@@ -42,8 +61,17 @@ def build_qss(theme: Theme | None = None) -> str:
         color: {t.text_primary};
         font-family: {t.font_sans};
         font-size: 10pt;
-        selection-background-color: {t.accent_royal};
-        selection-color: {t.text_white};
+        selection-background-color: {BRUTALIST_YELLOW};
+        selection-color: {BRUTALIST_BLACK};
+    }}
+
+    QScrollArea {{
+        background-color: transparent;
+        border: none;
+    }}
+
+    QScrollArea > QWidget > QWidget {{
+        background-color: transparent;
     }}
 
     /* Container Frames & Panels */
@@ -53,29 +81,35 @@ def build_qss(theme: Theme | None = None) -> str:
     }}
 
     QFrame[class="card"] {{
-        background-color: {t.bg_card};
-        border: 1px solid {t.border_subtle};
-        border-radius: {t.radius_lg}px;
+        background-color: {BRUTALIST_SURFACE};
+        border: 2px solid {BRUTALIST_BORDER};
+        border-radius: 0px;
     }}
 
     QFrame[class="card-interactive"] {{
-        background-color: {t.bg_card};
-        border: 1px solid {t.border_subtle};
-        border-radius: {t.radius_lg}px;
+        background-color: {BRUTALIST_SURFACE};
+        border: 2px solid {BRUTALIST_BORDER};
+        border-radius: 0px;
     }}
     QFrame[class="card-interactive"]:hover {{
-        background-color: {t.bg_card_hover};
-        border-color: {t.border_strong};
+        background-color: {BRUTALIST_SURFACE_ALT};
+        border: 2px solid {BRUTALIST_BORDER};
+    }}
+
+    QFrame[class="card-alt"] {{
+        background-color: {BRUTALIST_SURFACE_ALT};
+        border: 2px solid {BRUTALIST_BORDER};
+        border-radius: 0px;
     }}
 
     QFrame[class="hud"] {{
         background-color: {t.bg_surface};
-        border-bottom: 1px solid {t.border_subtle};
+        border-bottom: 2px solid {BRUTALIST_BORDER};
     }}
 
     QFrame[class="sidebar"] {{
         background-color: {t.bg_surface};
-        border-right: 1px solid {t.border_subtle};
+        border-right: 2px solid {BRUTALIST_BORDER};
     }}
 
     /* =========================================================================
@@ -88,233 +122,247 @@ def build_qss(theme: Theme | None = None) -> str:
     }}
 
     QLabel[class="hud-title"] {{
-        font-size: 12pt;
-        font-weight: 700;
-        color: {t.text_primary};
+        font-size: 13pt;
+        font-weight: 800;
+        color: {BRUTALIST_BLACK};
+        letter-spacing: -0.3px;
     }}
 
     QLabel[class="h1"] {{
-        font-size: 16pt;
-        font-weight: 700;
-        color: {t.text_primary};
+        font-size: 18pt;
+        font-weight: 800;
+        color: {BRUTALIST_BLACK};
+        letter-spacing: -0.5px;
     }}
 
     QLabel[class="h2"] {{
         font-size: 13pt;
-        font-weight: 600;
-        color: {t.text_primary};
+        font-weight: 700;
+        color: {BRUTALIST_BLACK};
     }}
 
     QLabel[class="h3"] {{
         font-size: 11pt;
-        font-weight: 600;
-        color: {t.text_primary};
+        font-weight: 700;
+        color: {BRUTALIST_BLACK};
     }}
 
     QLabel[class="text-secondary"] {{
-        color: {t.text_secondary};
+        color: {BRUTALIST_BLACK_SEC};
         font-size: 9.5pt;
+        font-weight: 500;
     }}
 
     QLabel[class="text-muted"] {{
-        color: {t.text_muted};
+        color: {BRUTALIST_MUTED};
         font-size: 8.5pt;
+        font-weight: 600;
     }}
 
     QLabel[class="code-text"] {{
         font-family: {t.font_mono};
         font-size: 9.5pt;
-        color: {t.accent_blue};
+        font-weight: 600;
+        color: {BRUTALIST_BLACK};
+        background-color: {BRUTALIST_SURFACE_ALT};
+        border: 1px solid {BRUTALIST_BORDER};
+        padding: 2px 4px;
     }}
 
     /* Badges */
     QLabel[class="badge-version"] {{
-        background-color: {t.bg_card};
-        color: {t.text_secondary};
+        background-color: {BRUTALIST_YELLOW};
+        color: {BRUTALIST_BLACK};
         font-size: 8.5pt;
-        font-weight: 600;
-        padding: 2px 8px;
-        border-radius: {t.radius_sm}px;
-        border: 1px solid {t.border_subtle};
+        font-weight: 800;
+        padding: 3px 8px;
+        border-radius: 0px;
+        border: 1.5px solid {BRUTALIST_BORDER};
     }}
 
     QLabel[class="badge-privacy"] {{
-        background-color: {t.status_success_bg};
-        color: {t.status_success};
+        background-color: {BRUTALIST_GREEN};
+        color: {BRUTALIST_BLACK};
         font-size: 8.5pt;
-        font-weight: 700;
-        padding: 3px 10px;
-        border-radius: {t.radius_sm}px;
-        border: 1px solid {t.status_success};
+        font-weight: 800;
+        padding: 4px 10px;
+        border-radius: 0px;
+        border: 2px solid {BRUTALIST_BORDER};
     }}
 
     QLabel[class="badge-critical"] {{
-        background-color: {t.risk_critical_bg};
-        color: {t.risk_critical};
+        background-color: {BRUTALIST_RED};
+        color: #FFFFFF;
         font-size: 8.5pt;
-        font-weight: 700;
+        font-weight: 800;
         padding: 2px 8px;
-        border-radius: {t.radius_sm}px;
-        border: 1px solid {t.risk_critical};
+        border-radius: 0px;
+        border: 1.5px solid {BRUTALIST_BORDER};
     }}
 
     QLabel[class="badge-high"] {{
-        background-color: {t.risk_high_bg};
-        color: {t.risk_high};
+        background-color: {BRUTALIST_ORANGE};
+        color: {BRUTALIST_BLACK};
         font-size: 8.5pt;
-        font-weight: 700;
+        font-weight: 800;
         padding: 2px 8px;
-        border-radius: {t.radius_sm}px;
-        border: 1px solid {t.risk_high};
+        border-radius: 0px;
+        border: 1.5px solid {BRUTALIST_BORDER};
     }}
 
     QLabel[class="badge-medium"] {{
-        background-color: {t.risk_medium_bg};
-        color: {t.risk_medium};
+        background-color: {BRUTALIST_YELLOW};
+        color: {BRUTALIST_BLACK};
         font-size: 8.5pt;
-        font-weight: 700;
+        font-weight: 800;
         padding: 2px 8px;
-        border-radius: {t.radius_sm}px;
-        border: 1px solid {t.risk_medium};
+        border-radius: 0px;
+        border: 1.5px solid {BRUTALIST_BORDER};
     }}
 
     QLabel[class="badge-low"] {{
-        background-color: {t.risk_low_bg};
-        color: {t.risk_low};
+        background-color: {BRUTALIST_COBALT};
+        color: #FFFFFF;
         font-size: 8.5pt;
-        font-weight: 700;
+        font-weight: 800;
         padding: 2px 8px;
-        border-radius: {t.radius_sm}px;
-        border: 1px solid {t.risk_low};
+        border-radius: 0px;
+        border: 1.5px solid {BRUTALIST_BORDER};
     }}
 
     QLabel[class="badge-clean"] {{
-        background-color: {t.status_success_bg};
-        color: {t.status_success};
+        background-color: {BRUTALIST_GREEN};
+        color: {BRUTALIST_BLACK};
         font-size: 8.5pt;
-        font-weight: 700;
+        font-weight: 800;
         padding: 2px 8px;
-        border-radius: {t.radius_sm}px;
-        border: 1px solid {t.status_success};
+        border-radius: 0px;
+        border: 1.5px solid {BRUTALIST_BORDER};
     }}
 
     /* =========================================================================
-       3. BUTTON HIERARCHY
+       3. BUTTON HIERARCHY (NEO-BRUTALIST)
        ========================================================================= */
     /* Secondary (Default) Button */
     QPushButton {{
-        background-color: {t.bg_card};
-        color: {t.text_primary};
-        border: 1px solid {t.border_subtle};
-        border-radius: {t.radius_md}px;
+        background-color: {BRUTALIST_SURFACE};
+        color: {BRUTALIST_BLACK};
+        border: 2px solid {BRUTALIST_BORDER};
+        border-radius: 0px;
         padding: 6px 14px;
         font-size: 9.5pt;
-        font-weight: 600;
-        min-height: 22px;
+        font-weight: 700;
+        min-height: 24px;
         outline: none;
     }}
     QPushButton:hover {{
-        background-color: {t.bg_card_hover};
-        border-color: {t.border_strong};
+        background-color: {BRUTALIST_SURFACE_ALT};
+        border-color: {BRUTALIST_BORDER};
     }}
     QPushButton:pressed {{
-        background-color: #16202e;
-        border-color: {t.border_subtle};
+        background-color: {BRUTALIST_BG_SECONDARY};
+        border-color: {BRUTALIST_BORDER};
     }}
     QPushButton:focus {{
-        border: 1.5px solid {t.border_focus};
+        border: 2px solid {BRUTALIST_BLACK};
     }}
     QPushButton:disabled {{
-        background-color: #131c2a;
-        color: {t.text_muted};
-        border-color: #1e293b;
+        background-color: #E2DFD6;
+        color: #8C887E;
+        border-color: #8C887E;
     }}
 
-    /* Primary Action Button (Call-to-Action) */
+    /* Primary Action Button (Signature Yellow) */
     QPushButton[class="primary"] {{
-        background-color: {t.accent_royal};
-        color: {t.text_white};
-        border: 1px solid {t.accent_royal_hover};
-        font-weight: 600;
+        background-color: {BRUTALIST_YELLOW};
+        color: {BRUTALIST_BLACK};
+        border: 2px solid {BRUTALIST_BORDER};
+        border-radius: 0px;
+        font-weight: 800;
         padding: 6px 16px;
     }}
     QPushButton[class="primary"]:hover {{
-        background-color: {t.accent_royal_hover};
-        border-color: {t.accent_royal_pressed};
+        background-color: {BRUTALIST_YELLOW_BRIGHT};
+        border-color: {BRUTALIST_BORDER};
     }}
     QPushButton[class="primary"]:pressed {{
-        background-color: {t.accent_royal_pressed};
+        background-color: #E6CE00;
+        border-color: {BRUTALIST_BORDER};
     }}
     QPushButton[class="primary"]:focus {{
-        border: 2px solid {t.border_focus};
+        border: 2.5px solid {BRUTALIST_BLACK};
     }}
     QPushButton[class="primary"]:disabled {{
-        background-color: {t.bg_card};
-        color: {t.text_muted};
-        border: 1px solid {t.border_subtle};
+        background-color: #E2DFD6;
+        color: #8C887E;
+        border-color: #8C887E;
     }}
 
     /* Danger / Terminate Button */
     QPushButton[class="danger"] {{
-        background-color: {t.risk_critical_btn};
-        color: {t.text_white};
-        border: 1px solid {t.risk_critical_hover};
-        font-weight: 600;
+        background-color: {BRUTALIST_RED};
+        color: #FFFFFF;
+        border: 2px solid {BRUTALIST_BORDER};
+        border-radius: 0px;
+        font-weight: 800;
         padding: 6px 14px;
     }}
     QPushButton[class="danger"]:hover {{
-        background-color: {t.risk_critical_hover};
+        background-color: #E02E2E;
     }}
     QPushButton[class="danger"]:pressed {{
-        background-color: #991b1b;
+        background-color: #C01B1B;
     }}
     QPushButton[class="danger"]:focus {{
-        border: 2px solid {t.risk_critical};
+        border: 2.5px solid {BRUTALIST_BLACK};
     }}
 
     /* Icon-Only Buttons */
     QPushButton[class="icon-only"] {{
-        background-color: transparent;
-        color: {t.text_secondary};
-        border: none;
-        border-radius: {t.radius_md}px;
+        background-color: {BRUTALIST_SURFACE};
+        color: {BRUTALIST_BLACK};
+        border: 2px solid {BRUTALIST_BORDER};
+        border-radius: 0px;
         padding: 4px;
         min-width: 32px;
         max-width: 36px;
         min-height: 32px;
         max-height: 36px;
         font-size: 11pt;
+        font-weight: bold;
     }}
     QPushButton[class="icon-only"]:hover {{
-        background-color: {t.bg_card};
-        color: {t.text_primary};
+        background-color: {BRUTALIST_YELLOW};
+        color: {BRUTALIST_BLACK};
     }}
     QPushButton[class="icon-only"]:pressed {{
-        background-color: {t.bg_surface};
+        background-color: {BRUTALIST_SURFACE_ALT};
     }}
 
     /* Sidebar Navigation Button */
     QPushButton[class="nav-btn"] {{
         background-color: transparent;
-        color: {t.text_secondary};
+        color: {BRUTALIST_BLACK};
         border: none;
-        border-left: 3px solid transparent;
-        border-radius: 0px {t.radius_md}px {t.radius_md}px 0px;
-        padding: 8px 12px;
+        border-left: 4px solid transparent;
+        border-radius: 0px;
+        padding: 8px 14px;
         font-size: 10pt;
-        font-weight: 500;
+        font-weight: 700;
         text-align: left;
-        min-height: 24px;
+        min-height: 26px;
     }}
     QPushButton[class="nav-btn"]:hover {{
-        background-color: rgba(30, 41, 59, 0.7);
-        color: {t.text_primary};
+        background-color: {BRUTALIST_SURFACE};
+        color: {BRUTALIST_BLACK};
+        border-left: 4px solid {BRUTALIST_BORDER};
     }}
     QPushButton[class="nav-btn"]:checked {{
-        background-color: {t.bg_card};
-        color: {t.accent_blue};
-        font-weight: 600;
-        border-left: 3px solid {t.accent_blue};
+        background-color: {BRUTALIST_YELLOW};
+        color: {BRUTALIST_BLACK};
+        font-weight: 800;
+        border: 2px solid {BRUTALIST_BORDER};
+        border-left: 6px solid {BRUTALIST_BORDER};
     }}
     QPushButton[class="nav-btn"]:focus {{
         outline: none;
@@ -324,94 +372,150 @@ def build_qss(theme: Theme | None = None) -> str:
        4. FORM CONTROLS & INPUT WELLS
        ========================================================================= */
     QLineEdit {{
-        background-color: {t.bg_input};
-        color: {t.text_primary};
-        border: 1px solid {t.border_subtle};
-        border-radius: {t.radius_md}px;
+        background-color: {BRUTALIST_SURFACE};
+        color: {BRUTALIST_BLACK};
+        border: 2px solid {BRUTALIST_BORDER};
+        border-radius: 0px;
         padding: 6px 10px;
         font-size: 9.5pt;
-        min-height: 22px;
+        min-height: 24px;
     }}
     QLineEdit:hover {{
-        border-color: {t.border_strong};
+        border-color: {BRUTALIST_BORDER};
+        background-color: #FFFFFA;
     }}
     QLineEdit:focus {{
-        border: 1.5px solid {t.border_focus};
+        border: 2.5px solid {BRUTALIST_BLACK};
+        background-color: {BRUTALIST_SURFACE};
     }}
     QLineEdit:disabled {{
-        background-color: {t.bg_surface};
-        color: {t.text_muted};
-        border-color: {t.border_subtle};
+        background-color: #E2DFD6;
+        color: #8C887E;
+        border-color: #8C887E;
     }}
     QLineEdit[class="error"] {{
-        border: 1.5px solid {t.border_error};
+        border: 2.5px solid {BRUTALIST_RED};
+        background-color: #FFF0F0;
     }}
     QLineEdit[class="success"] {{
-        border: 1.5px solid {t.status_success};
+        border: 2.5px solid {BRUTALIST_GREEN};
     }}
 
     QComboBox {{
-        background-color: {t.bg_input};
-        color: {t.text_primary};
-        border: 1px solid {t.border_subtle};
-        border-radius: {t.radius_md}px;
+        background-color: {BRUTALIST_SURFACE};
+        color: {BRUTALIST_BLACK};
+        border: 2px solid {BRUTALIST_BORDER};
+        border-radius: 0px;
         padding: 6px 12px;
         font-size: 9.5pt;
-        min-height: 22px;
+        font-weight: 600;
+        min-height: 24px;
     }}
     QComboBox:hover {{
-        border-color: {t.border_strong};
+        border-color: {BRUTALIST_BORDER};
+        background-color: {BRUTALIST_SURFACE_ALT};
     }}
     QComboBox:focus {{
-        border: 1.5px solid {t.border_focus};
+        border: 2.5px solid {BRUTALIST_BLACK};
     }}
     QComboBox::drop-down {{
         subcontrol-origin: padding;
         subcontrol-position: top right;
         width: 26px;
-        border-left: 1px solid {t.border_subtle};
-        border-top-right-radius: {t.radius_md}px;
-        border-bottom-right-radius: {t.radius_md}px;
+        border-left: 2px solid {BRUTALIST_BORDER};
     }}
     QComboBox QAbstractItemView {{
-        background-color: {t.bg_surface};
-        color: {t.text_primary};
-        border: 1px solid {t.border_strong};
-        border-radius: {t.radius_md}px;
-        selection-background-color: {t.accent_royal};
-        selection-color: {t.text_white};
+        background-color: {BRUTALIST_SURFACE};
+        color: {BRUTALIST_BLACK};
+        border: 2px solid {BRUTALIST_BORDER};
+        border-radius: 0px;
+        selection-background-color: {BRUTALIST_YELLOW};
+        selection-color: {BRUTALIST_BLACK};
         padding: 4px;
         outline: none;
+    }}
+
+    QSpinBox {{
+        background-color: {BRUTALIST_SURFACE};
+        color: {BRUTALIST_BLACK};
+        border: 2px solid {BRUTALIST_BORDER};
+        border-radius: 0px;
+        padding: 6px 10px;
+        font-size: 9.5pt;
+        font-weight: 600;
+        min-height: 24px;
+    }}
+
+    QCheckBox {{
+        color: {BRUTALIST_BLACK};
+        font-size: 9.5pt;
+        font-weight: 600;
+        spacing: 8px;
+    }}
+    QCheckBox::indicator {{
+        width: 18px;
+        height: 18px;
+        border: 2px solid {BRUTALIST_BORDER};
+        border-radius: 0px;
+        background-color: {BRUTALIST_SURFACE};
+    }}
+    QCheckBox::indicator:hover {{
+        background-color: {BRUTALIST_SURFACE_ALT};
+    }}
+    QCheckBox::indicator:checked {{
+        background-color: {BRUTALIST_YELLOW};
+        image: none;
+    }}
+
+    QRadioButton {{
+        color: {BRUTALIST_BLACK};
+        font-size: 9.5pt;
+        font-weight: 600;
+        spacing: 8px;
+    }}
+    QRadioButton::indicator {{
+        width: 18px;
+        height: 18px;
+        border: 2px solid {BRUTALIST_BORDER};
+        border-radius: 0px;
+        background-color: {BRUTALIST_SURFACE};
+    }}
+    QRadioButton::indicator:checked {{
+        background-color: {BRUTALIST_YELLOW};
     }}
 
     /* =========================================================================
        5. STACKED WIDGET & CONTAINERS
        ========================================================================= */
     QStackedWidget {{
-        background-color: transparent;
+        background-color: {t.bg_base};
         border: none;
     }}
 
+    QSplitter::handle {{
+        background-color: {BRUTALIST_BORDER};
+        width: 4px;
+    }}
+
     /* =========================================================================
-       6. SLEEK CUSTOM SCROLLBARS (8px Width)
+       6. NEO-BRUTALIST SCROLLBARS (10px Width with Black Border)
        ========================================================================= */
     QScrollBar:vertical {{
         background-color: {t.bg_base};
-        width: 8px;
+        width: 12px;
         margin: 0px;
-        border-radius: {t.radius_sm}px;
+        border-left: 2px solid {BRUTALIST_BORDER};
     }}
     QScrollBar::handle:vertical {{
-        background-color: {t.border_subtle};
-        min-height: 24px;
-        border-radius: {t.radius_sm}px;
+        background-color: {BRUTALIST_YELLOW};
+        min-height: 30px;
+        border: 1px solid {BRUTALIST_BORDER};
     }}
     QScrollBar::handle:vertical:hover {{
-        background-color: {t.border_strong};
+        background-color: {BRUTALIST_BLACK};
     }}
     QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {{
         height: 0px;
-        subcontrol-origin: margin;
     }}
     QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {{
         background: none;
@@ -419,21 +523,20 @@ def build_qss(theme: Theme | None = None) -> str:
 
     QScrollBar:horizontal {{
         background-color: {t.bg_base};
-        height: 8px;
+        height: 12px;
         margin: 0px;
-        border-radius: {t.radius_sm}px;
+        border-top: 2px solid {BRUTALIST_BORDER};
     }}
     QScrollBar::handle:horizontal {{
-        background-color: {t.border_subtle};
-        min-width: 24px;
-        border-radius: {t.radius_sm}px;
+        background-color: {BRUTALIST_YELLOW};
+        min-width: 30px;
+        border: 1px solid {BRUTALIST_BORDER};
     }}
     QScrollBar::handle:horizontal:hover {{
-        background-color: {t.border_strong};
+        background-color: {BRUTALIST_BLACK};
     }}
     QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal {{
         width: 0px;
-        subcontrol-origin: margin;
     }}
     QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal {{
         background: none;
@@ -444,88 +547,105 @@ def build_qss(theme: Theme | None = None) -> str:
        ========================================================================= */
     QStatusBar {{
         background-color: {t.bg_surface};
-        color: {t.text_secondary};
-        border-top: 1px solid {t.border_subtle};
-        font-size: 8.5pt;
-        padding: 2px 10px;
-        min-height: 24px;
+        color: {BRUTALIST_BLACK};
+        border-top: 2px solid {BRUTALIST_BORDER};
+        font-size: 9pt;
+        font-weight: 700;
+        padding: 3px 12px;
+        min-height: 26px;
     }}
     QStatusBar::item {{
         border: none;
-        padding: 0 4px;
+        padding: 0 6px;
     }}
 
     QToolTip {{
-        background-color: {t.bg_card};
-        color: {t.text_primary};
-        border: 1px solid {t.border_strong};
-        border-radius: {t.radius_sm}px;
+        background-color: {BRUTALIST_SURFACE_ALT};
+        color: {BRUTALIST_BLACK};
+        border: 2px solid {BRUTALIST_BORDER};
+        border-radius: 0px;
         padding: 6px 10px;
         font-size: 8.5pt;
+        font-weight: 600;
     }}
 
     /* =========================================================================
        8. DATA TABLES & PROGRESS METRICS
        ========================================================================= */
     QTableView {{
-        background-color: {t.bg_surface};
-        gridline-color: {t.bg_card};
-        border: 1px solid {t.border_subtle};
-        border-radius: {t.radius_md}px;
-        color: {t.text_primary};
-        selection-background-color: #1e3a5f;
-        selection-color: {t.text_primary};
+        background-color: {BRUTALIST_SURFACE};
+        alternate-background-color: {BRUTALIST_SURFACE_ALT};
+        gridline-color: {BRUTALIST_BORDER};
+        border: 2px solid {BRUTALIST_BORDER};
+        border-radius: 0px;
+        color: {BRUTALIST_BLACK};
+        selection-background-color: {BRUTALIST_YELLOW};
+        selection-color: {BRUTALIST_BLACK};
+        font-size: 9.5pt;
     }}
     QHeaderView::section {{
-        background-color: {t.bg_card};
-        color: {t.text_secondary};
-        font-weight: 600;
+        background-color: {BRUTALIST_YELLOW};
+        color: {BRUTALIST_BLACK};
+        font-weight: 800;
         font-size: 9pt;
         padding: 6px 10px;
-        border: none;
-        border-bottom: 1px solid {t.border_subtle};
-        border-right: 1px solid {t.border_subtle};
+        border: 1px solid {BRUTALIST_BORDER};
+        border-bottom: 2px solid {BRUTALIST_BORDER};
+        border-radius: 0px;
     }}
 
     QProgressBar {{
-        background-color: {t.bg_card};
-        border: 1px solid {t.border_subtle};
-        border-radius: {t.radius_sm}px;
-        height: 8px;
+        background-color: {t.bg_surface};
+        border: 2px solid {BRUTALIST_BORDER};
+        border-radius: 0px;
+        height: 14px;
         text-align: center;
-        color: transparent;
+        color: {BRUTALIST_BLACK};
+        font-weight: bold;
+        font-size: 8pt;
     }}
     QProgressBar::chunk {{
-        background-color: {t.accent_royal};
-        border-radius: 3px;
+        background-color: {BRUTALIST_YELLOW};
+        border-right: 2px solid {BRUTALIST_BORDER};
     }}
 
     /* =========================================================================
-       9. TABS
+       9. DIALOGS & POPUPS
        ========================================================================= */
-    QTabWidget::pane {{
-        border: 1px solid {t.border_subtle};
-        border-radius: {t.radius_md}px;
-        background-color: {t.bg_surface};
-    }}
-    QTabBar::tab {{
+    QDialog {{
         background-color: {t.bg_base};
-        color: {t.text_secondary};
-        border: 1px solid {t.border_subtle};
-        padding: 6px 14px;
-        margin-right: 2px;
-        border-top-left-radius: {t.radius_sm}px;
-        border-top-right-radius: {t.radius_sm}px;
+        border: 2px solid {BRUTALIST_BORDER};
     }}
-    QTabBar::tab:selected {{
-        background-color: {t.bg_card};
-        color: {t.accent_blue};
-        border-bottom-color: {t.bg_card};
+
+    QMessageBox {{
+        background-color: {t.bg_base};
+        border: 2px solid {BRUTALIST_BORDER};
+    }}
+
+    QMenu {{
+        background-color: {BRUTALIST_SURFACE};
+        color: {BRUTALIST_BLACK};
+        border: 2px solid {BRUTALIST_BORDER};
+        border-radius: 0px;
+        padding: 4px;
+    }}
+    QMenu::item {{
+        padding: 6px 20px;
         font-weight: 600;
     }}
-    QTabBar::tab:hover:!selected {{
-        background-color: {t.bg_card_hover};
-        color: {t.text_primary};
+    QMenu::item:selected {{
+        background-color: {BRUTALIST_YELLOW};
+        color: {BRUTALIST_BLACK};
+    }}
+
+    QPlainTextEdit, QTextEdit {{
+        background-color: {BRUTALIST_SURFACE};
+        color: {BRUTALIST_BLACK};
+        border: 2px solid {BRUTALIST_BORDER};
+        border-radius: 0px;
+        font-family: {t.font_mono};
+        font-size: 9.5pt;
+        padding: 6px;
     }}
     """
 
@@ -536,7 +656,7 @@ def polish_widget(widget: QWidget, class_name: str | None = None) -> None:
 
     Args:
         widget: Target QWidget.
-        class_name: Optional class string (e.g. "error", "success", "card") to set before re-polishing.
+        class_name: Optional class string to set before re-polishing.
     """
     if class_name is not None:
         widget.setProperty("class", class_name)

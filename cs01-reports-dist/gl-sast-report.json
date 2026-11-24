@@ -1,0 +1,296 @@
+{
+  "version": "15.0.0",
+  "vulnerabilities": [
+    {
+      "id": "7c93e4bd0efdb7c66f63100abbe1601a85a30d0caf0ff55da1fa69b637e83a03",
+      "category": "sast",
+      "name": "[CODE-DPDP-001] Personal data flows directly into an unguarded logger sink",
+      "message": "Personal data flows directly into an unguarded logger sink (Statutory: §8(5))",
+      "description": "Personal data flows directly into an unguarded logger sink\nStatutory Reference: §8(5)\nCeiling: DPDP Act §8(5) — Up to ₹250 Crore (Discretionary Maximum)\nRemediation: Wrap sensitive personal data with a masking or tokenization function before logging (e.g. mask_pii(payload)).",
+      "severity": "Critical",
+      "confidence": "High",
+      "scanner": {
+        "id": "cs01",
+        "name": "CS-01 DPDP Compliance Auditor"
+      },
+      "location": {
+        "file": "backend/api.py",
+        "start_line": 10,
+        "end_line": 10
+      },
+      "identifiers": [
+        {
+          "type": "cs01_rule_id",
+          "name": "CODE-DPDP-001",
+          "value": "CODE-DPDP-001",
+          "url": "https://dpdp.gov.in"
+        },
+        {
+          "type": "dpdp_act_section",
+          "name": "DPDP Act §8(5)",
+          "value": "§8(5)"
+        }
+      ]
+    },
+    {
+      "id": "4303eea7505443bae36fc4e41b975acc454b4e6015d7cea20fc34c35f1eda363",
+      "category": "sast",
+      "name": "[SQL-DPDP-001] Personal data column defined without column-level encryption marker in database ",
+      "message": "Personal data column defined without column-level encryption marker in database schema (Statutory: §8(5))",
+      "description": "Personal data column defined without column-level encryption marker in database schema\nStatutory Reference: §8(5)\nCeiling: DPDP Act §8(5) — Up to ₹250 Crore (Discretionary Maximum)\nRemediation: Enable column-level encryption (e.g. EncryptedType, KMS, or DB pgcrypto) for personal data columns.",
+      "severity": "Critical",
+      "confidence": "High",
+      "scanner": {
+        "id": "cs01",
+        "name": "CS-01 DPDP Compliance Auditor"
+      },
+      "location": {
+        "file": "db/schema.sql",
+        "start_line": 1,
+        "end_line": 1
+      },
+      "identifiers": [
+        {
+          "type": "cs01_rule_id",
+          "name": "SQL-DPDP-001",
+          "value": "SQL-DPDP-001",
+          "url": "https://dpdp.gov.in"
+        },
+        {
+          "type": "dpdp_act_section",
+          "name": "DPDP Act §8(5)",
+          "value": "§8(5)"
+        }
+      ]
+    },
+    {
+      "id": "ed02239b7e22b6d80ab701210730ea7421f236802e928a0b5e3c6a6870646ba9",
+      "category": "sast",
+      "name": "[SQL-DPDP-001] Personal data column defined without column-level encryption marker in database ",
+      "message": "Personal data column defined without column-level encryption marker in database schema (Statutory: §8(5))",
+      "description": "Personal data column defined without column-level encryption marker in database schema\nStatutory Reference: §8(5)\nCeiling: DPDP Act §8(5) — Up to ₹250 Crore (Discretionary Maximum)\nRemediation: Enable column-level encryption (e.g. EncryptedType, KMS, or DB pgcrypto) for personal data columns.",
+      "severity": "Critical",
+      "confidence": "High",
+      "scanner": {
+        "id": "cs01",
+        "name": "CS-01 DPDP Compliance Auditor"
+      },
+      "location": {
+        "file": "db/schema.sql",
+        "start_line": 1,
+        "end_line": 1
+      },
+      "identifiers": [
+        {
+          "type": "cs01_rule_id",
+          "name": "SQL-DPDP-001",
+          "value": "SQL-DPDP-001",
+          "url": "https://dpdp.gov.in"
+        },
+        {
+          "type": "dpdp_act_section",
+          "name": "DPDP Act §8(5)",
+          "value": "§8(5)"
+        }
+      ]
+    },
+    {
+      "id": "dca64f73690a0752b5c332f6d8ab15a917c9ac2d92fb06f7373c71d5195ef6cc",
+      "category": "sast",
+      "name": "[CODE-DPDP-002] Personal data sent to third-party SDK or external HTTP sink without verified con",
+      "message": "Personal data sent to third-party SDK or external HTTP sink without verified consent guard (Statutory: §7)",
+      "description": "Personal data sent to third-party SDK or external HTTP sink without verified consent guard\nStatutory Reference: §7\nCeiling: DPDP Act Residual (§33 Schedule) — Up to ₹50 Crore (Discretionary Maximum)\nRemediation: Verify explicit user consent prior to dispatching personal data to external services.",
+      "severity": "High",
+      "confidence": "High",
+      "scanner": {
+        "id": "cs01",
+        "name": "CS-01 DPDP Compliance Auditor"
+      },
+      "location": {
+        "file": "backend/api.py",
+        "start_line": 11,
+        "end_line": 11
+      },
+      "identifiers": [
+        {
+          "type": "cs01_rule_id",
+          "name": "CODE-DPDP-002",
+          "value": "CODE-DPDP-002",
+          "url": "https://dpdp.gov.in"
+        },
+        {
+          "type": "dpdp_act_section",
+          "name": "DPDP Act §7",
+          "value": "§7"
+        }
+      ]
+    },
+    {
+      "id": "87fd71e0ee75c6098361076d8f96ddc61afce5163777ddcc037240e5d3494a21",
+      "category": "sast",
+      "name": "[ARCH-DPDP-001] Application stores personal data in schema, but no consent withdrawal or user er",
+      "message": "Application stores personal data in schema, but no consent withdrawal or user erasure route exists (Statutory: §6(4))",
+      "description": "Application stores personal data in schema, but no consent withdrawal or user erasure route exists\nStatutory Reference: §6(4)\nCeiling: DPDP Act Residual (§33 Schedule) — Up to ₹50 Crore (Discretionary Maximum)\nRemediation: Implement a dedicated endpoint (e.g. POST /consent/withdraw or DELETE /user/profile) allowing Data Principals to withdraw consent and request erasure.",
+      "severity": "High",
+      "confidence": "High",
+      "scanner": {
+        "id": "cs01",
+        "name": "CS-01 DPDP Compliance Auditor"
+      },
+      "location": {
+        "file": "global",
+        "start_line": 1,
+        "end_line": 1
+      },
+      "identifiers": [
+        {
+          "type": "cs01_rule_id",
+          "name": "ARCH-DPDP-001",
+          "value": "ARCH-DPDP-001",
+          "url": "https://dpdp.gov.in"
+        },
+        {
+          "type": "dpdp_act_section",
+          "name": "DPDP Act §6(4)",
+          "value": "§6(4)"
+        }
+      ]
+    },
+    {
+      "id": "31191dca66c51622a382e116166189d72d25956a60e604750ef7858366ac77e0",
+      "category": "sast",
+      "name": "[ARCH-DPDP-002] Personal data stored in schema, but no scheduled data purging/erasure routine de",
+      "message": "Personal data stored in schema, but no scheduled data purging/erasure routine detected (Statutory: §8(7))",
+      "description": "Personal data stored in schema, but no scheduled data purging/erasure routine detected\nStatutory Reference: §8(7)\nCeiling: DPDP Act Residual (§33 Schedule) — Up to ₹50 Crore (Discretionary Maximum)\nRemediation: Implement a background job or cron routine to purge personal data whose purpose has expired or whose retention threshold has elapsed.",
+      "severity": "High",
+      "confidence": "High",
+      "scanner": {
+        "id": "cs01",
+        "name": "CS-01 DPDP Compliance Auditor"
+      },
+      "location": {
+        "file": "global",
+        "start_line": 1,
+        "end_line": 1
+      },
+      "identifiers": [
+        {
+          "type": "cs01_rule_id",
+          "name": "ARCH-DPDP-002",
+          "value": "ARCH-DPDP-002",
+          "url": "https://dpdp.gov.in"
+        },
+        {
+          "type": "dpdp_act_section",
+          "name": "DPDP Act §8(7)",
+          "value": "§8(7)"
+        }
+      ]
+    },
+    {
+      "id": "568072a4b9f926969cb879a8920ce16ebd0050b988699880feb35b8529285771",
+      "category": "sast",
+      "name": "[SQL-DPDP-005] Personal data table schema missing verifiable consent ledger linkage reference",
+      "message": "Personal data table schema missing verifiable consent ledger linkage reference (Statutory: §6(1))",
+      "description": "Personal data table schema missing verifiable consent ledger linkage reference\nStatutory Reference: §6(1)\nCeiling: DPDP Act Residual (§33 Schedule) — Up to ₹50 Crore (Discretionary Maximum)\nRemediation: Link personal data records to a consent ledger or consent token column (e.g. consent_id / consent_token).",
+      "severity": "Medium",
+      "confidence": "High",
+      "scanner": {
+        "id": "cs01",
+        "name": "CS-01 DPDP Compliance Auditor"
+      },
+      "location": {
+        "file": "db/schema.sql",
+        "start_line": 1,
+        "end_line": 1
+      },
+      "identifiers": [
+        {
+          "type": "cs01_rule_id",
+          "name": "SQL-DPDP-005",
+          "value": "SQL-DPDP-005",
+          "url": "https://dpdp.gov.in"
+        },
+        {
+          "type": "dpdp_act_section",
+          "name": "DPDP Act §6(1)",
+          "value": "§6(1)"
+        }
+      ]
+    },
+    {
+      "id": "88d8e4ec581a59ee1c3df9853855f2a27d35ef1aa05f802d1937b0ced1511a3b",
+      "category": "sast",
+      "name": "[SQL-DPDP-002] Personal data table lacks documented retention period comment in schema",
+      "message": "Personal data table lacks documented retention period comment in schema (Statutory: §8(7))",
+      "description": "Personal data table lacks documented retention period comment in schema\nStatutory Reference: §8(7)\nCeiling: DPDP Act Residual (§33 Schedule) — Up to ₹50 Crore (Discretionary Maximum)\nRemediation: Document the statutory retention period in table or column schema comments (e.g. COMMENT ON COLUMN ... 'retention 180 days').",
+      "severity": "Medium",
+      "confidence": "High",
+      "scanner": {
+        "id": "cs01",
+        "name": "CS-01 DPDP Compliance Auditor"
+      },
+      "location": {
+        "file": "db/schema.sql",
+        "start_line": 1,
+        "end_line": 1
+      },
+      "identifiers": [
+        {
+          "type": "cs01_rule_id",
+          "name": "SQL-DPDP-002",
+          "value": "SQL-DPDP-002",
+          "url": "https://dpdp.gov.in"
+        },
+        {
+          "type": "dpdp_act_section",
+          "name": "DPDP Act §8(7)",
+          "value": "§8(7)"
+        }
+      ]
+    },
+    {
+      "id": "942946f71a0e60c9622f7b470dab69b77e987ac7414e98df356eba1e63ce037d",
+      "category": "sast",
+      "name": "[SQL-DPDP-002] Personal data table lacks documented retention period comment in schema",
+      "message": "Personal data table lacks documented retention period comment in schema (Statutory: §8(7))",
+      "description": "Personal data table lacks documented retention period comment in schema\nStatutory Reference: §8(7)\nCeiling: DPDP Act Residual (§33 Schedule) — Up to ₹50 Crore (Discretionary Maximum)\nRemediation: Document the statutory retention period in table or column schema comments (e.g. COMMENT ON COLUMN ... 'retention 180 days').",
+      "severity": "Medium",
+      "confidence": "High",
+      "scanner": {
+        "id": "cs01",
+        "name": "CS-01 DPDP Compliance Auditor"
+      },
+      "location": {
+        "file": "db/schema.sql",
+        "start_line": 1,
+        "end_line": 1
+      },
+      "identifiers": [
+        {
+          "type": "cs01_rule_id",
+          "name": "SQL-DPDP-002",
+          "value": "SQL-DPDP-002",
+          "url": "https://dpdp.gov.in"
+        },
+        {
+          "type": "dpdp_act_section",
+          "name": "DPDP Act §8(7)",
+          "value": "§8(7)"
+        }
+      ]
+    }
+  ],
+  "remediations": [],
+  "scan": {
+    "scanner": {
+      "id": "cs01",
+      "name": "CS-01",
+      "url": "https://github.com/DPDP-Auditor/cs01",
+      "version": "0.1.0-alpha"
+    },
+    "type": "sast",
+    "start_time": "2026-11-24T01:19:34.400850+00:00",
+    "status": "success"
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "title": "DPDP Rule 3 & 4 Consent Flow Audit",
+  "scan_id": "5b32eed7-e895-4f48-9434-85091f452b04",
+  "consent_withdrawal_available": false,
+  "pre_collection_notice_enforced": true,
+  "consent_table_persistence": {
+    "status": "NEEDS_REMEDIATION",
+    "findings": [
+      "Personal data sent to third-party SDK or external HTTP sink without verified consent guard",
+      "Application stores personal data in schema, but no consent withdrawal or user erasure route exists",
+      "Personal data table schema missing verifiable consent ledger linkage reference"
+    ]
+  },
+  "statutory_recommendation": "Ensure consent records are maintained with timestamp, purpose, and version as mandated by DPDP Act Section 6 and DPDP Rules 2025 Rule 3."
+}

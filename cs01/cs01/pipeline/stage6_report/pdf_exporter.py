@@ -529,6 +529,45 @@ def _build_pdf_html(
     return html_doc
 
 
+def _ensure_fonts_loaded() -> None:
+    """
+    Ensures true system font glyphs (Segoe UI, Consolas, Cascadia Code, Arial)
+    are registered with QFontDatabase so QPdfWriter embeds outline vectors rather
+    than rendering missing-glyph tofu boxes / solid colored rectangular bars.
+    """
+    from PySide6.QtGui import QFontDatabase
+    existing = set(QFontDatabase.families())
+    needed = ["Segoe UI", "Consolas", "Arial"]
+    if not all(f in existing for f in needed):
+        candidates = [
+            # Windows system fonts
+            r"C:\Windows\Fonts\segoeui.ttf",
+            r"C:\Windows\Fonts\segoeuib.ttf",
+            r"C:\Windows\Fonts\segoeuii.ttf",
+            r"C:\Windows\Fonts\segoeuiz.ttf",
+            r"C:\Windows\Fonts\consola.ttf",
+            r"C:\Windows\Fonts\consolab.ttf",
+            r"C:\Windows\Fonts\consolai.ttf",
+            r"C:\Windows\Fonts\consolaz.ttf",
+            r"C:\Windows\Fonts\CascadiaCode.ttf",
+            r"C:\Windows\Fonts\CascadiaMono.ttf",
+            r"C:\Windows\Fonts\arial.ttf",
+            r"C:\Windows\Fonts\arialbd.ttf",
+            r"C:\Windows\Fonts\calibri.ttf",
+            # Standard Linux / Unix TrueType fonts
+            "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+            "/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf",
+            "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",
+            "/usr/share/fonts/truetype/liberation/LiberationMono-Regular.ttf",
+        ]
+        for font_path in candidates:
+            if os.path.exists(font_path):
+                try:
+                    QFontDatabase.addApplicationFont(font_path)
+                except Exception:
+                    pass
+
+
 def export_pdf_report(
     bundle: ScoredFindingBundle,
     cfg: ScanConfig,
@@ -571,6 +610,9 @@ def export_pdf_report(
             def_font = QFont("Segoe UI", 10)
             app.setFont(def_font)
 
+    # Guarantee fonts are loaded into QFontDatabase so QPdfWriter embeds valid glyphs
+    _ensure_fonts_loaded()
+
     # Generate print-optimized HTML content
     html_content = _build_pdf_html(
         bundle=bundle,
@@ -583,12 +625,6 @@ def export_pdf_report(
         with open(html_path, "w", encoding="utf-8") as fh:
             fh.write(html_content)
 
-    # Load into QTextDocument
-    doc = QTextDocument()
-    doc_font = QFont("Segoe UI", 10)
-    doc.setDefaultFont(doc_font)
-    doc.setHtml(html_content)
-
     # Configure A4 PDF Writer with 12mm margins
     writer = QPdfWriter(str(out_file))
     writer.setPageSize(QPageSize(QPageSize.A4))
@@ -599,6 +635,13 @@ def export_pdf_report(
         QPageLayout.Millimeter,
     )
     writer.setPageLayout(layout)
+
+    # Load into QTextDocument and bind paint device metrics
+    doc = QTextDocument()
+    doc.documentLayout().setPaintDevice(writer)
+    doc_font = QFont("Segoe UI", 10)
+    doc.setDefaultFont(doc_font)
+    doc.setHtml(html_content)
 
     # Print document to PDF
     doc.print_(writer)

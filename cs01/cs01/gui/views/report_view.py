@@ -29,7 +29,21 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from cs01.gui.theme import COLOR_BG_CARD, COLOR_BORDER_SUBTLE
+from cs01.gui.theme import (
+    BRUTALIST_BG_MAIN,
+    BRUTALIST_BG_SECONDARY,
+    BRUTALIST_BLACK,
+    BRUTALIST_BORDER,
+    BRUTALIST_COBALT,
+    BRUTALIST_GREEN,
+    BRUTALIST_MUTED,
+    BRUTALIST_RED,
+    BRUTALIST_SURFACE,
+    BRUTALIST_SURFACE_ALT,
+    BRUTALIST_YELLOW,
+    COLOR_BG_CARD,
+    COLOR_BORDER_SUBTLE,
+)
 from cs01.gui.widgets.diff_viewer import DiffViewerDialog
 from cs01.gui.widgets.ropa_table_dialog import RopaTableDialog
 from cs01.pipeline.stage6_report.evidence_locker import verify_evidence_bundle
@@ -84,46 +98,57 @@ class ReportView(QWidget):
         header_vbox = QVBoxLayout()
         header_vbox.setSpacing(3)
 
-        title = QLabel("Compliance Deliverables & Evidence Locker")
-        title.setStyleSheet("font-size: 19px; font-weight: 700; color: #f8fafc;")
+        title = QLabel("COMPLIANCE DELIVERABLES & EVIDENCE LOCKER")
+        title.setStyleSheet(f"font-size: 16pt; font-weight: 800; color: {BRUTALIST_BLACK}; letter-spacing: -0.5px;")
         header_vbox.addWidget(title)
 
         subtitle = QLabel("Access executive PDF compliance audits, RoPA schemas, SARIF feeds, and Rule 13 tamper-evident evidence packages.")
-        subtitle.setStyleSheet("font-size: 9.5pt; color: #a6b4c8;")
+        subtitle.setStyleSheet(f"font-size: 9.5pt; color: {BRUTALIST_MUTED};")
         header_vbox.addWidget(subtitle)
         layout.addLayout(header_vbox)
 
         self.tiles_container = QWidget()
         tiles_layout = QVBoxLayout(self.tiles_container)
         tiles_layout.setContentsMargins(0, 0, 0, 0)
-        tiles_layout.setSpacing(8)
+        tiles_layout.setSpacing(10)
 
         self.tiles: dict[str, QFrame] = {}
         for key, name, action_text in _ARTIFACTS:
             frame = QFrame()
+            frame.setObjectName(f"tile_{key}")
             frame.setStyleSheet(
-                f"QFrame {{ background-color: {COLOR_BG_CARD}; "
-                f"border: 1px solid {COLOR_BORDER_SUBTLE}; "
-                "border-radius: 8px; padding: 12px; } "
-                "QFrame:hover { border-color: #3b4d68; }"
+                f"QFrame#tile_{key} {{ background-color: #FFFFFF; "
+                f"border: 2px solid {BRUTALIST_BORDER}; "
+                "border-radius: 0px; padding: 12px; }} "
+                f"QFrame#tile_{key}:hover {{ background-color: {BRUTALIST_SURFACE_ALT}; }} "
+                "QLabel { border: none; background: transparent; padding: 0px; }"
             )
             f_layout = QHBoxLayout(frame)
-            f_layout.setContentsMargins(12, 8, 12, 8)
+            f_layout.setContentsMargins(14, 10, 14, 10)
             f_layout.setSpacing(12)
 
             lbl = QLabel(name)
-            lbl.setStyleSheet("font-size: 10pt; font-weight: 600; color: #f1f5f9;")
+            lbl.setStyleSheet(f"font-size: 10pt; font-weight: 800; color: {BRUTALIST_BLACK}; border: none; background: transparent;")
             f_layout.addWidget(lbl)
             f_layout.addStretch()
 
             status_lbl = QLabel("Not Generated")
-            status_lbl.setStyleSheet("color: #71829b; font-size: 9pt;")
+            status_lbl.setStyleSheet(
+                f"color: {BRUTALIST_MUTED}; font-size: 8.5pt; font-weight: 700; "
+                f"background-color: {BRUTALIST_BG_SECONDARY}; border: 1.5px solid {BRUTALIST_BORDER}; padding: 2px 8px;"
+            )
             f_layout.addWidget(status_lbl)
 
             btn = QPushButton(action_text)
             btn.setProperty("class", "primary")
             btn.setEnabled(False)
             btn.setCursor(Qt.PointingHandCursor)
+            btn.setFixedHeight(34)
+            btn.setStyleSheet(
+                f"QPushButton {{ background-color: {BRUTALIST_YELLOW}; color: {BRUTALIST_BLACK}; "
+                f"font-weight: 800; border: 2px solid {BRUTALIST_BORDER}; padding: 6px 14px; text-transform: uppercase; font-size: 9pt; }} "
+                f"QPushButton:disabled {{ background-color: {BRUTALIST_BG_SECONDARY}; color: {BRUTALIST_MUTED}; border: 1.5px solid {BRUTALIST_MUTED}; }}"
+            )
             btn.clicked.connect(lambda _checked=False, k=key: self._on_tile_action(k))
             f_layout.addWidget(btn)
 
@@ -133,6 +158,12 @@ class ReportView(QWidget):
                 save_btn.setProperty("class", "secondary")
                 save_btn.setEnabled(False)
                 save_btn.setCursor(Qt.PointingHandCursor)
+                save_btn.setFixedHeight(34)
+                save_btn.setStyleSheet(
+                    f"QPushButton {{ background-color: {BRUTALIST_BG_SECONDARY}; color: {BRUTALIST_BLACK}; "
+                    f"font-weight: 800; border: 2px solid {BRUTALIST_BORDER}; padding: 6px 14px; text-transform: uppercase; font-size: 9pt; }} "
+                    f"QPushButton:disabled {{ background-color: {BRUTALIST_BG_SECONDARY}; color: {BRUTALIST_MUTED}; border: 1.5px solid {BRUTALIST_MUTED}; }}"
+                )
                 save_btn.clicked.connect(lambda _checked=False, k=key: self._on_save_as(k))
                 f_layout.addWidget(save_btn)
                 frame.save_btn = save_btn  # type: ignore[attr-defined]
@@ -149,7 +180,7 @@ class ReportView(QWidget):
         # Evidence verification status banner
         self.evidence_verification_banner = QLabel("")
         self.evidence_verification_banner.setStyleSheet(
-            "font-size: 10pt; font-weight: bold; padding: 10px 14px; border-radius: 6px;"
+            f"font-size: 10pt; font-weight: 800; padding: 10px 14px; border: 2px solid {BRUTALIST_BORDER};"
         )
         layout.addWidget(self.evidence_verification_banner)
 
@@ -217,14 +248,14 @@ class ReportView(QWidget):
                         "✓ VERIFIED (Rule 13 Compliant: Cryptographic Hash Match)"
                     )
                     self.evidence_verification_banner.setStyleSheet(
-                        "color: #10b981; font-weight: bold;"
+                        f"background-color: {BRUTALIST_GREEN}; color: {BRUTALIST_BLACK}; font-weight: 800; border: 2px solid {BRUTALIST_BORDER}; padding: 10px 14px;"
                     )
                 else:
                     self.evidence_verification_banner.setText(
                         "❌ TAMPERING DETECTED: Evidence hash verification failed!"
                     )
                     self.evidence_verification_banner.setStyleSheet(
-                        "color: #ef4444; font-weight: bold;"
+                        f"background-color: {BRUTALIST_RED}; color: #FFFFFF; font-weight: 800; border: 2px solid {BRUTALIST_BORDER}; padding: 10px 14px;"
                     )
 
     def _on_save_as(self, key: str) -> None:
@@ -276,13 +307,19 @@ class ReportView(QWidget):
 
             if file_match and Path(file_match).exists():
                 frame.status_lbl.setText("✓ Available")
-                frame.status_lbl.setStyleSheet("color: #10b981; font-size: 11px;")
+                frame.status_lbl.setStyleSheet(
+                    f"color: {BRUTALIST_BLACK}; font-weight: 800; font-size: 8.5pt; "
+                    f"background-color: {BRUTALIST_GREEN}; border: 1.5px solid {BRUTALIST_BORDER}; padding: 2px 8px;"
+                )
                 frame.btn.setEnabled(True)
                 if hasattr(frame, "save_btn"):
                     frame.save_btn.setEnabled(True)
             else:
                 frame.status_lbl.setText("Not Generated / Scan Required")
-                frame.status_lbl.setStyleSheet("color: #64748b; font-size: 11px;")
+                frame.status_lbl.setStyleSheet(
+                    f"color: {BRUTALIST_MUTED}; font-weight: 700; font-size: 8.5pt; "
+                    f"background-color: {BRUTALIST_BG_SECONDARY}; border: 1.5px solid {BRUTALIST_BORDER}; padding: 2px 8px;"
+                )
                 frame.btn.setEnabled(False)
                 if hasattr(frame, "save_btn"):
                     frame.save_btn.setEnabled(False)
