@@ -48,6 +48,7 @@ class NavigationSidebar(QFrame):
         (3, "Findings", "FND"),
         (4, "PII Inventory", "PII"),
         (5, "Reports", "REP"),
+        (6, "Settings", "CFG"),
     ]
 
     def __init__(self, parent: QWidget | None = None) -> None:

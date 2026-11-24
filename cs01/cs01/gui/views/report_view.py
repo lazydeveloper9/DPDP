@@ -17,7 +17,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-from PySide6.QtCore import Qt, QUrl
+from PySide6.QtCore import Qt, QUrl, Signal
 from PySide6.QtGui import QDesktopServices
 from PySide6.QtWidgets import (
     QFileDialog,
@@ -78,12 +78,17 @@ _ARTIFACTS: list[tuple[str, str, str]] = [
 
 class ReportView(QWidget):
     """
-    Deliverables Hub with artifact tiles, RoPA dialog launch, and evidence verifier.
+    Deliverables Hub with artifact tiles, in-app Markdown viewer, RoPA dialog launch, and evidence verifier.
+
+    Signals:
+        open_markdown_requested(object): Emitted when a markdown report is opened in-app.
 
     Attributes:
         tiles: Dict mapping artifact key → styled QFrame tile.
         evidence_verification_banner: Banner showing Rule 13 verification result.
     """
+
+    open_markdown_requested = Signal(object)
 
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
@@ -95,6 +100,7 @@ class ReportView(QWidget):
         layout.setContentsMargins(24, 20, 24, 24)
         layout.setSpacing(14)
 
+        top_hdr_layout = QHBoxLayout()
         header_vbox = QVBoxLayout()
         header_vbox.setSpacing(3)
 
@@ -105,7 +111,19 @@ class ReportView(QWidget):
         subtitle = QLabel("Access executive PDF compliance audits, RoPA schemas, SARIF feeds, and Rule 13 tamper-evident evidence packages.")
         subtitle.setStyleSheet(f"font-size: 9.5pt; color: {BRUTALIST_MUTED};")
         header_vbox.addWidget(subtitle)
-        layout.addLayout(header_vbox)
+        top_hdr_layout.addLayout(header_vbox, stretch=1)
+
+        self.open_md_btn = QPushButton("Open Markdown File...")
+        self.open_md_btn.setProperty("class", "secondary")
+        self.open_md_btn.setCursor(Qt.PointingHandCursor)
+        self.open_md_btn.setStyleSheet(
+            f"QPushButton {{ background-color: {BRUTALIST_SURFACE}; color: {BRUTALIST_BLACK}; "
+            f"font-weight: 800; border: 2px solid {BRUTALIST_BORDER}; padding: 6px 14px; font-size: 9pt; }} "
+            f"QPushButton:hover {{ background-color: {BRUTALIST_SURFACE_ALT}; }}"
+        )
+        self.open_md_btn.clicked.connect(self._on_user_pick_markdown)
+        top_hdr_layout.addWidget(self.open_md_btn)
+        layout.addLayout(top_hdr_layout)
 
         self.tiles_container = QWidget()
         tiles_layout = QVBoxLayout(self.tiles_container)
@@ -208,7 +226,9 @@ class ReportView(QWidget):
         elif key == "markdown":
             md_path = self.report_files.get("cs01-report.md")
             if md_path and Path(md_path).exists():
-                _open_file(Path(md_path))
+                self.open_markdown_requested.emit(Path(md_path))
+            else:
+                self.open_markdown_requested.emit(None)
 
         elif key == "sarif":
             sarif_path = self.report_files.get("cs01-findings.sarif")
@@ -323,3 +343,14 @@ class ReportView(QWidget):
                 frame.btn.setEnabled(False)
                 if hasattr(frame, "save_btn"):
                     frame.save_btn.setEnabled(False)
+
+    def _on_user_pick_markdown(self) -> None:
+        """Prompts user to select any external or custom Markdown audit report."""
+        path, _ = QFileDialog.getOpenFileName(
+            self,
+            "Open Markdown Audit Report",
+            "",
+            "Markdown Files (*.md *.markdown *.mdown);;All Files (*.*)",
+        )
+        if path:
+            self.open_markdown_requested.emit(Path(path))

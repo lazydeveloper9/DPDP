@@ -41,6 +41,7 @@ class BrutalistCard(QFrame):
     """
     Core Neo-Brutalist Card Container.
     Renders a hard solid black offset shadow with 2px solid black border.
+    Integrates dynamically with ThemeManager tokens.
     """
 
     def __init__(
@@ -52,7 +53,8 @@ class BrutalistCard(QFrame):
         parent: QWidget | None = None,
     ) -> None:
         super().__init__(parent)
-        actual_bg = bg or bg_color or BRUTALIST_SURFACE
+        self._explicit_bg = bg or bg_color
+        actual_bg = self._explicit_bg or BRUTALIST_SURFACE
         self._bg_color = QColor(actual_bg)
         self._shadow_color = QColor(BRUTALIST_BLACK)
         self._border_color = QColor(BRUTALIST_BORDER)
@@ -61,19 +63,51 @@ class BrutalistCard(QFrame):
         else:
             self._shadow_offset = shadow_offset
         self._border_width = border_width
+        self._corner_radius: int = 0
+        self._shadow_enabled: bool = True
         self._is_hovered: bool = False
         self._inner_layout: QVBoxLayout | None = None
+
+        self._sync_theme_tokens()
+        try:
+            from cs01.gui.theme_engine.theme_manager import ThemeManager
+            ThemeManager.instance().theme_changed.connect(self._on_theme_changed)
+        except Exception:
+            pass
+
+    def _sync_theme_tokens(self) -> None:
+        """Syncs styling parameters with active ThemeManager tokens."""
+        try:
+            from cs01.gui.theme_engine.theme_manager import ThemeManager
+            tm = ThemeManager.instance()
+            self._border_color = QColor(str(tm.get_token("design.border.color", BRUTALIST_BORDER)))
+            self._shadow_color = QColor(str(tm.get_token("design.shadow.color", BRUTALIST_BLACK)))
+            self._border_width = int(tm.get_token("design.border.width", self._border_width))
+            self._corner_radius = int(tm.get_token("design.corner.radius", 0))
+            self._shadow_enabled = bool(tm.get_token("design.shadow.enabled", True))
+            sx = int(tm.get_token("design.shadow.x", self._shadow_offset[0]))
+            sy = int(tm.get_token("design.shadow.y", self._shadow_offset[1]))
+            self._shadow_offset = (sx, sy)
+            if self._explicit_bg is None:
+                self._bg_color = QColor(str(tm.get_token("component.card.bg", BRUTALIST_SURFACE)))
+        except Exception:
+            pass
+
+    def _on_theme_changed(self) -> None:
+        self._sync_theme_tokens()
+        self.update()
 
     @property
     def layout_container(self) -> QVBoxLayout:
         if self._inner_layout is None:
-            sx, sy = self._shadow_offset
+            sx, sy = self._shadow_offset if self._shadow_enabled else (0, 0)
             self._inner_layout = QVBoxLayout(self)
             self._inner_layout.setContentsMargins(12, 12, 12 + sx, 12 + sy)
             self._inner_layout.setSpacing(8)
         return self._inner_layout
 
     def set_bg_color(self, color_hex: str) -> None:
+        self._explicit_bg = color_hex
         self._bg_color = QColor(color_hex)
         self.update()
 
@@ -89,24 +123,41 @@ class BrutalistCard(QFrame):
 
     def paintEvent(self, event: QPaintEvent) -> None:  # noqa: N802
         painter = QPainter(self)
-        painter.setRenderHint(QPainter.RenderHint.Antialiasing, False)
-
         w, h = self.width(), self.height()
-        sx, sy = self._shadow_offset
+        sx, sy = self._shadow_offset if self._shadow_enabled else (0, 0)
 
         # 1. Hard Offset Solid Shadow (Bottom-Right)
-        shadow_rect = QRect(sx, sy, w - sx, h - sy)
-        painter.fillRect(shadow_rect, self._shadow_color)
+        if self._shadow_enabled and (sx > 0 or sy > 0):
+            painter.setRenderHint(QPainter.RenderHint.Antialiasing, self._corner_radius > 0)
+            shadow_rect = QRect(sx, sy, w - sx, h - sy)
+            if self._corner_radius > 0:
+                painter.setPen(Qt.PenStyle.NoPen)
+                painter.setBrush(self._shadow_color)
+                painter.drawRoundedRect(shadow_rect, self._corner_radius, self._corner_radius)
+            else:
+                painter.fillRect(shadow_rect, self._shadow_color)
 
         # 2. Main Card Body
         body_rect = QRect(0, 0, w - sx, h - sy)
-        painter.fillRect(body_rect, self._bg_color)
+        if self._corner_radius > 0:
+            painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
+            painter.setPen(Qt.PenStyle.NoPen)
+            painter.setBrush(self._bg_color)
+            painter.drawRoundedRect(body_rect, self._corner_radius, self._corner_radius)
+        else:
+            painter.setRenderHint(QPainter.RenderHint.Antialiasing, False)
+            painter.fillRect(body_rect, self._bg_color)
 
-        # 3. Solid Black Border (2px)
-        pen = QPen(self._border_color, self._border_width)
-        pen.setJoinStyle(Qt.PenJoinStyle.MiterJoin)
-        painter.setPen(pen)
-        painter.drawRect(body_rect.adjusted(1, 1, -1, -1))
+        # 3. Solid Border
+        if self._border_width > 0:
+            pen = QPen(self._border_color, self._border_width)
+            pen.setJoinStyle(Qt.PenJoinStyle.MiterJoin)
+            painter.setPen(pen)
+            painter.setBrush(Qt.BrushStyle.NoBrush)
+            if self._corner_radius > 0:
+                painter.drawRoundedRect(body_rect.adjusted(1, 1, -1, -1), self._corner_radius, self._corner_radius)
+            else:
+                painter.drawRect(body_rect.adjusted(1, 1, -1, -1))
 
 
 class BrutalistMetricCard(BrutalistCard):

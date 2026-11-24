@@ -9,7 +9,7 @@ import json
 from pathlib import Path
 from unittest.mock import patch, MagicMock
 import subprocess
-import yaml
+from ruamel.yaml import YAML
 import pytest
 
 from cs01.pipeline.stage3_detect.opengrep_bridge import OpengrepBridge
@@ -23,7 +23,7 @@ def test_default_rules_exist_and_valid():
     assert rules_path.exists(), f"Rules file missing: {rules_path}"
 
     with open(rules_path, "r", encoding="utf-8") as f:
-        data = yaml.safe_load(f)
+        data = YAML(typ="safe").load(f)
 
     assert "rules" in data, "YAML must have a 'rules' key"
     rules = data["rules"]

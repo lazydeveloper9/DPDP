@@ -41,6 +41,8 @@ from cs01.gui.views.report_view import ReportView
 from cs01.gui.views.results_view import ResultsView
 from cs01.gui.views.scan_config_view import ScanConfigView
 from cs01.gui.views.scan_execution_view import ScanExecutionView
+from cs01.gui.views.settings_view import SettingsView
+from cs01.gui.markdown_viewer.viewer_view import AuditReportViewer
 from cs01.gui.widgets.sidebar import NavigationSidebar
 
 
@@ -164,7 +166,7 @@ class MainWindow(QMainWindow):
         main_vbox.addWidget(content_widget)
 
     def _init_view_slots(self) -> None:
-        """Mounts all 6 real view instances into QStackedWidget."""
+        """Mounts all 7 real view instances into QStackedWidget."""
         # Instantiate all views
         self.dashboard_view = DashboardView(self)
         self.scan_config_view = ScanConfigView(self)
@@ -172,18 +174,26 @@ class MainWindow(QMainWindow):
         self.results_view = ResultsView(self)
         self.pii_inventory_view = PiiInventoryView(self)
         self.report_view = ReportView(self)
+        self.settings_view = SettingsView(self)
+        self.audit_report_viewer = AuditReportViewer(self)
 
         # Add in order matching sidebar indices:
-        # 0=Dashboard, 1=Scan Setup, 2=Execution, 3=Findings, 4=PII Inventory, 5=Reports
+        # 0=Dashboard, 1=Scan Setup, 2=Execution, 3=Findings, 4=PII Inventory, 5=Reports, 6=Settings, 7=Report Viewer
         self.stacked_widget.addWidget(self.dashboard_view)       # 0
         self.stacked_widget.addWidget(self.scan_config_view)     # 1
         self.stacked_widget.addWidget(self.scan_execution_view)  # 2
         self.stacked_widget.addWidget(self.results_view)         # 3
         self.stacked_widget.addWidget(self.pii_inventory_view)   # 4
         self.stacked_widget.addWidget(self.report_view)          # 5
+        self.stacked_widget.addWidget(self.settings_view)        # 6
+        self.stacked_widget.addWidget(self.audit_report_viewer)  # 7
 
         # Connect Dashboard "Start New Scan" shortcut
         self.dashboard_view.start_scan_requested.connect(lambda: self.navigate_to(1))
+
+        # Connect ReportView in-app markdown opening & viewer back navigation
+        self.report_view.open_markdown_requested.connect(self._on_open_markdown_requested)
+        self.audit_report_viewer.back_requested.connect(lambda: self.navigate_to(5))
 
         # Connect ScanConfigView scan launch → pipeline worker
         self.scan_config_view.start_scan_requested.connect(self._on_start_scan_requested)
@@ -403,6 +413,31 @@ class MainWindow(QMainWindow):
         except Exception as e:
             from PySide6.QtWidgets import QMessageBox
             QMessageBox.warning(self, "Load Error", f"Could not load scan bundle:\n{e}")
+
+    def _on_open_markdown_requested(self, path: object = None) -> None:
+        """Opens a Markdown audit report file inside the built-in reader."""
+        target_path = None
+        if path:
+            from pathlib import Path
+            p = Path(str(path)).resolve()
+            if p.exists() and p.is_file():
+                target_path = p
+
+        if not target_path:
+            from pathlib import Path
+            default_p = Path("cs01-reports/cs01-report.md").resolve()
+            if default_p.exists():
+                target_path = default_p
+
+        if target_path:
+            self.audit_report_viewer.load_file(target_path)
+        else:
+            self.audit_report_viewer.load_text(
+                "# No Markdown Report Found\n\n"
+                "Please run an audit scan or load an existing scan bundle to view the report.",
+                filename="no-report.md",
+            )
+        self.navigate_to(7)
 
     def _setup_status_bar(self) -> None:
         """Initializes bottom status bar with engine, egress, and memory readouts."""

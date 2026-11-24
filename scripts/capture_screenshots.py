@@ -1,6 +1,6 @@
 """
-Script to capture offscreen screenshots of all 6 screens in CS-01 DPDP Compliance Auditor.
-Saves rendered PNGs directly into the conversation artifact directory.
+Script to capture offscreen screenshots of all screens in CS-01 DPDP Compliance Auditor.
+Saves rendered PNGs directly into docs/screenshots/ and the artifact directory.
 """
 import os
 import sys
@@ -26,6 +26,7 @@ from cs01.models.scored_finding import (
     ScoredFindingBundle,
 )
 
+REPO_SCREENSHOTS_DIR = Path("docs/screenshots").resolve()
 ARTIFACT_DIR = Path(r"C:\Users\ykn\.gemini\antigravity\brain\fe414285-3ea0-4dc6-bed1-0e21a4a225a1")
 
 def make_sample_bundle() -> tuple[ScoredFindingBundle, list[PiiHit], dict[str, Path]]:
@@ -179,7 +180,7 @@ def make_sample_bundle() -> tuple[ScoredFindingBundle, list[PiiHit], dict[str, P
         ),
     ]
 
-    # Create dummy report files in tmp
+    # Reference existing or dummy report files
     tmp_reports = Path("./cs01-reports-dist")
     tmp_reports.mkdir(exist_ok=True)
     report_files = {
@@ -196,6 +197,17 @@ def make_sample_bundle() -> tuple[ScoredFindingBundle, list[PiiHit], dict[str, P
         p.write_text("ok", encoding="utf-8")
 
     return bundle, pii_hits, report_files
+
+
+def save_image(pixmap, filename: str):
+    """Saves pixmap to both docs/screenshots/ and ARTIFACT_DIR."""
+    REPO_SCREENSHOTS_DIR.mkdir(parents=True, exist_ok=True)
+    repo_path = REPO_SCREENSHOTS_DIR / filename
+    pixmap.save(str(repo_path), "PNG")
+    if ARTIFACT_DIR.exists():
+        art_path = ARTIFACT_DIR / filename
+        pixmap.save(str(art_path), "PNG")
+    print(f"Saved: {repo_path} ({repo_path.stat().st_size:,} bytes)")
 
 
 def main():
@@ -227,7 +239,7 @@ def main():
     window.scan_config_view.target_input.setText("C:/DPDP/sample_codebase")
     window.scan_config_view.validate_target()
 
-    # In scan_execution_view, set a running simulation state
+    # In scan_execution_view, set a realistic running simulation state
     window.scan_execution_view.on_scan_started()
     window.scan_execution_view.on_stage_started(3, "Indian PII Scanner")
     window.scan_execution_view.on_progress_updated(45, "Scanning 142 files for Indian PII identifiers...")
@@ -236,30 +248,66 @@ def main():
     window.scan_execution_view.log_console.append_log("WARNING", "Stage 3: Detected unmasked Aadhaar pattern in src/models/user_vault.py:48.")
     window.scan_execution_view.log_console.append_log("INFO", "Stage 3: Verified PAN checksum with Verhoeff & Luhn engines.")
 
+    # Load real markdown report if available
+    md_file = Path("cs01-reports/cs01-report.md")
+    if md_file.exists():
+        window.audit_report_viewer.load_file(md_file)
+
     window.resize(1440, 900)
     window.sidebar.set_collapsed(False)
     window.show()
 
-    screens = [
-        (0, "screenshot_dashboard.png"),
-        (1, "screenshot_scan_setup.png"),
-        (2, "screenshot_execution.png"),
-        (3, "screenshot_findings.png"),
-        (4, "screenshot_pii_inventory.png"),
-        (5, "screenshot_reports.png"),
-    ]
+    # 1. Dashboard
+    window.navigate_to(0)
+    app.processEvents()
+    save_image(window.grab(), "dashboard.png")
 
-    for index, filename in screens:
-        window.navigate_to(index)
-        app.processEvents()
+    # 2. Scan Setup
+    window.navigate_to(1)
+    app.processEvents()
+    save_image(window.grab(), "scan-setup.png")
 
-        # Capture window content
-        pixmap = window.grab()
-        out_path = ARTIFACT_DIR / filename
-        pixmap.save(str(out_path), "PNG")
-        print(f"Captured screen {index} -> {out_path} ({out_path.stat().st_size} bytes)")
+    # 3. Execution
+    window.navigate_to(2)
+    app.processEvents()
+    save_image(window.grab(), "execution.png")
 
-    print("ALL SCREENSHOTS CAPTURED SUCCESSFULLY!")
+    # 4. Findings (with row 0 selected)
+    window.navigate_to(3)
+    if window.results_view.findings_table.model().rowCount() > 0:
+        window.results_view.findings_table.selectRow(0)
+    app.processEvents()
+    save_image(window.grab(), "findings.png")
+
+    # 5. Finding Details
+    if hasattr(window.results_view, "detail_frame") and window.results_view.detail_frame:
+        save_image(window.results_view.detail_frame.grab(), "finding-details.png")
+    else:
+        save_image(window.grab(), "finding-details.png")
+
+    # 6. PII Inventory
+    window.navigate_to(4)
+    app.processEvents()
+    save_image(window.grab(), "pii-inventory.png")
+
+    # 7. Reports
+    window.navigate_to(5)
+    app.processEvents()
+    save_image(window.grab(), "reports.png")
+
+    # 8. Theme Customization Studio
+    window.navigate_to(6)
+    window.settings_view.category_list.setCurrentRow(0)  # Theme Presets
+    app.processEvents()
+    save_image(window.grab(), "theme-studio.png")
+
+    # 9. In-App Markdown Report Viewer
+    window.navigate_to(7)
+    app.processEvents()
+    save_image(window.grab(), "markdown-viewer.png")
+
+    print("\n✔ ALL 9 REQUIRED SCREENSHOTS CAPTURED AND STORED IN docs/screenshots/!")
+
 
 if __name__ == "__main__":
     main()

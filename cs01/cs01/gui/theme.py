@@ -14,7 +14,7 @@ from typing import Final
 # 1. COLOR TOKENS (BOLD ENTERPRISE NEO-BRUTALIST PALETTE)
 # ============================================================================
 
-BRUTALIST_BG_MAIN: Final[str] = "#F6F3EA"       # Warm off-white canvas
+BRUTALIST_BG_MAIN: Final[str] = "#FFF6CC"       # Warm off-white canvas
 BRUTALIST_BG_SECONDARY: Final[str] = "#EAE6DA"  # Secondary warm off-white (sidebar/HUD)
 BRUTALIST_SURFACE: Final[str] = "#FFFFFF"       # Pure white surface (cards/tables/inputs)
 BRUTALIST_SURFACE_ALT: Final[str] = "#FFF4C2"   # Pale yellow surface (alternating rows/accents)

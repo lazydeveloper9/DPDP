@@ -37,6 +37,12 @@ class PenaltyCeilingBanner(QFrame):
         super().__init__(parent)
         self._bg_color = QColor(BRUTALIST_SURFACE)
 
+        try:
+            from cs01.gui.theme_engine.theme_manager import ThemeManager
+            ThemeManager.instance().theme_changed.connect(self.update)
+        except Exception:
+            pass
+
         # 5px shadow offset margins
         sx, sy = (5, 5)
         layout = QHBoxLayout(self)
@@ -82,22 +88,43 @@ class PenaltyCeilingBanner(QFrame):
         painter = QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing, False)
 
+        try:
+            from cs01.gui.theme_engine.theme_manager import ThemeManager
+            tm = ThemeManager.instance()
+            shadow_c = QColor(str(tm.get_token("page.dashboard.kpi_card_shadow", BRUTALIST_BLACK)))
+            banner_bg = QColor(str(tm.get_token("page.dashboard.penalty_bg", BRUTALIST_SURFACE)))
+            border_c = QColor(str(tm.get_token("page.dashboard.kpi_card_border", BRUTALIST_BORDER)))
+            b_width = int(tm.get_token("design.border.width", 2))
+            sx = int(tm.get_token("design.shadow.x", 5))
+            sy = int(tm.get_token("design.shadow.y", 5))
+            shadow_enabled = bool(tm.get_token("design.shadow.enabled", True))
+        except Exception:
+            shadow_c = QColor(BRUTALIST_BLACK)
+            banner_bg = self._bg_color
+            border_c = QColor(BRUTALIST_BORDER)
+            b_width = 2
+            sx, sy = (5, 5)
+            shadow_enabled = True
+
         w, h = self.width(), self.height()
-        sx, sy = (5, 5)
+        if not shadow_enabled:
+            sx, sy = (0, 0)
 
         # 1. Hard Offset Solid Shadow
-        shadow_rect = QRect(sx, sy, w - sx, h - sy)
-        painter.fillRect(shadow_rect, QColor(BRUTALIST_BLACK))
+        if shadow_enabled and (sx > 0 or sy > 0):
+            shadow_rect = QRect(sx, sy, w - sx, h - sy)
+            painter.fillRect(shadow_rect, shadow_c)
 
         # 2. Main Body
         body_rect = QRect(0, 0, w - sx, h - sy)
-        painter.fillRect(body_rect, self._bg_color)
+        painter.fillRect(body_rect, banner_bg)
 
-        # 3. 2px Solid Black Border
-        pen = QPen(QColor(BRUTALIST_BORDER), 2)
-        pen.setJoinStyle(Qt.PenJoinStyle.MiterJoin)
-        painter.setPen(pen)
-        painter.drawRect(body_rect.adjusted(1, 1, -1, -1))
+        # 3. Solid Border
+        if b_width > 0:
+            pen = QPen(border_c, b_width)
+            pen.setJoinStyle(Qt.PenJoinStyle.MiterJoin)
+            painter.setPen(pen)
+            painter.drawRect(body_rect.adjusted(1, 1, -1, -1))
 
     def set_ceiling(self, ceiling_text: str) -> None:
         """Update the ceiling label text and re-colour based on the band."""
